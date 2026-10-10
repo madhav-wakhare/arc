@@ -1,23 +1,54 @@
 # Smriti
 
-Smriti is a personal work and learning tracker. It runs on your computer in one Docker container. The data is in a SQLite file in this folder.
+Smriti is a personal work and learning tracker. It runs on your computer in one Docker container and keeps everything in a SQLite file in this folder. Nothing leaves your machine.
+
+Use it to plan your day, track time on tasks like in Jira, keep a list of things you heard about, and keep what you learned in front of you so you don't forget it.
 
 ## Features
 
+### Work
+
 - **Board**: Kanban board with Backlog, Today, In Progress and Done. Drag cards between columns. Each open card shows how many days it has been pending (amber after 7 days, red after 14).
-- **Item types**: work tasks, learning items (videos, articles, books) and notes.
-- **Radar**: topics you hear about (vLLM, Langfuse, tmux...). Press `N` anywhere to add one. Topics stay off the board. Review each one and create a Learning or Task ticket from it; its link and `#tags` become the ticket link and labels. Tabs: To review, Ticketed, Dismissed.
-- **Revise**: things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (notes stay hidden until you reveal them) and a link. Add with `R`, from any ticket, from Radar, or when you finish a Learning ticket. "Mark as revised" moves it to the Revised tab.
-- **Projects**: each project has a key, so items get keys such as `WORK-12` and `LRN-4`. The Projects page lets you edit, deactivate (hide from the sidebar and pickers) or delete a project.
-- **Trash**: deleted items and projects stay in Trash for 30 days. You can restore them, or delete them for good. After 30 days Smriti removes them automatically.
+- **Today**: today's plan, overdue items, a quick pick from the backlog, a "Keep in mind" list from Revise, and an end-of-day review.
+- **All items**: a sortable table of every item with filters.
+- **Item types**: tasks, learning items (videos, articles, courses, books) and notes.
+- **Item panel**: title, description, checklist, comments, work log and history. Properties: status, priority, type, project, due date, repeat and labels.
 - **Time tracking (Jira style)**: original estimate, "Log work" with `2h 30m`, `45m` or `1d` (1d = 8h), a start/stop timer, and a work log per item.
-- **Today**: today's plan, overdue items, a quick pick from the backlog, and an end-of-day review.
 - **Recurring items**: daily, weekdays, weekly or monthly. When you mark one Done, Smriti makes the next one.
-- **Dashboard and weekly report**: completed items, time logged, learning time, time per project, longest pending items.
-- **Search**: `⌘K` / `Ctrl K` searches titles, descriptions, links and comments. Type a key like `LRN-4` to jump to an item.
-- **Obsidian export**: for items with a link, "Export to Obsidian" writes one note named after the item title. If you later change the title or link, Smriti overwrites the note.
-- **Backups**: once a month, Smriti copies the database to `backups/YYYY-MM/smriti-YYYY-MM-DD.db`. Settings has a "Back up now" button.
-- **Themes**: dark and light. Works on a phone on the same Wi-Fi.
+- **Projects**: each project has a key and an icon, so items get keys such as `WORK-12` and `LRN-4`. On the Projects page you can edit a project, turn it off (it is hidden from the sidebar and pickers) or delete it.
+
+### Learning
+
+- **Radar**: topics you hear about, such as vLLM, Langfuse or tmux. Press `N` anywhere to add one. Topics stay off the board. Review each one, then create a Learning or Task ticket from it, move it to Revise, or dismiss it. Its link and `#tags` become the ticket link and labels.
+- **Learning**: your queue of videos, articles and courses, with YouTube thumbnails. Paste a link to add one.
+- **Revise**: things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (the notes stay hidden until you show them), a link and a priority.
+  - Add a topic with `R`, from any ticket, from Radar, or when you mark a Learning ticket Done.
+  - Start a session timer or log time by hand. Each topic shows when you last revised it, the total time and the number of sessions.
+  - "Mark as revised" moves the topic to the Revised tab. "Revise again" brings it back.
+
+### Overview
+
+- **Dashboard**: where things stand right now. Open items, in progress, overdue, time logged today, topics to review, today's plan, items waiting longest, the Revise list and a short summary of this week.
+- **Weekly report**: what happened in a week. Time per day, time per project, completed and carried-over items, and daily reviews. Use the arrows to go back to earlier weeks.
+
+### Other
+
+- **Search**: `⌘K` / `Ctrl K` searches titles, descriptions, links, comments and Radar topics. Type a key like `LRN-4` to jump to an item.
+- **Obsidian export**: for items with a link, "Export to Obsidian" writes one note named after the item title. If you later change the title or link, Smriti overwrites the note. You can turn this off in Settings.
+- **Trash**: deleted items and projects stay in Trash for 30 days. You can restore them or delete them for good. After 30 days, Smriti removes them automatically.
+- **Backups**: once a month, Smriti copies the database to `backups/YYYY-MM/smriti-YYYY-MM-DD.db`. Settings has a "Back up now" button and a switch for the monthly backup.
+- **Themes**: dark and light. The layout works on a phone on the same Wi-Fi.
+
+## Keyboard shortcuts
+
+| Key | Action |
+| --- | --- |
+| `⌘K` / `Ctrl K` | Search and commands |
+| `C` | New work item |
+| `N` | Add a topic to Radar |
+| `R` | Add a topic to Revise |
+| `Esc` | Close a panel or dialog |
+| `⌘ Enter` | Post a comment |
 
 ## Run
 
@@ -39,6 +70,7 @@ Run `make` to see all commands:
 | `make up` | Create `.env` if missing, build and start in Docker |
 | `make down` / `make restart` | Stop / rebuild and restart |
 | `make logs` / `make status` | Follow logs / show health |
+| `make open` | Open Smriti in the browser |
 | `make backup` | Write a backup now |
 | `make restore FILE=backups/YYYY-MM/smriti-YYYY-MM-DD.db` | Restore a backup (keeps the old database as `data/smriti.db.before-restore`) |
 | `make dev` | Run backend and UI locally with live reload |
@@ -47,6 +79,18 @@ Run `make` to see all commands:
 | `make clean` | Remove build output and dev data (keeps `data/` and `backups/`) |
 
 > **Security:** Smriti has no login. With the default `SMRITI_BIND=0.0.0.0`, any device on the same network can read and change your data. On a shared or office network, set `SMRITI_BIND=127.0.0.1` in `.env`.
+
+## Configuration
+
+`make up` creates `.env` from `.env.example`. You can edit it at any time and then run `make restart`.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `OBSIDIAN_VAULT_PATH` | (asked on first run) | Full path of your Obsidian vault |
+| `OBSIDIAN_FOLDER` | `Smriti/Videos` | Folder inside the vault for exported notes (also in Settings) |
+| `TZ` | `Asia/Kolkata` | Your time zone, used for "today", reviews and reports |
+| `SMRITI_PORT` | `8080` | Port on this Mac |
+| `SMRITI_BIND` | `0.0.0.0` | `0.0.0.0` allows other devices on your network, `127.0.0.1` allows this Mac only |
 
 ## Obsidian notes
 
@@ -64,7 +108,7 @@ smriti_id: LRN-1
 [Kubernetes networking deep dive](https://www.youtube.com/watch?v=...)
 ```
 
-The default folder is `Smriti/Videos` inside the vault. You can change it in Settings. Smriti only deletes an old note during a rename when the note has the same `smriti_id`.
+The default folder is `Smriti/Videos` inside the vault. You can change it in Settings. Smriti deletes an old note during a rename only when that note has the same `smriti_id`.
 
 ## Data and backups
 
@@ -72,6 +116,10 @@ The default folder is `Smriti/Videos` inside the vault. You can change it in Set
 | --- | --- |
 | `data/smriti.db` | The database |
 | `backups/YYYY-MM/` | Monthly copies of the database |
+
+These folders are on your disk, not inside the container. You can stop, remove or rebuild the container (`make down`, `make restart`) and your data stays. Git ignores both folders, so pushing the repository does not upload your data. To protect against disk loss, also copy `backups/` to another place, for example iCloud Drive or an external disk.
+
+When a new version needs a database change, Smriti writes a backup first and then updates the database on start.
 
 To restore a backup, run `make restore FILE=...`.
 
@@ -82,6 +130,19 @@ make dev
 ```
 
 This installs dependencies from the lockfiles (`backend/uv.lock` with uv, `frontend/package-lock.json` with npm). Then it starts the API on port 8765 and the Vite UI on http://localhost:5173. Dev data goes to `.dev/`, not to `data/`.
+
+```
+backend/
+  app/main.py       API routes
+  app/db.py         SQLite schema and migrations
+  app/obsidian.py   Obsidian export
+  app/backup.py     Monthly backups and Trash cleanup
+  tests/            API tests (make test)
+frontend/src/
+  pages/            One file per page
+  components/       Shared UI (sidebar, item panel, dialogs, dashboard pieces)
+  lib/              API client, hooks, formatting
+```
 
 - Backend: Python 3.12, FastAPI, SQLite with FTS5. Dependencies are in `backend/pyproject.toml`.
 - Frontend: React, Vite, Tailwind CSS, Geist font, Lucide icons, Recharts.
