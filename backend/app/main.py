@@ -825,21 +825,6 @@ def stats_overview(days: int = Query(default=30, ge=1, le=365), conn=Depends(get
         "overdue": conn.execute(
             "SELECT count(*) FROM live_items WHERE status != 'done' AND due_date < ?", (t,)).fetchone()[0],
         "by_status": rows(conn.execute("SELECT status, count(*) AS count FROM live_items GROUP BY status")),
-        "completed_per_day": _per_day_by_type(conn, """
-            SELECT substr(completed_at, 1, 10), type, count(*) FROM live_items
-            WHERE substr(completed_at, 1, 10) BETWEEN ? AND ? GROUP BY 1, 2""", start, end),
-        "created_per_day": _per_day_by_type(conn, """
-            SELECT substr(created_at, 1, 10), type, count(*) FROM live_items
-            WHERE substr(created_at, 1, 10) BETWEEN ? AND ? GROUP BY 1, 2""", start, end),
-        "minutes_per_day": _per_day_by_type(conn, """
-            SELECT substr(w.started_at, 1, 10), i.type, sum(w.minutes) FROM worklogs w
-            JOIN live_items i ON i.id = w.item_id WHERE substr(w.started_at, 1, 10) BETWEEN ? AND ? GROUP BY 1, 2""",
-            start, end),
-        "minutes_by_project": rows(conn.execute("""
-            SELECT p.id, p.key, p.name, p.color, p.icon, sum(w.minutes) AS minutes FROM worklogs w
-            JOIN live_items i ON i.id = w.item_id JOIN projects p ON p.id = i.project_id
-            WHERE substr(w.started_at, 1, 10) BETWEEN ? AND ? GROUP BY p.id ORDER BY minutes DESC""",
-            (start.isoformat(), end.isoformat()))),
         "oldest_open": [_decode(r) for r in rows(conn.execute(
             ITEM_SELECT + " WHERE i.status != 'done' AND i.type != 'note' ORDER BY i.created_at LIMIT 6"))],
     }

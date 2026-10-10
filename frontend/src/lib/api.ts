@@ -112,10 +112,6 @@ export interface Overview {
   inbox_open: number;
   overdue: number;
   by_status: { status: Status; count: number }[];
-  completed_per_day: DayByType[];
-  created_per_day: DayByType[];
-  minutes_per_day: DayByType[];
-  minutes_by_project: ProjectMinutes[];
   oldest_open: Item[];
 }
 export interface Weekly {
