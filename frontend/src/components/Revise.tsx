@@ -1,5 +1,4 @@
 import { useMutation } from "@tanstack/react-query";
-import { CircleHelp, Flag, Link2, NotebookText, Type } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { api, type Priority, type Revision } from "../lib/api";
 import { PRIORITIES, PriorityIcon } from "../lib/meta";
@@ -8,14 +7,12 @@ import { Button, Input, Kbd, Modal, Select, Textarea, useToast } from "./ui";
 
 export type RevisionFields = { title: string; question: string; notes: string; url: string; priority: Priority };
 
-/** Label with a small icon, used by the Revise forms. */
-export function IconLabel({ icon, label, hint, children }: { icon: ReactNode; label: string; hint?: string; children: ReactNode }) {
+function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <label className="block space-y-1.5">
-      <span className="flex items-center gap-1.5 text-[13px] font-medium">
-        <span className="text-fg-3">{icon}</span>
+      <span className="text-[13px] font-medium">
         {label}
-        {hint && <span className="font-normal text-fg-3">· {hint}</span>}
+        {hint && <span className="ml-1 font-normal text-fg-3">{hint}</span>}
       </span>
       {children}
     </label>
@@ -26,20 +23,20 @@ export function RevisionForm({ value, onChange }: { value: RevisionFields; onCha
   const set = (k: keyof RevisionFields) => (e: { target: { value: string } }) => onChange({ ...value, [k]: e.target.value });
   return (
     <div className="space-y-4">
-      <IconLabel icon={<Type size={14} />} label="Topic">
+      <Row label="Topic">
         <Input autoFocus value={value.title} onChange={set("title")} placeholder="e.g. KV cache in vLLM" />
-      </IconLabel>
-      <IconLabel icon={<CircleHelp size={14} />} label="Question" hint="optional, to test yourself">
-        <Input value={value.question} onChange={set("question")} placeholder="e.g. Why does the KV cache use so much GPU memory?" />
-      </IconLabel>
-      <IconLabel icon={<NotebookText size={14} />} label="Notes" hint="in your own words">
-        <Textarea value={value.notes} onChange={set("notes")} placeholder="The few lines you want to remember" className="min-h-28" />
-      </IconLabel>
+      </Row>
+      <Row label="Question" hint="(optional)">
+        <Input value={value.question} onChange={set("question")} placeholder="A question to test yourself" />
+      </Row>
+      <Row label="Notes">
+        <Textarea value={value.notes} onChange={set("notes")} placeholder="What you want to remember" className="min-h-28" />
+      </Row>
       <div className="grid gap-4 sm:grid-cols-[1fr_180px]">
-        <IconLabel icon={<Link2 size={14} />} label="Link" hint="optional">
+        <Row label="Link" hint="(optional)">
           <Input value={value.url} onChange={set("url")} placeholder="https://" />
-        </IconLabel>
-        <IconLabel icon={<Flag size={14} />} label="Priority">
+        </Row>
+        <Row label="Priority">
           <Select icon={<PriorityIcon priority={value.priority} />} value={value.priority} onChange={set("priority")}>
             {PRIORITIES.map((p) => (
               <option key={p.value} value={p.value}>
@@ -47,7 +44,7 @@ export function RevisionForm({ value, onChange }: { value: RevisionFields; onCha
               </option>
             ))}
           </Select>
-        </IconLabel>
+        </Row>
       </div>
     </div>
   );
@@ -79,7 +76,7 @@ export function AddRevisionModal({ open, onClose, onAdded }: { open: boolean; on
     <Modal
       open={open}
       onClose={onClose}
-      title="Add to Revise"
+      title="Add topic"
       width="max-w-xl"
       footer={
         <div className="flex w-full items-center justify-between">
@@ -90,7 +87,7 @@ export function AddRevisionModal({ open, onClose, onAdded }: { open: boolean; on
           <div className="flex gap-2">
             <Button onClick={onClose}>Cancel</Button>
             <Button variant="primary" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>
-              Add to Revise
+              Add
             </Button>
           </div>
         </div>
@@ -101,7 +98,6 @@ export function AddRevisionModal({ open, onClose, onAdded }: { open: boolean; on
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && form.title.trim()) save.mutate();
         }}
       >
-        <p className="-mt-1 mb-4 text-[13px] text-fg-3">Something you learned and want to keep in front of you so you don’t forget it.</p>
         <RevisionForm value={form} onChange={setForm} />
       </div>
     </Modal>
