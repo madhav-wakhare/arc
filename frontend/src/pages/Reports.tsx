@@ -92,7 +92,7 @@ export default function Reports() {
               data={data.minutes_per_day}
               total={fmtMinutes(data.current.minutes)}
               fmt={fmtMinutes}
-              axisFmt={(v) => `${Math.round(v / 60)}h`}
+              axisFmt={(v) => (v === 0 ? "0" : v < 60 ? `${v}m` : `${+(v / 60).toFixed(1)}h`)}
             />
             <Card className="p-5">
               <h3 className="mb-4 text-[15px] font-medium">Time by project</h3>
