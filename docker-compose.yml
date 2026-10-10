@@ -1,0 +1,17 @@
+services:
+  smriti:
+    build: .
+    image: smriti:latest
+    container_name: smriti
+    restart: unless-stopped
+    ports:
+      # 0.0.0.0 lets your phone on the same Wi-Fi open http://<mac-ip>:8080
+      # Change to "127.0.0.1:8080:8000" to allow this Mac only.
+      - "${SMRITI_BIND:-0.0.0.0}:${SMRITI_PORT:-8080}:8000"
+    environment:
+      TZ: ${TZ:-Asia/Kolkata}
+      OBSIDIAN_FOLDER: ${OBSIDIAN_FOLDER:-Smriti/Videos}
+    volumes:
+      - ./data:/data                                  # SQLite database
+      - ./backups:/backups                            # monthly backups, YYYY-MM/
+      - ${OBSIDIAN_VAULT_PATH:-./vault-not-set}:/vault  # your Obsidian vault

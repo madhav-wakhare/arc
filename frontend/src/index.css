@@ -1,0 +1,135 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Light: Plane-style. Dark: Bifrost-style. Components use only these tokens. */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --sidebar: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f5f5f5;
+  --surface-3: #ececec;
+  --border: #e7e7e7;
+  --border-strong: #d4d4d4;
+  --fg: #171717;
+  --fg-2: #525252;
+  --fg-3: #8a8a8a;
+  --accent: #0b78b8;
+  --accent-soft: #e6f3fb;
+  --accent-fg: #ffffff;
+  --overlay: rgb(0 0 0 / 0.35);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
+
+  /* categorical series (dataviz reference palette, slots 1-3) */
+  --series-task: #2a78d6;
+  --series-learning: #eb6834;
+  --series-note: #1baf7a;
+  /* status (fixed) */
+  --good: #0ca30c;
+  --warning: #c98500;
+  --critical: #d03b3b;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111111;
+  --sidebar: #0c0c0c;
+  --surface: #161616;
+  --surface-2: #1d1d1d;
+  --surface-3: #262626;
+  --border: #262626;
+  --border-strong: #333333;
+  --fg: #ededed;
+  --fg-2: #a3a3a3;
+  --fg-3: #737373;
+  --accent: #56b4e9;
+  --accent-soft: #0f2533;
+  --accent-fg: #06202f;
+  --overlay: rgb(0 0 0 / 0.6);
+  --shadow: 0 8px 30px rgb(0 0 0 / 0.5);
+
+  --series-task: #3987e5;
+  --series-learning: #d95926;
+  --series-note: #199e70;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --critical: #e66767;
+}
+
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+
+  --color-bg: var(--bg);
+  --color-sidebar: var(--sidebar);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-good: var(--good);
+  --color-warning: var(--warning);
+  --color-critical: var(--critical);
+  --color-task: var(--series-task);
+  --color-learning: var(--series-learning);
+  --color-note: var(--series-note);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  /* thin scrollbars like Bifrost */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+.recharts-cartesian-grid line {
+  stroke: var(--border);
+}
+.recharts-text {
+  fill: var(--fg-3);
+  font-size: 11px;
+}
+.recharts-tooltip-cursor {
+  fill: var(--surface-2);
+}

@@ -1,0 +1,11 @@
+.git
+.env
+data
+backups
+vault-not-set
+frontend/node_modules
+frontend/dist
+backend/.venv
+**/__pycache__
+backend/tests
+.dev

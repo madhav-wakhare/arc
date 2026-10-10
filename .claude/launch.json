@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "smriti-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd backend && DATA_DIR=../.dev/data VAULT_DIR=../.dev/vault BACKUP_DIR=../.dev/backups STATIC_DIR=../frontend/dist TZ=Asia/Kolkata uv run uvicorn app.main:app --port 8765"],
+      "port": 8765
+    }
+  ]
+}

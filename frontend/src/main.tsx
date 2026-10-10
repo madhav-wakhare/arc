@@ -1,0 +1,48 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { ToastProvider } from "./components/ui";
+import "./index.css";
+import Board from "./pages/Board";
+import Dashboard from "./pages/Dashboard";
+import Radar from "./pages/Radar";
+import Learning from "./pages/Learning";
+import ListView from "./pages/ListView";
+import Reports from "./pages/Reports";
+import Projects from "./pages/Projects";
+import Settings from "./pages/Settings";
+import Trash from "./pages/Trash";
+import Today from "./pages/Today";
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: true } },
+});
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="radar" element={<Radar />} />
+              <Route path="inbox" element={<Navigate to="/radar" replace />} />
+              <Route path="today" element={<Today />} />
+              <Route path="board" element={<Board />} />
+              <Route path="list" element={<ListView />} />
+              <Route path="learning" element={<Learning />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="projects" element={<Projects />} />
+              <Route path="trash" element={<Trash />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="*" element={<Dashboard />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
+    </QueryClientProvider>
+  </StrictMode>,
+);

@@ -1,0 +1,11 @@
+.env
+data/
+backups/
+vault-not-set/
+node_modules/
+frontend/dist/
+backend/.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.dev/
