@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowUpRight, Ban, ExternalLink, Link2, Plus, Radar as RadarIcon, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { ArrowUpRight, Ban, BookmarkPlus, ExternalLink, Link2, Plus, Radar as RadarIcon, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { AddTopicModal, defaultProject } from "../components/Jots";
 import { useActions } from "../components/Layout";
@@ -101,6 +101,18 @@ function TopicPanel({ jot, onGone, onClose }: { jot: Jot; onGone: () => void; on
       onGone();
     },
   });
+  const toRevise = useMutation({
+    mutationFn: async () => {
+      if (dirty) await api.patch(`/jots/${jot.id}`, { body, details, url });
+      return api.post(`/jots/${jot.id}/revise`);
+    },
+    onSuccess: () => {
+      refresh();
+      toast(`Moved “${body}” to Revise`);
+      onGone();
+    },
+    onError: (e: Error) => toast(e.message, "error"),
+  });
   const remove = useMutation({
     mutationFn: () => api.del(`/jots/${jot.id}`),
     onSuccess: () => {
@@ -164,6 +176,11 @@ function TopicPanel({ jot, onGone, onClose }: { jot: Jot; onGone: () => void; on
             {jot.status === "open" && (
               <Button icon={<Ban size={14} />} onClick={() => setJotStatus.mutate("archived")}>
                 Dismiss
+              </Button>
+            )}
+            {jot.status !== "converted" && (
+              <Button icon={<BookmarkPlus size={14} />} onClick={() => toRevise.mutate()} title="Keep it on your Revise list">
+                Move to Revise
               </Button>
             )}
             {jot.status === "archived" && (

@@ -8,6 +8,7 @@ import "./index.css";
 import Board from "./pages/Board";
 import Dashboard from "./pages/Dashboard";
 import Radar from "./pages/Radar";
+import Revise from "./pages/Revise";
 import Learning from "./pages/Learning";
 import ListView from "./pages/ListView";
 import Reports from "./pages/Reports";
@@ -29,6 +30,7 @@ createRoot(document.getElementById("root")!).render(
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="radar" element={<Radar />} />
+              <Route path="revise" element={<Revise />} />
               <Route path="inbox" element={<Navigate to="/radar" replace />} />
               <Route path="today" element={<Today />} />
               <Route path="board" element={<Board />} />

@@ -115,6 +115,33 @@ CREATE TABLE IF NOT EXISTS jots (
 );
 CREATE INDEX IF NOT EXISTS idx_jots_status ON jots(status);
 
+-- Revise: topics to keep in front of your eyes. 'revised' ones sit in an archive tab.
+CREATE TABLE IF NOT EXISTS revisions (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    question TEXT NOT NULL DEFAULT '',
+    url TEXT,
+    item_id INTEGER REFERENCES items(id) ON DELETE SET NULL,
+    source TEXT NOT NULL DEFAULT 'manual' CHECK (source IN ('manual', 'ticket', 'radar')),
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'revised')),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    revised_at TEXT,
+    priority TEXT NOT NULL DEFAULT 'none',
+    timer_started_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_revisions_status ON revisions(status);
+
+-- One row per revision session: when and for how long you revised a topic.
+CREATE TABLE IF NOT EXISTS revision_sessions (
+    id INTEGER PRIMARY KEY,
+    revision_id INTEGER NOT NULL REFERENCES revisions(id) ON DELETE CASCADE,
+    minutes INTEGER NOT NULL CHECK (minutes > 0),
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_revision_sessions_rev ON revision_sessions(revision_id);
+
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -167,6 +194,8 @@ MIGRATIONS = [
     ("projects", "archived", "INTEGER NOT NULL DEFAULT 0"),
     ("jots", "url", "TEXT"),
     ("projects", "icon", "TEXT"),
+    ("revisions", "priority", "TEXT NOT NULL DEFAULT 'none'"),
+    ("revisions", "timer_started_at", "TEXT"),
 ]
 
 # Project icons (Lucide names). New projects take the first one not in use.

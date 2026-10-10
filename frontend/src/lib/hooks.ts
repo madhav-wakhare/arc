@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { api, type Item, type Jot, type Project, type Settings, type Timer, type Trash } from "./api";
+import { api, type Item, type Jot, type Project, type Revision, type Settings, type Timer, type Trash } from "./api";
 import { useToast } from "../components/ui";
 
 export const useProjects = () => useQuery({ queryKey: ["projects"], queryFn: () => api.get<Project[]>("/projects") });
 export const useJots = () => useQuery({ queryKey: ["jots"], queryFn: () => api.get<Jot[]>("/jots") });
+export const useRevisions = () => useQuery({ queryKey: ["revisions"], queryFn: () => api.get<Revision[]>("/revisions") });
 export const useTrash = () => useQuery({ queryKey: ["trash"], queryFn: () => api.get<Trash>("/trash") });
 export const useSettings = () => useQuery({ queryKey: ["settings"], queryFn: () => api.get<Settings>("/settings") });
 export const useTimer = () =>
@@ -14,7 +15,7 @@ export const useTimer = () =>
 export function useRefreshItems() {
   const qc = useQueryClient();
   return () => {
-    for (const k of ["items", "item", "stats", "weekly", "projects", "timer", "worklogs", "history", "comments", "trash", "jots"])
+    for (const k of ["items", "item", "stats", "weekly", "projects", "timer", "worklogs", "history", "comments", "trash", "jots", "revisions"])
       qc.invalidateQueries({ queryKey: [k] });
   };
 }
@@ -24,7 +25,20 @@ export function useUpdateItem() {
   const toast = useToast();
   return useMutation({
     mutationFn: ({ id, ...patch }: Partial<Item> & { id: number }) => api.patch<Item>(`/items/${id}`, patch),
-    onSuccess: refresh,
+    onSuccess: (item, patch) => {
+      refresh();
+      // Finished a learning ticket: offer to keep it in front of you on the Revise list.
+      if (patch.status === "done" && item.type === "learning" && !item.revision_id) {
+        toast(`Done: ${item.title}. Keep it on your Revise list?`, "default", {
+          label: "Add to Revise",
+          onClick: () =>
+            api.post(`/items/${item.id}/revise`).then(() => {
+              refresh();
+              toast("Added to Revise");
+            }),
+        });
+      }
+    },
     onError: (e: Error) => toast(e.message, "error"),
   });
 }

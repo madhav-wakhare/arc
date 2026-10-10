@@ -7,6 +7,7 @@ Smriti is a personal work and learning tracker. It runs on your computer in one 
 - **Board**: Kanban board with Backlog, Today, In Progress and Done. Drag cards between columns. Each open card shows how many days it has been pending (amber after 7 days, red after 14).
 - **Item types**: work tasks, learning items (videos, articles, books) and notes.
 - **Radar**: topics you hear about (vLLM, Langfuse, tmux...). Press `N` anywhere to add one. Topics stay off the board. Review each one and create a Learning or Task ticket from it; its link and `#tags` become the ticket link and labels. Tabs: To review, Ticketed, Dismissed.
+- **Revise**: things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (notes stay hidden until you reveal them) and a link. Add with `R`, from any ticket, from Radar, or when you finish a Learning ticket. "Mark as revised" moves it to the Revised tab.
 - **Projects**: each project has a key, so items get keys such as `WORK-12` and `LRN-4`. The Projects page lets you edit, deactivate (hide from the sidebar and pickers) or delete a project.
 - **Trash**: deleted items and projects stay in Trash for 30 days. You can restore them, or delete them for good. After 30 days Smriti removes them automatically.
 - **Time tracking (Jira style)**: original estimate, "Log work" with `2h 30m`, `45m` or `1d` (1d = 8h), a start/stop timer, and a work log per item.

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ItemRows, Panel, Stat, StatRow } from "../components/dash";
 import { useActions } from "../components/Layout";
+import { RevisePreview } from "../components/RevisePreview";
 import { PageHeader } from "../components/ui";
 import { api, type Item, type Overview, type Weekly } from "../lib/api";
 import { fmtDate, fmtMinutes, statusMeta, todayIso } from "../lib/meta";
@@ -45,7 +46,8 @@ export default function Dashboard() {
         </StatRow>
 
         <div className="grid items-start gap-5 lg:grid-cols-3">
-          <Panel title={`Today · ${planned.length}`} className="lg:col-span-2" action={<PanelLink to="/today">Plan today</PanelLink>}>
+          <div className="space-y-5 lg:col-span-2">
+          <Panel title={`Today · ${planned.length}`} action={<PanelLink to="/today">Plan today</PanelLink>}>
             <ItemRows
               items={planned}
               onOpen={openItem}
@@ -62,6 +64,11 @@ export default function Dashboard() {
               )}
             />
           </Panel>
+
+          <Panel title={`To revise · ${now?.revise_open ?? 0}`} action={<PanelLink to="/revise">Revise</PanelLink>}>
+            <RevisePreview limit={5} />
+          </Panel>
+          </div>
 
           <div className="space-y-5">
             <Panel title="Waiting longest" action={<PanelLink to="/list">All items</PanelLink>}>

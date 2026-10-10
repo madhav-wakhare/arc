@@ -239,3 +239,49 @@ def test_project_icons(client):
     assert p["icon"] == "code"  # first unused
     assert client.patch(f"/api/projects/{p['id']}", json={"icon": "brain"}).json()["icon"] == "brain"
     assert client.patch(f"/api/projects/{p['id']}", json={"icon": "nope"}).status_code == 422
+
+
+def test_revise_manual_and_lifecycle(client):
+    r = client.post("/api/revisions", json={"title": "KV cache", "question": "Why so much memory?", "notes": "stores past tokens"}).json()
+    assert r["status"] == "active" and r["source"] == "manual"
+    assert client.get("/api/stats/overview?days=1").json()["revise_open"] == 1
+
+    done = client.patch(f"/api/revisions/{r['id']}", json={"status": "revised"}).json()
+    assert done["status"] == "revised" and done["revised_at"]
+    again = client.patch(f"/api/revisions/{r['id']}", json={"status": "active"}).json()
+    assert again["revised_at"] is None
+    assert client.delete(f"/api/revisions/{r['id']}").status_code == 204
+    assert client.get("/api/revisions").json() == []
+
+
+def test_revise_from_ticket_and_radar(client):
+    item = _learning(client, description="course notes")
+    rev = client.post(f"/api/items/{item['id']}/revise").json()
+    assert rev["item_key"] == "LRN-1" and rev["notes"] == "course notes" and rev["url"] == "https://youtu.be/abc"
+    # adding twice returns the same topic
+    assert client.post(f"/api/items/{item['id']}/revise").json()["id"] == rev["id"]
+    assert client.get(f"/api/items/{item['id']}").json()["revision_id"] == rev["id"]
+
+    j = client.post("/api/jots", json={"body": "tmux", "details": "panes"}).json()
+    r2 = client.post(f"/api/jots/{j['id']}/revise").json()
+    assert r2["source"] == "radar" and r2["title"] == "tmux"
+    assert client.get("/api/jots").json() == []  # left Radar
+
+
+def test_revision_sessions_priority_and_timer(client):
+    low = client.post("/api/revisions", json={"title": "low one", "priority": "low"}).json()
+    high = client.post("/api/revisions", json={"title": "high one", "priority": "high"}).json()
+    assert [r["title"] for r in client.get("/api/revisions").json()] == ["high one", "low one"]
+
+    r = client.post(f"/api/revisions/{low['id']}/sessions", json={"time_spent": "20m"}).json()
+    assert r["total_minutes"] == 20 and r["session_count"] == 1 and r["last_revised_at"]
+    assert r["status"] == "active"  # logging a session keeps it on the list
+
+    client.post(f"/api/revisions/{high['id']}/timer/start")
+    assert client.get("/api/revisions").json()[0]["timer_started_at"]
+    done = client.patch(f"/api/revisions/{high['id']}", json={"status": "revised"}).json()
+    assert done["session_count"] == 1 and done["timer_started_at"] is None  # running timer was logged
+
+    sessions = client.get(f"/api/revisions/{low['id']}/sessions").json()
+    client.delete(f"/api/revision-sessions/{sessions[0]['id']}")
+    assert client.patch(f"/api/revisions/{low['id']}", json={"priority": "urgent"}).json()["total_minutes"] == 0

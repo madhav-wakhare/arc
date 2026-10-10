@@ -6,6 +6,7 @@ import {
   FileBarChart,
   LayoutDashboard,
   Radar as RadarIcon,
+  BookMarked,
   ListTodo,
   CirclePlus,
   Menu,
@@ -23,8 +24,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { api, type ItemType, type Status } from "../lib/api";
-import { useJots, useLocalState, useNow, useProjects, useRefreshItems, useSettings, useTimer, useTrash } from "../lib/hooks";
+import { useJots, useRevisions, useLocalState, useNow, useProjects, useRefreshItems, useSettings, useTimer, useTrash } from "../lib/hooks";
 import { AddTopicModal } from "./Jots";
+import { AddRevisionModal } from "./Revise";
 import { CommandPalette } from "./CommandPalette";
 import { ItemDrawer } from "./ItemDrawer";
 import { NewItemModal } from "./NewItemModal";
@@ -39,17 +41,26 @@ type Actions = {
   newItem: (defaults?: NewItemDefaults) => void;
   openSearch: () => void;
   quickNote: () => void;
+  addRevision: () => void;
 };
-const ActionsCtx = createContext<Actions>({ openItem: () => {}, newItem: () => {}, openSearch: () => {}, quickNote: () => {} });
+const ActionsCtx = createContext<Actions>({
+  openItem: () => {},
+  newItem: () => {},
+  openSearch: () => {},
+  quickNote: () => {},
+  addRevision: () => {},
+});
 export const useActions = () => useContext(ActionsCtx);
 
+// Sidebar order chosen by the user: Board 2nd, Radar 3rd.
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/board", label: "Board", icon: SquareKanban },
   { to: "/radar", label: "Radar", icon: RadarIcon },
   { to: "/today", label: "Today", icon: CalendarCheck },
-  { to: "/board", label: "Board", icon: SquareKanban },
   { to: "/list", label: "All items", icon: ListTodo },
   { to: "/learning", label: "Learning", icon: BookOpen },
+  { to: "/revise", label: "Revise", icon: BookMarked },
   { to: "/reports", label: "Weekly report", icon: FileBarChart },
 ];
 
@@ -131,6 +142,11 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
   const { openSearch, newItem, quickNote } = useActions();
   const { data: jots } = useJots();
   const inboxCount = jots?.filter((j) => j.status === "open").length ?? 0;
+  const { data: revisions } = useRevisions();
+  const counts: Record<string, number> = {
+    "/radar": inboxCount,
+    "/revise": revisions?.filter((r) => r.status === "active").length ?? 0,
+  };
   const [theme, toggleTheme] = useTheme();
   const [groupOpen, setGroupOpen] = useLocalState("smriti-nav-open", true);
   const [newProject, setNewProject] = useState(false);
@@ -226,8 +242,8 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
               <NavLink key={n.to} to={n.to} end={n.end} className={linkCls} onClick={onNavigate} title={n.label}>
                 <n.icon size={16} strokeWidth={1.75} />
                 {!compact && <span className="flex-1">{n.label}</span>}
-                {!compact && n.to === "/radar" && inboxCount > 0 && (
-                  <span className="rounded bg-surface-3 px-1.5 font-mono text-[11px] text-fg-2">{inboxCount}</span>
+                {!compact && !!counts[n.to] && (
+                  <span className="rounded bg-surface-3 px-1.5 font-mono text-[11px] text-fg-2">{counts[n.to]}</span>
                 )}
               </NavLink>
             ))}
@@ -293,6 +309,7 @@ export function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [reviseOpen, setReviseOpen] = useState(false);
   const [newDefaults, setNewDefaults] = useState<NewItemDefaults | null>(null);
   const [params, setParams] = useSearchParams();
   const openId = Number(params.get("item")) || null;
@@ -306,6 +323,7 @@ export function Layout() {
     newItem: (d = {}) => setNewDefaults(d),
     openSearch: () => setSearchOpen(true),
     quickNote: () => setNoteOpen(true),
+    addRevision: () => setReviseOpen(true),
   };
 
   useEffect(() => {
@@ -321,6 +339,9 @@ export function Layout() {
       } else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "n") {
         e.preventDefault();
         setNoteOpen(true);
+      } else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "r") {
+        e.preventDefault();
+        setReviseOpen(true);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -366,6 +387,7 @@ export function Layout() {
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
       <NewItemModal defaults={newDefaults} onClose={() => setNewDefaults(null)} />
       <AddTopicModal open={noteOpen} onClose={() => setNoteOpen(false)} />
+      <AddRevisionModal open={reviseOpen} onClose={() => setReviseOpen(false)} />
       <ItemDrawer
         itemId={openId}
         onClose={() =>

@@ -1,10 +1,12 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { CalendarCheck, Check, Clock, Play, Plus, Square } from "lucide-react";
+import { ArrowRight, BookMarked, CalendarCheck, Check, Clock, Play, Plus, Square } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { PendingBadge } from "../components/ItemCard";
 import { LogWorkModal } from "../components/ItemDrawer";
 import { useActions } from "../components/Layout";
+import { RevisePreview } from "../components/RevisePreview";
 import { Button, Card, Empty, Field, IconButton, PageHeader, Textarea, useToast } from "../components/ui";
 import { api, type Item, type Overview, type Review } from "../lib/api";
 import { useRefreshItems, useTimer, useUpdateItem } from "../lib/hooks";
@@ -201,6 +203,18 @@ export default function Today() {
             </div>
           </Card>
         )}
+
+        <Card className="p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-[15px] font-medium">
+              <BookMarked size={15} className="text-fg-2" /> Keep in mind
+            </h3>
+            <Link to="/revise" className="flex items-center gap-1 text-xs text-fg-3 hover:text-fg">
+              Revise <ArrowRight size={12} />
+            </Link>
+          </div>
+          <RevisePreview limit={4} />
+        </Card>
 
         <DailyReview />
       </div>

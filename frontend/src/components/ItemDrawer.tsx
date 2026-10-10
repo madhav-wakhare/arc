@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import {
+  BookMarked,
+  BookmarkPlus,
   CalendarClock,
   Check,
   Clock,
@@ -16,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { api, type Comment, type HistoryEntry, type Item, type Worklog } from "../lib/api";
 import { useProjects, useRefreshItems, useTimer, useUpdateItem } from "../lib/hooks";
 import {
@@ -189,6 +192,7 @@ function Activity({ item }: { item: Item }) {
     if (h.field === "created") return <>created the item</>;
     if (h.field === "from_inbox") return <>created from Radar topic “{h.new_value}”</>;
     if (h.field === "restored") return <>restored from Trash</>;
+    if (h.field === "revise") return <>added to Revise</>;
     if (h.field === "description") return <>edited the description</>;
     if (h.field === "worklog") return <>logged {h.new_value}</>;
     if (h.field === "obsidian") return <>exported to Obsidian · <span className="font-mono text-xs">{h.new_value}</span></>;
@@ -333,6 +337,15 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
     },
     onError: (e: Error) => toast(e.message, "error"),
   });
+  const navigate = useNavigate();
+  const addRevise = useMutation({
+    mutationFn: () => api.post<{ id: number }>(`/items/${itemId}/revise`),
+    onSuccess: () => {
+      refresh();
+      toast("Added to Revise");
+    },
+    onError: (e: Error) => toast(e.message, "error"),
+  });
   const timerStart = useMutation({ mutationFn: () => api.post(`/items/${itemId}/timer/start`), onSuccess: refresh });
   const timerStop = useMutation({ mutationFn: () => api.post(`/timer/stop`), onSuccess: refresh });
   const remove = useMutation({
@@ -385,6 +398,15 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                 title={item.obsidian_path ?? "Write this link as a note in your vault"}
               >
                 <span className="hidden sm:inline">{item.obsidian_path ? "Re-export" : "Export to Obsidian"}</span>
+              </Button>
+            )}
+            {item.revision_id ? (
+              <Button size="sm" icon={<BookMarked size={13} />} onClick={() => navigate(`/revise?id=${item.revision_id}`)} title="Open in Revise">
+                <span className="hidden sm:inline">In Revise</span>
+              </Button>
+            ) : (
+              <Button size="sm" icon={<BookmarkPlus size={13} />} onClick={() => addRevise.mutate()} disabled={addRevise.isPending} title="Keep this on your Revise list">
+                <span className="hidden sm:inline">Revise</span>
               </Button>
             )}
             {timing ? (

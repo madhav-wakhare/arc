@@ -439,16 +439,17 @@ export function Drawer({
 
 // ---------------------------------------------------------------- toasts
 
-type Toast = { id: number; text: string; tone: "default" | "error" };
-const ToastCtx = createContext<(text: string, tone?: Toast["tone"]) => void>(() => {});
+type ToastAction = { label: string; onClick: () => void };
+type Toast = { id: number; text: string; tone: "default" | "error"; action?: ToastAction };
+const ToastCtx = createContext<(text: string, tone?: Toast["tone"], action?: ToastAction) => void>(() => {});
 export const useToast = () => useContext(ToastCtx);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const push = useCallback((text: string, tone: Toast["tone"] = "default") => {
+  const push = useCallback((text: string, tone: Toast["tone"] = "default", action?: ToastAction) => {
     const id = Date.now() + Math.random();
-    setToasts((t) => [...t, { id, text, tone }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
+    setToasts((t) => [...t, { id, text, tone, action }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), action ? 9000 : 3500);
   }, []);
   return (
     <ToastCtx.Provider value={push}>
@@ -459,11 +460,22 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={t.id}
               className={clsx(
-                "pointer-events-auto max-w-sm rounded-lg border bg-surface px-4 py-3 text-[13px] shadow-[var(--shadow)]",
+                "pointer-events-auto flex max-w-sm items-center gap-3 rounded-lg border bg-surface px-4 py-3 text-[13px] shadow-[var(--shadow)]",
                 t.tone === "error" ? "border-critical/50 text-critical" : "border-line text-fg",
               )}
             >
-              {t.text}
+              <span className="flex-1">{t.text}</span>
+              {t.action && (
+                <button
+                  onClick={() => {
+                    t.action!.onClick();
+                    setToasts((all) => all.filter((x) => x.id !== t.id));
+                  }}
+                  className="h-7 shrink-0 rounded-md bg-fg px-2.5 text-xs font-medium text-bg hover:opacity-85"
+                >
+                  {t.action.label}
+                </button>
+              )}
             </div>
           ))}
         </div>,

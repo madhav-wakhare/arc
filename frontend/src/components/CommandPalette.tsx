@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ListTodo,
   Radar,
+  BookMarked,
   MessageSquare,
   Plus,
   Search,
@@ -46,7 +47,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const [debounced, setDebounced] = useState("");
   const [sel, setSel] = useState(0);
   const navigate = useNavigate();
-  const { openItem, newItem, quickNote } = useActions();
+  const { openItem, newItem, quickNote, addRevision } = useActions();
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 150);
@@ -79,6 +80,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     const pages: Entry[] = [
       { id: "new", icon: <Plus size={15} />, label: "New work item", hint: <Kbd>C</Kbd>, run: () => (onClose(), newItem()) },
       { id: "note", icon: <Radar size={15} />, label: "Add topic to Radar", hint: <Kbd>N</Kbd>, run: () => (onClose(), quickNote()) },
+      { id: "revise", icon: <BookMarked size={15} />, label: "Add to Revise", hint: <Kbd>R</Kbd>, run: () => (onClose(), addRevision()) },
       {
         id: "new-learning",
         icon: <BookOpen size={15} />,
@@ -86,11 +88,12 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         run: () => (onClose(), newItem({ type: "learning" })),
       },
       { id: "p-dash", icon: <LayoutDashboard size={15} />, label: "Go to Dashboard", run: go("/") },
+      { id: "p-board", icon: <SquareKanban size={15} />, label: "Go to Board", run: go("/board") },
       { id: "p-radar", icon: <Radar size={15} />, label: "Go to Radar", run: go("/radar") },
       { id: "p-today", icon: <CalendarCheck size={15} />, label: "Go to Today", run: go("/today") },
-      { id: "p-board", icon: <SquareKanban size={15} />, label: "Go to Board", run: go("/board") },
       { id: "p-list", icon: <ListTodo size={15} />, label: "Go to All items", run: go("/list") },
       { id: "p-learn", icon: <BookOpen size={15} />, label: "Go to Learning", run: go("/learning") },
+      { id: "p-revise", icon: <BookMarked size={15} />, label: "Go to Revise", run: go("/revise") },
       { id: "p-rep", icon: <FileBarChart size={15} />, label: "Go to Weekly report", run: go("/reports") },
       { id: "p-set", icon: <Settings size={15} />, label: "Go to Settings", run: go("/settings") },
     ];
@@ -134,7 +137,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         }))
       : [];
     return [...results, ...notes, ...filteredPages];
-  }, [q, hits, jotHits, navigate, onClose, openItem, newItem, quickNote]);
+  }, [q, hits, jotHits, navigate, onClose, openItem, newItem, quickNote, addRevision]);
 
   useEffect(() => setSel(0), [entries.length]);
 

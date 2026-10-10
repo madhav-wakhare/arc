@@ -45,6 +45,7 @@ export interface Item {
   subtask_count: number;
   subtask_done: number;
   comment_count: number;
+  revision_id: number | null;
   subtasks?: Subtask[];
 }
 
@@ -110,6 +111,7 @@ export interface Overview {
   previous: RangeStats;
   open: number;
   inbox_open: number;
+  revise_open: number;
   overdue: number;
   by_status: { status: Status; count: number }[];
   oldest_open: Item[];
@@ -162,6 +164,34 @@ export interface Jot {
   created_at: string;
   updated_at: string;
   converted_at: string | null;
+}
+export interface Revision {
+  id: number;
+  title: string;
+  notes: string;
+  question: string;
+  url: string | null;
+  item_id: number | null;
+  item_key: string | null;
+  item_title: string | null;
+  item_type: ItemType | null;
+  item_deleted: number | null;
+  source: "manual" | "ticket" | "radar";
+  status: "active" | "revised";
+  priority: Priority;
+  timer_started_at: string | null;
+  total_minutes: number;
+  session_count: number;
+  last_revised_at: string | null;
+  created_at: string;
+  updated_at: string;
+  revised_at: string | null;
+}
+export interface RevisionSession {
+  id: number;
+  revision_id: number;
+  minutes: number;
+  created_at: string;
 }
 export interface TrashProject extends Project {
   deleted_at: string;

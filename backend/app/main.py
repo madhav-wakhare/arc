@@ -140,6 +140,27 @@ class JotConvert(BaseModel):
     labels: list[str] | None = None
 
 
+class RevisionIn(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    notes: str = ""
+    question: str = ""
+    url: str | None = None
+    priority: Priority = "none"
+
+
+class RevisionPatch(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    notes: str | None = None
+    question: str | None = None
+    url: str | None = None
+    status: Literal["active", "revised"] | None = None
+    priority: Priority | None = None
+
+
+class SessionIn(BaseModel):
+    time_spent: str = Field(description="For example '20m' or '1h 15m'")
+
+
 class SettingsIn(BaseModel):
     obsidian_folder: str | None = Field(default=None, min_length=1, max_length=200)
     auto_reexport: bool | None = None
@@ -172,7 +193,8 @@ SELECT i.*, p.key AS project_key, p.name AS project_name, p.color AS project_col
        coalesce((SELECT sum(minutes) FROM worklogs w WHERE w.item_id = i.id), 0) AS logged_minutes,
        (SELECT count(*) FROM subtasks s WHERE s.item_id = i.id) AS subtask_count,
        (SELECT count(*) FROM subtasks s WHERE s.item_id = i.id AND s.done = 1) AS subtask_done,
-       (SELECT count(*) FROM comments c WHERE c.item_id = i.id) AS comment_count
+       (SELECT count(*) FROM comments c WHERE c.item_id = i.id) AS comment_count,
+       (SELECT r.id FROM revisions r WHERE r.item_id = i.id AND r.status = 'active' LIMIT 1) AS revision_id
 FROM live_items i JOIN projects p ON p.id = i.project_id
 """
 
@@ -729,6 +751,146 @@ def convert_jot(jot_id: int, data: JotConvert, conn=Depends(get_db)):
     return {"jot": load_jot(conn, jot_id), "item": load_item(conn, item_id)}
 
 
+# --------------------------------------------------------------------------- revise
+
+REVISION_SELECT = """
+SELECT r.*, p.key || '-' || i.number AS item_key, i.title AS item_title, i.type AS item_type,
+       i.deleted_at IS NOT NULL AS item_deleted,
+       coalesce((SELECT sum(minutes) FROM revision_sessions s WHERE s.revision_id = r.id), 0) AS total_minutes,
+       (SELECT count(*) FROM revision_sessions s WHERE s.revision_id = r.id) AS session_count,
+       (SELECT max(created_at) FROM revision_sessions s WHERE s.revision_id = r.id) AS last_revised_at
+FROM revisions r LEFT JOIN items i ON i.id = r.item_id LEFT JOIN projects p ON p.id = i.project_id
+"""
+
+
+def load_revision(conn, rid: int) -> dict:
+    r = row(conn.execute(REVISION_SELECT + " WHERE r.id = ?", (rid,)))
+    if not r:
+        raise HTTPException(404, "Revision topic not found")
+    return r
+
+
+def _insert_revision(conn, title: str, notes: str, question: str, url: str | None,
+                     source: str, item_id: int | None = None, priority: str = "none") -> dict:
+    ts = now()
+    cur = conn.execute(
+        """INSERT INTO revisions (title, notes, question, url, item_id, source, priority, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (title.strip(), notes.strip(), question.strip(), (url or "").strip() or None, item_id, source, priority, ts, ts),
+    )
+    return load_revision(conn, cur.lastrowid)
+
+
+@app.get("/api/revisions")
+def list_revisions(conn=Depends(get_db)):
+    # Active: by priority, then oldest first so long-waiting topics stay on top. Revised: most recent first.
+    return rows(conn.execute(
+        REVISION_SELECT + """ ORDER BY r.status = 'revised',
+            CASE WHEN r.status = 'active' THEN CASE r.priority
+                WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END END,
+            CASE WHEN r.status = 'active' THEN r.created_at END ASC,
+            CASE WHEN r.status = 'active' THEN r.id END ASC,
+            r.revised_at DESC, r.id DESC"""))
+
+
+@app.post("/api/revisions", status_code=201)
+def create_revision(data: RevisionIn, conn=Depends(get_db)):
+    return _insert_revision(conn, data.title, data.notes, data.question, data.url, "manual", priority=data.priority)
+
+
+@app.patch("/api/revisions/{rid}")
+def update_revision(rid: int, data: RevisionPatch, conn=Depends(get_db)):
+    load_revision(conn, rid)
+    fields = {k: (v.strip() if isinstance(v, str) else v) for k, v in data.model_dump(exclude_unset=True).items()}
+    if "url" in fields:
+        fields["url"] = fields["url"] or None
+    if "status" in fields:
+        if fields["status"] == "revised":
+            _stop_revision_timer(conn, rid)  # a running session counts
+        fields["revised_at"] = now() if fields["status"] == "revised" else None
+    if fields:
+        fields["updated_at"] = now()
+        sets = ", ".join(f"{k} = ?" for k in fields)
+        conn.execute(f"UPDATE revisions SET {sets} WHERE id = ?", (*fields.values(), rid))
+    return load_revision(conn, rid)
+
+
+def _log_session(conn, rid: int, minutes: int, at: str | None = None) -> None:
+    conn.execute(
+        "INSERT INTO revision_sessions (revision_id, minutes, created_at) VALUES (?, ?, ?)", (rid, minutes, at or now()))
+
+
+def _stop_revision_timer(conn, rid: int) -> None:
+    started = conn.execute("SELECT timer_started_at FROM revisions WHERE id = ?", (rid,)).fetchone()[0]
+    if not started:
+        return
+    elapsed = datetime.fromisoformat(now()) - datetime.fromisoformat(started)
+    _log_session(conn, rid, max(1, round(elapsed.total_seconds() / 60)))
+    conn.execute("UPDATE revisions SET timer_started_at = NULL WHERE id = ?", (rid,))
+
+
+@app.post("/api/revisions/{rid}/timer/start")
+def start_revision_timer(rid: int, conn=Depends(get_db)):
+    load_revision(conn, rid)
+    conn.execute("UPDATE revisions SET timer_started_at = ? WHERE id = ? AND timer_started_at IS NULL", (now(), rid))
+    return load_revision(conn, rid)
+
+
+@app.post("/api/revisions/{rid}/timer/stop")
+def stop_revision_timer(rid: int, conn=Depends(get_db)):
+    load_revision(conn, rid)
+    _stop_revision_timer(conn, rid)
+    return load_revision(conn, rid)
+
+
+@app.delete("/api/revisions/{rid}/timer", status_code=204)
+def discard_revision_timer(rid: int, conn=Depends(get_db)):
+    conn.execute("UPDATE revisions SET timer_started_at = NULL WHERE id = ?", (rid,))
+
+
+@app.get("/api/revisions/{rid}/sessions")
+def list_revision_sessions(rid: int, conn=Depends(get_db)):
+    return rows(conn.execute(
+        "SELECT * FROM revision_sessions WHERE revision_id = ? ORDER BY created_at DESC, id DESC", (rid,)))
+
+
+@app.post("/api/revisions/{rid}/sessions", status_code=201)
+def add_revision_session(rid: int, data: SessionIn, conn=Depends(get_db)):
+    load_revision(conn, rid)
+    _log_session(conn, rid, parse_duration(data.time_spent))
+    return load_revision(conn, rid)
+
+
+@app.delete("/api/revision-sessions/{sid}", status_code=204)
+def delete_revision_session(sid: int, conn=Depends(get_db)):
+    conn.execute("DELETE FROM revision_sessions WHERE id = ?", (sid,))
+
+
+@app.delete("/api/revisions/{rid}", status_code=204)
+def delete_revision(rid: int, conn=Depends(get_db)):
+    conn.execute("DELETE FROM revisions WHERE id = ?", (rid,))
+
+
+@app.post("/api/items/{item_id}/revise", status_code=201)
+def revise_item(item_id: int, conn=Depends(get_db)):
+    """Put a ticket on the Revise list (once)."""
+    item = load_item(conn, item_id)
+    if item["revision_id"]:
+        return load_revision(conn, item["revision_id"])
+    rev = _insert_revision(conn, item["title"], item["description"], "", item["url"], "ticket", item_id)
+    log_history(conn, item_id, "revise", None, None)
+    return rev
+
+
+@app.post("/api/jots/{jot_id}/revise", status_code=201)
+def revise_jot(jot_id: int, conn=Depends(get_db)):
+    """Move a Radar topic to the Revise list. The topic leaves Radar."""
+    j = load_jot(conn, jot_id)
+    rev = _insert_revision(conn, j["body"], j["details"], "", j["url"], "radar")
+    conn.execute("DELETE FROM jots WHERE id = ?", (jot_id,))
+    return rev
+
+
 # --------------------------------------------------------------------------- search
 
 
@@ -822,6 +984,7 @@ def stats_overview(days: int = Query(default=30, ge=1, le=365), conn=Depends(get
         "previous": _range_stats(conn, prev_start, prev_end),
         "open": conn.execute("SELECT count(*) FROM live_items WHERE status != 'done'").fetchone()[0],
         "inbox_open": conn.execute("SELECT count(*) FROM jots WHERE status = 'open'").fetchone()[0],
+        "revise_open": conn.execute("SELECT count(*) FROM revisions WHERE status = 'active'").fetchone()[0],
         "overdue": conn.execute(
             "SELECT count(*) FROM live_items WHERE status != 'done' AND due_date < ?", (t,)).fetchone()[0],
         "by_status": rows(conn.execute("SELECT status, count(*) AS count FROM live_items GROUP BY status")),
