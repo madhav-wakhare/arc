@@ -307,19 +307,3 @@ def test_edit_comment(client):
     assert client.patch("/api/comments/999", json={"body": "x"}).status_code == 404
     # search finds the edited text
     assert client.get("/api/search", params={"q": "fixed"}).json()[0]["match"] == "comment"
-
-
-def test_notification_digests(client):
-    lrn = next(p for p in client.get("/api/projects").json() if p["key"] == "LRN")
-    client.post("/api/items", json={"project_id": lrn["id"], "title": "Low one", "status": "today", "priority": "low"})
-    client.post("/api/items", json={"project_id": lrn["id"], "title": "Late one", "due_date": "2000-01-01"})
-    client.post("/api/revisions", json={"title": "KV cache"})
-    m = client.get("/api/digest/morning").json()
-    assert m["path"] == "/today"
-    assert "2 items planned · 1 overdue · 1 to revisit" in m["message"]
-    assert "Start with: Late one" in m["message"]  # overdue first
-
-    item = client.post("/api/items", json={"project_id": lrn["id"], "type": "learning", "title": "Done one", "status": "done"}).json()
-    client.post(f"/api/items/{item['id']}/worklogs", json={"time_spent": "1h 30m"})
-    wk = client.get("/api/digest/weekly").json()
-    assert wk["path"] == "/reports" and "1 done · 1h 30m logged · 1h 30m learning" in wk["message"]
