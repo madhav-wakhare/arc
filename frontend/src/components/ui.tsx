@@ -340,16 +340,19 @@ export function Card({ className, children }: { className?: string; children: Re
 }
 
 export function PageHeader({ title, icon, actions }: { title: ReactNode; icon?: ReactNode; actions?: ReactNode }) {
+  // On large screens: three columns (title | quote dock | actions). The two sides are equal (1fr),
+  // so the dock sits in the true centre of the page whether or not there are actions.
+  // The header is a size container: the dock only shows when the header is wide enough.
   return (
-    <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 lg:flex-nowrap lg:px-8">
+    <div className="@container/hdr flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-6 lg:px-8">
       <h1 className="flex shrink-0 items-center gap-2.5 text-lg font-semibold tracking-tight">
         {icon && <span className="text-fg-2">{icon}</span>}
         {title}
       </h1>
-      <div className="@container hidden min-w-0 flex-1 justify-center px-4 lg:flex">
+      <div className="hidden min-w-0 max-w-[720px] justify-center lg:flex">
         <QuoteDock />
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+      <div className="flex shrink-0 flex-wrap items-center gap-2 lg:flex-nowrap lg:justify-self-end">{actions}</div>
     </div>
   );
 }
