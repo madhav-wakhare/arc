@@ -8,7 +8,8 @@ let skipped = 0;
 
 /**
  * Glass dock in the top bar that shows your quotes one at a time.
- * It grows sideways to fit the quote on one line and only wraps to a second line when it must.
+ * It grows sideways into the free space (up to 1080px) to fit the quote on one line,
+ * and only wraps to a second line when it must.
  * The quote shown depends on the clock, so every page shows the same one and the order continues.
  * Hover pauses it (and shows the full quote if it is cut off); a click shows the next quote.
  */
@@ -42,7 +43,7 @@ export function QuoteDock({ page }: { page: "dashboard" | "board" }) {
 
   return (
     <div
-      className="relative hidden min-w-0 max-w-[720px] @[22rem]/dock:block"
+      className="relative hidden min-w-0 max-w-[1080px] @[22rem]/dock:block"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
