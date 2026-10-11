@@ -46,7 +46,7 @@ import { ProjectIcon } from "../lib/projectIcons";
 
 // ---------------------------------------------------------------- time tracking (Jira style)
 
-export function TimeTracking({ item, onLog }: { item: Item; onLog: () => void }) {
+export function TimeTracking({ item, onLog }: { item: Item; onLog?: () => void }) {
   const logged = item.logged_minutes;
   const est = item.estimate_minutes ?? 0;
   const remaining = Math.max(0, est - logged);
@@ -65,9 +65,11 @@ export function TimeTracking({ item, onLog }: { item: Item; onLog: () => void })
         <span>{fmtMinutes(logged)} logged</span>
         <span>{est ? (over ? `${fmtMinutes(logged - est)} over` : `${fmtMinutes(remaining)} remaining`) : "No estimate"}</span>
       </div>
-      <Button size="sm" className="mt-2.5 w-full" icon={<Clock size={13} />} onClick={onLog}>
-        Log work
-      </Button>
+      {onLog && (
+        <Button size="sm" className="mt-2.5 w-full" icon={<Clock size={13} />} onClick={onLog}>
+          Log work
+        </Button>
+      )}
     </div>
   );
 }
@@ -80,6 +82,8 @@ function localInputValue(d = new Date()) {
 export function LogWorkModal({ item, open, onClose }: { item: Item; open: boolean; onClose: () => void }) {
   const [spent, setSpent] = useState("");
   const [started, setStarted] = useState(localInputValue());
+  // Until you pick a start yourself, it is "now minus time spent" (20m logged at 18:03 started at 17:43).
+  const [startTouched, setStartTouched] = useState(false);
   const [comment, setComment] = useState("");
   const refresh = useRefreshItems();
   const toast = useToast();
@@ -90,8 +94,15 @@ export function LogWorkModal({ item, open, onClose }: { item: Item; open: boolea
       setSpent("");
       setComment("");
       setStarted(localInputValue());
+      setStartTouched(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (startTouched) return;
+    const m = minutes && !Number.isNaN(minutes) ? minutes : 0;
+    setStarted(localInputValue(new Date(Date.now() - m * 60_000)));
+  }, [minutes, startTouched]);
 
   const save = useMutation({
     mutationFn: () => api.post(`/items/${item.id}/worklogs`, { time_spent: spent, started_at: started, comment }),
@@ -119,13 +130,20 @@ export function LogWorkModal({ item, open, onClose }: { item: Item; open: boolea
       }
     >
       <div className="space-y-4">
-        <TimeTracking item={{ ...item, logged_minutes: after }} onLog={() => {}} />
+        <TimeTracking item={{ ...item, logged_minutes: after }} />
         <div className="grid grid-cols-2 gap-3">
           <Field label="Time spent" hint="Use 2w 4d 6h 45m (1d = 8h)">
             <Input autoFocus value={spent} onChange={(e) => setSpent(e.target.value)} placeholder="1h 30m" />
           </Field>
-          <Field label="Date started">
-            <Input type="datetime-local" value={started} onChange={(e) => setStarted(e.target.value)} />
+          <Field label="Started" hint={startTouched ? undefined : "Now minus time spent"}>
+            <Input
+              type="datetime-local"
+              value={started}
+              onChange={(e) => {
+                setStartTouched(true);
+                setStarted(e.target.value);
+              }}
+            />
           </Field>
         </div>
         <Field label="Work description">
