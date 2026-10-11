@@ -16,9 +16,11 @@ import {
 import type { Item, ItemType, Priority, Recurrence, Status } from "./api";
 
 export const STATUSES: { value: Status; label: string; icon: LucideIcon; tone: string }[] = [
+  // Board columns and status pickers follow this order: work moves Backlog → In Progress,
+  // and Today holds what is planned for the day.
   { value: "backlog", label: "Backlog", icon: CircleDashed, tone: "text-fg-3" },
-  { value: "today", label: "Today", icon: Circle, tone: "text-task" },
   { value: "in_progress", label: "In Progress", icon: CircleDot, tone: "text-warning" },
+  { value: "today", label: "Today", icon: Circle, tone: "text-task" },
   { value: "done", label: "Done", icon: CircleCheck, tone: "text-good" },
 ];
 
