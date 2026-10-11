@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ListTodo,
   Radar,
+  Quote,
   BookMarked,
   MessageSquare,
   Plus,
@@ -95,6 +96,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       { id: "p-learn", icon: <BookOpen size={15} />, label: "Go to Learning", run: go("/learning") },
       { id: "p-revise", icon: <BookMarked size={15} />, label: "Go to Revisit", run: go("/revisit") },
       { id: "p-rep", icon: <FileBarChart size={15} />, label: "Go to Weekly report", run: go("/reports") },
+      { id: "p-quotes", icon: <Quote size={15} />, label: "Go to Quotes", run: go("/quotes") },
       { id: "p-set", icon: <Settings size={15} />, label: "Go to Settings", run: go("/settings") },
     ];
     const s = q.trim().toLowerCase();

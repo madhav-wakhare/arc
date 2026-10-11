@@ -17,13 +17,14 @@ import {
   Settings as SettingsIcon,
   Square,
   Trash2,
+  Quote as QuoteIcon,
   SquareKanban,
   Sun,
 } from "lucide-react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
-import { api, type ItemType, type Status } from "../lib/api";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { api, type ItemType, type Quote, type Status } from "../lib/api";
 import { useJots, useRevisions, useLocalState, useNow, useProjects, useRefreshItems, useSettings, useTimer, useTrash } from "../lib/hooks";
 import { AddTopicModal } from "./Jots";
 import { AddRevisionModal } from "./Revise";
@@ -141,6 +142,8 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
   const { data: projects } = useProjects();
   const { data: settings } = useSettings();
   const { data: trash } = useTrash();
+  const { data: quotes } = useQuery({ queryKey: ["quotes"], queryFn: () => api.get<Quote[]>("/quotes") });
+  const quoteCount = quotes?.length ?? 0;
   const trashCount = (trash?.items.filter((i) => !i.deleted_with_project).length ?? 0) + (trash?.projects.length ?? 0);
   const { openSearch, newItem, quickNote } = useActions();
   const { data: jots } = useJots();
@@ -278,6 +281,11 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
           </div>
         )}
         <div className="mt-6">
+          <NavLink to="/quotes" className={linkCls} onClick={onNavigate} title="Quotes">
+            <QuoteIcon size={16} strokeWidth={1.75} />
+            {!compact && <span className="flex-1">Quotes</span>}
+            {!compact && !!quoteCount && <span className="font-mono text-[11px] text-fg-3">{quoteCount}</span>}
+          </NavLink>
           <NavLink to="/trash" className={linkCls} onClick={onNavigate} title="Trash">
             <Trash2 size={16} strokeWidth={1.75} />
             {!compact && <span className="flex-1">Trash</span>}

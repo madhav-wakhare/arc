@@ -346,7 +346,7 @@ export function PageHeader({ title, icon, actions }: { title: ReactNode; icon?: 
         {icon && <span className="text-fg-2">{icon}</span>}
         {title}
       </h1>
-      <div className="hidden min-w-0 flex-1 justify-center px-4 lg:flex">
+      <div className="@container hidden min-w-0 flex-1 justify-center px-4 lg:flex">
         <QuoteDock />
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}

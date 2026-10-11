@@ -3,7 +3,6 @@ import clsx from "clsx";
 import { Archive, CheckCircle2, FolderOpen, Settings as SettingsIcon, XCircle } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { ObsidianIcon } from "../components/ObsidianIcon";
-import { QuoteSettings } from "../components/QuoteSettings";
 import { Button, Card, Field, Input, PageHeader, Switch, useToast } from "../components/ui";
 import { api, type Backup, type Settings as SettingsT } from "../lib/api";
 import { useSettings } from "../lib/hooks";
@@ -145,8 +144,6 @@ export default function Settings() {
             ))}
           </div>
         </Card>
-
-        <QuoteSettings settings={data} />
 
         <Card className="p-5">
           <h3 className="mb-3 text-[15px] font-medium">Keyboard shortcuts</h3>

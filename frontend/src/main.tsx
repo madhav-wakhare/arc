@@ -7,6 +7,7 @@ import { ToastProvider } from "./components/ui";
 import "./index.css";
 import Board from "./pages/Board";
 import Dashboard from "./pages/Dashboard";
+import Quotes from "./pages/Quotes";
 import Radar from "./pages/Radar";
 import Revise from "./pages/Revise";
 import Learning from "./pages/Learning";
@@ -39,6 +40,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="learning" element={<Learning />} />
               <Route path="reports" element={<Reports />} />
               <Route path="projects" element={<Projects />} />
+              <Route path="quotes" element={<Quotes />} />
               <Route path="trash" element={<Trash />} />
               <Route path="settings" element={<Settings />} />
               <Route path="*" element={<Dashboard />} />
