@@ -9,7 +9,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 ### Work
 
 - **Board**: Kanban board with Backlog, Today, In Progress and Done. Drag cards between columns. Each open card shows how many days it has been pending (amber after 7 days, red after 14).
-- **Today**: today's plan, overdue items, a quick pick from the backlog, a "Keep in mind" list from Revise, and an end-of-day review.
+- **Today**: today's plan, overdue items, a quick pick from the backlog, a "Keep in mind" list from Revisit, and an end-of-day review.
 - **All items**: a sortable table of every item with filters.
 - **Item types**: tasks, learning items (videos, articles, courses, books) and notes.
 - **Item panel**: title, description, checklist, comments, work log and history. Properties: status, priority, type, project, due date, repeat and labels.
@@ -19,16 +19,16 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 
 ### Learning
 
-- **Radar**: topics you hear about, such as vLLM, Langfuse or tmux. Press `N` anywhere to add one. Topics stay off the board. Review each one, then create a Learning or Task ticket from it, move it to Revise, or dismiss it. Its link and `#tags` become the ticket link and labels.
+- **Radar**: topics you hear about, such as vLLM, Langfuse or tmux. Press `N` anywhere to add one. Topics stay off the board. Review each one, then create a Learning or Task ticket from it, move it to Revisit, or dismiss it. Its link and `#tags` become the ticket link and labels.
 - **Learning**: your queue of videos, articles and courses, with YouTube thumbnails. Paste a link to add one.
-- **Revise**: things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (the notes stay hidden until you show them), a link and a priority.
+- **Revisit**: things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (the notes stay hidden until you show them), a link and a priority.
   - Add a topic with `R`, from any ticket, from Radar, or when you mark a Learning ticket Done.
-  - Start a session timer or log time by hand. Each topic shows when you last revised it, the total time and the number of sessions.
-  - "Mark as revised" moves the topic to the Revised tab. "Revise again" brings it back.
+  - Start a session timer or log time by hand. Each topic shows when you last revisited it, the total time and the number of sessions.
+  - "Mark as revisited" moves the topic to the Revisited tab. "Revisit again" brings it back.
 
 ### Overview
 
-- **Dashboard**: where things stand right now. Open items, in progress, overdue, time logged today, topics to review, today's plan, items waiting longest, the Revise list and a short summary of this week.
+- **Dashboard**: where things stand right now. Open items, in progress, overdue, time logged today, topics to review, today's plan, items waiting longest, the Revisit list and a short summary of this week.
 - **Weekly report**: what happened in a week. Time per day, time per project, completed and carried-over items, and daily reviews. Use the arrows to go back to earlier weeks.
 
 ### Other
@@ -46,7 +46,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 | `⌘K` / `Ctrl K` | Search and commands |
 | `C` | New work item |
 | `N` | Add a topic to Radar |
-| `R` | Add a topic to Revise |
+| `R` | Add a topic to Revisit |
 | `Esc` | Close a panel or dialog |
 | `⌘ Enter` | Post a comment |
 

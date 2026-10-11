@@ -80,7 +80,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     const pages: Entry[] = [
       { id: "new", icon: <Plus size={15} />, label: "New work item", hint: <Kbd>C</Kbd>, run: () => (onClose(), newItem()) },
       { id: "note", icon: <Radar size={15} />, label: "Add topic to Radar", hint: <Kbd>N</Kbd>, run: () => (onClose(), quickNote()) },
-      { id: "revise", icon: <BookMarked size={15} />, label: "Add to Revise", hint: <Kbd>R</Kbd>, run: () => (onClose(), addRevision()) },
+      { id: "revise", icon: <BookMarked size={15} />, label: "Add to Revisit", hint: <Kbd>R</Kbd>, run: () => (onClose(), addRevision()) },
       {
         id: "new-learning",
         icon: <BookOpen size={15} />,
@@ -93,7 +93,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       { id: "p-today", icon: <CalendarCheck size={15} />, label: "Go to Today", run: go("/today") },
       { id: "p-list", icon: <ListTodo size={15} />, label: "Go to All items", run: go("/list") },
       { id: "p-learn", icon: <BookOpen size={15} />, label: "Go to Learning", run: go("/learning") },
-      { id: "p-revise", icon: <BookMarked size={15} />, label: "Go to Revise", run: go("/revise") },
+      { id: "p-revise", icon: <BookMarked size={15} />, label: "Go to Revisit", run: go("/revisit") },
       { id: "p-rep", icon: <FileBarChart size={15} />, label: "Go to Weekly report", run: go("/reports") },
       { id: "p-set", icon: <Settings size={15} />, label: "Go to Settings", run: go("/settings") },
     ];

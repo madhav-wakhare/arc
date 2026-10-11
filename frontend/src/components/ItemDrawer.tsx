@@ -192,7 +192,7 @@ function Activity({ item }: { item: Item }) {
     if (h.field === "created") return <>created the item</>;
     if (h.field === "from_inbox") return <>created from Radar topic “{h.new_value}”</>;
     if (h.field === "restored") return <>restored from Trash</>;
-    if (h.field === "revise") return <>added to Revise</>;
+    if (h.field === "revise") return <>added to Revisit</>;
     if (h.field === "description") return <>edited the description</>;
     if (h.field === "worklog") return <>logged {h.new_value}</>;
     if (h.field === "obsidian") return <>exported to Obsidian · <span className="font-mono text-xs">{h.new_value}</span></>;
@@ -342,7 +342,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
     mutationFn: () => api.post<{ id: number }>(`/items/${itemId}/revise`),
     onSuccess: () => {
       refresh();
-      toast("Added to Revise");
+      toast("Added to Revisit");
     },
     onError: (e: Error) => toast(e.message, "error"),
   });
@@ -401,12 +401,12 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
               </Button>
             )}
             {item.revision_id ? (
-              <Button size="sm" icon={<BookMarked size={13} />} onClick={() => navigate(`/revise?id=${item.revision_id}`)} title="Open in Revise">
-                <span className="hidden sm:inline">In Revise</span>
+              <Button size="sm" icon={<BookMarked size={13} />} onClick={() => navigate(`/revisit?id=${item.revision_id}`)} title="Open in Revisit">
+                <span className="hidden sm:inline">In Revisit</span>
               </Button>
             ) : (
-              <Button size="sm" icon={<BookmarkPlus size={13} />} onClick={() => addRevise.mutate()} disabled={addRevise.isPending} title="Keep this on your Revise list">
-                <span className="hidden sm:inline">Revise</span>
+              <Button size="sm" icon={<BookmarkPlus size={13} />} onClick={() => addRevise.mutate()} disabled={addRevise.isPending} title="Keep this on your Revisit list">
+                <span className="hidden sm:inline">Revisit</span>
               </Button>
             )}
             {timing ? (

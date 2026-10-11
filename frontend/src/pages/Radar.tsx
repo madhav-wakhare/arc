@@ -108,7 +108,7 @@ function TopicPanel({ jot, onGone, onClose }: { jot: Jot; onGone: () => void; on
     },
     onSuccess: () => {
       refresh();
-      toast(`Moved “${body}” to Revise`);
+      toast(`Moved “${body}” to Revisit`);
       onGone();
     },
     onError: (e: Error) => toast(e.message, "error"),
@@ -179,8 +179,8 @@ function TopicPanel({ jot, onGone, onClose }: { jot: Jot; onGone: () => void; on
               </Button>
             )}
             {jot.status !== "converted" && (
-              <Button icon={<BookmarkPlus size={14} />} onClick={() => toRevise.mutate()} title="Keep it on your Revise list">
-                Move to Revise
+              <Button icon={<BookmarkPlus size={14} />} onClick={() => toRevise.mutate()} title="Keep it on your Revisit list">
+                Move to Revisit
               </Button>
             )}
             {jot.status === "archived" && (

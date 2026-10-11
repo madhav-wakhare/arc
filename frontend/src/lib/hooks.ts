@@ -27,14 +27,14 @@ export function useUpdateItem() {
     mutationFn: ({ id, ...patch }: Partial<Item> & { id: number }) => api.patch<Item>(`/items/${id}`, patch),
     onSuccess: (item, patch) => {
       refresh();
-      // Finished a learning ticket: offer to keep it in front of you on the Revise list.
+      // Finished a learning ticket: offer to keep it in front of you on the Revisit list.
       if (patch.status === "done" && item.type === "learning" && !item.revision_id) {
-        toast(`Done: ${item.title}. Keep it on your Revise list?`, "default", {
-          label: "Add to Revise",
+        toast(`Done: ${item.title}. Keep it on your Revisit list?`, "default", {
+          label: "Add to Revisit",
           onClick: () =>
             api.post(`/items/${item.id}/revise`).then(() => {
               refresh();
-              toast("Added to Revise");
+              toast("Added to Revisit");
             }),
         });
       }

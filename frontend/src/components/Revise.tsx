@@ -65,7 +65,7 @@ export function AddRevisionModal({ open, onClose, onAdded }: { open: boolean; on
     mutationFn: () => api.post<Revision>("/revisions", { ...form, url: form.url.trim() || null }),
     onSuccess: (r) => {
       refresh();
-      toast(`Added “${r.title}” to Revise`);
+      toast(`Added “${r.title}” to Revisit`);
       onClose();
       onAdded?.(r);
     },

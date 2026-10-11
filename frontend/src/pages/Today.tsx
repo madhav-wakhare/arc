@@ -209,8 +209,8 @@ export default function Today() {
             <h3 className="flex items-center gap-2 text-[15px] font-medium">
               <BookMarked size={15} className="text-fg-2" /> Keep in mind
             </h3>
-            <Link to="/revise" className="flex items-center gap-1 text-xs text-fg-3 hover:text-fg">
-              Revise <ArrowRight size={12} />
+            <Link to="/revisit" className="flex items-center gap-1 text-xs text-fg-3 hover:text-fg">
+              Revisit <ArrowRight size={12} />
             </Link>
           </div>
           <RevisePreview limit={4} />

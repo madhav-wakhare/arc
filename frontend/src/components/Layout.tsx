@@ -60,7 +60,7 @@ const NAV = [
   { to: "/today", label: "Today", icon: CalendarCheck },
   { to: "/list", label: "All items", icon: ListTodo },
   { to: "/learning", label: "Learning", icon: BookOpen },
-  { to: "/revise", label: "Revise", icon: BookMarked },
+  { to: "/revisit", label: "Revisit", icon: BookMarked },
   { to: "/reports", label: "Weekly report", icon: FileBarChart },
 ];
 
@@ -145,7 +145,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
   const { data: revisions } = useRevisions();
   const counts: Record<string, number> = {
     "/radar": inboxCount,
-    "/revise": revisions?.filter((r) => r.status === "active").length ?? 0,
+    "/revisit": revisions?.filter((r) => r.status === "active").length ?? 0,
   };
   const [theme, toggleTheme] = useTheme();
   const [groupOpen, setGroupOpen] = useLocalState("smriti-nav-open", true);

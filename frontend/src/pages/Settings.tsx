@@ -152,7 +152,7 @@ export default function Settings() {
               ["Search and commands", "⌘K / Ctrl K"],
               ["New work item", "C"],
               ["Add topic to Radar", "N"],
-              ["Add to Revise", "R"],
+              ["Add to Revisit", "R"],
               ["Close panel or dialog", "Esc"],
               ["Post a comment", "⌘ Enter"],
             ].map(([a, b]) => (

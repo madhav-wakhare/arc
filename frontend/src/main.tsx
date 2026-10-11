@@ -30,7 +30,8 @@ createRoot(document.getElementById("root")!).render(
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="radar" element={<Radar />} />
-              <Route path="revise" element={<Revise />} />
+              <Route path="revisit" element={<Revise />} />
+              <Route path="revise" element={<Navigate to="/revisit" replace />} />
               <Route path="inbox" element={<Navigate to="/radar" replace />} />
               <Route path="today" element={<Today />} />
               <Route path="board" element={<Board />} />

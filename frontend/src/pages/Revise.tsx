@@ -104,7 +104,7 @@ function RevisionPanel({ rev, onClose }: { rev: Revision; onClose: () => void })
           <h2 className="text-xl font-semibold tracking-tight">{rev.title}</h2>
           <p className="mt-1 text-[13px] text-fg-3">
             {SOURCE[rev.source]} · {timeAgo(rev.created_at)}
-            {rev.status === "revised" && rev.revised_at && <> · revised {fmtDateTime(rev.revised_at)}</>}
+            {rev.status === "revised" && rev.revised_at && <> · revisited {fmtDateTime(rev.revised_at)}</>}
           </p>
         </div>
         <div className="-mr-2 flex shrink-0 items-center">
@@ -144,7 +144,7 @@ function RevisionPanel({ rev, onClose }: { rev: Revision; onClose: () => void })
             </select>
           </span>
         </label>
-        <Prop label="Last revised">{rev.last_revised_at ? timeAgo(rev.last_revised_at) : "Never"}</Prop>
+        <Prop label="Last revisited">{rev.last_revised_at ? timeAgo(rev.last_revised_at) : "Never"}</Prop>
         <Prop label="Time spent">{fmtMinutes(rev.total_minutes)}</Prop>
         <button
           onClick={() => rev.session_count && setShowHistory(!showHistory)}
@@ -288,16 +288,16 @@ function RevisionPanel({ rev, onClose }: { rev: Revision; onClose: () => void })
             <Button
               variant="primary"
               icon={<Check size={15} />}
-              onClick={() => call.mutate({ method: "patch", path: `/revisions/${rev.id}`, body: { status: "revised" }, done: `Revised “${rev.title}”`, close: true })}
+              onClick={() => call.mutate({ method: "patch", path: `/revisions/${rev.id}`, body: { status: "revised" }, done: `Revisited “${rev.title}”`, close: true })}
             >
-              Mark as revised
+              Mark as revisited
             </Button>
           ) : (
             <Button
               icon={<RotateCcw size={14} />}
               onClick={() => call.mutate({ method: "patch", path: `/revisions/${rev.id}`, body: { status: "active" }, done: "Back on your list", close: true })}
             >
-              Revise again
+              Revisit again
             </Button>
           )}
         </div>
@@ -367,7 +367,7 @@ export default function Revise() {
     });
   const selected = revisions.find((r) => r.id === selectedId) ?? null;
 
-  // A link to a revised topic opens the right tab.
+  // A link to a revisited topic opens the right tab.
   useEffect(() => {
     if (selected && selected.status !== tab) setTab(selected.status);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -405,15 +405,15 @@ export default function Revise() {
           }}
           className={clsx("flex", split ? "w-full [&>button]:flex-1" : "w-fit")}
           tabs={[
-            { value: "active", label: `To revise · ${count("active")}` },
-            { value: "revised", label: `Revised · ${count("revised")}` },
+            { value: "active", label: `To revisit · ${count("active")}` },
+            { value: "revised", label: `Revisited · ${count("revised")}` },
           ]}
         />
       </div>
       <div className="max-h-[calc(100vh-220px)] overflow-y-auto">
         {!isLoading && visible.length === 0 && (
           <div className="px-6 py-14 text-center">
-            <p className="text-[13px] text-fg-2">{q ? "No topics match" : tab === "active" ? "Nothing to revise" : "Nothing revised yet"}</p>
+            <p className="text-[13px] text-fg-2">{q ? "No topics match" : tab === "active" ? "Nothing to revisit" : "Nothing revisited yet"}</p>
             {tab === "active" && !q && (
               <p className="mt-1 text-xs text-fg-3">
                 Press <Kbd>R</Kbd> to add something you want to remember.
@@ -439,10 +439,10 @@ export default function Revise() {
                 </span>
                 <span className="mt-0.5 block text-xs text-fg-3">
                   {r.status === "revised" && r.revised_at
-                    ? `Revised ${timeAgo(r.revised_at)}`
+                    ? `Revisited ${timeAgo(r.revised_at)}`
                     : r.last_revised_at
-                      ? `Last revised ${timeAgo(r.last_revised_at)}`
-                      : "Not revised yet"}
+                      ? `Last revisited ${timeAgo(r.last_revised_at)}`
+                      : "Not revisited yet"}
                   {r.total_minutes > 0 && ` · ${fmtMinutes(r.total_minutes)}`}
                 </span>
               </span>
@@ -458,7 +458,7 @@ export default function Revise() {
     <div className="mx-auto w-full max-w-[1440px] pb-10">
       <PageHeader
         icon={<BookMarked size={18} />}
-        title="Revise"
+        title="Revisit"
         actions={
           <>
             <Input icon={<Search size={14} />} placeholder="Search" value={filter} onChange={(e) => setFilter(e.target.value)} className="w-52" />

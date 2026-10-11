@@ -65,7 +65,7 @@ export default function Dashboard() {
             />
           </Panel>
 
-          <Panel title={`To revise · ${now?.revise_open ?? 0}`} action={<PanelLink to="/revise">Revise</PanelLink>}>
+          <Panel title={`To revisit · ${now?.revise_open ?? 0}`} action={<PanelLink to="/revisit">Revisit</PanelLink>}>
             <RevisePreview limit={5} />
           </Panel>
           </div>
