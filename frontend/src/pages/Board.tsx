@@ -173,6 +173,7 @@ export default function Board() {
       )}
       <div className="flex min-w-0 flex-1 flex-col">
         <PageHeader
+          quotes="board"
           icon={<SquareKanban size={18} />}
           title={project ? `${project.name} board` : "Board"}
           actions={

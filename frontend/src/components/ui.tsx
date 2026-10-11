@@ -339,20 +339,33 @@ export function Card({ className, children }: { className?: string; children: Re
   return <div className={clsx("rounded-lg border border-line bg-surface", className)}>{children}</div>;
 }
 
-export function PageHeader({ title, icon, actions }: { title: ReactNode; icon?: ReactNode; actions?: ReactNode }) {
-  // On large screens: three columns (title | quote dock | actions). The two sides are equal (1fr),
-  // so the dock sits in the true centre of the page whether or not there are actions.
-  // The header is a size container: the dock only shows when the header is wide enough.
+export function PageHeader({
+  title,
+  icon,
+  actions,
+  quotes,
+}: {
+  title: ReactNode;
+  icon?: ReactNode;
+  actions?: ReactNode;
+  /** Show the quote dock (only Dashboard and Board use it). */
+  quotes?: "dashboard" | "board";
+}) {
   return (
-    <div className="@container/hdr flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-6 lg:px-8">
+    <div className="flex min-h-16 flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3 md:px-6 lg:flex-nowrap lg:px-8">
       <h1 className="flex shrink-0 items-center gap-2.5 text-lg font-semibold tracking-tight">
         {icon && <span className="text-fg-2">{icon}</span>}
         {title}
       </h1>
-      <div className="hidden min-w-0 max-w-[720px] justify-center lg:flex">
-        <QuoteDock />
-      </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2 lg:flex-nowrap lg:justify-self-end">{actions}</div>
+      {quotes && (
+        // Takes the free space between title and actions; the dock is centred in it,
+        // so the gap to the title and to the actions is the same.
+        <div className="@container/dock hidden min-w-0 flex-1 justify-center lg:flex">
+          <QuoteDock page={quotes} />
+        </div>
+      )}
+      {/* Rendered even when empty next to the dock, so the gap on its right matches the gap on its left. */}
+      {(actions || quotes) && <div className="flex shrink-0 items-center gap-2 lg:flex-nowrap">{actions}</div>}
     </div>
   );
 }

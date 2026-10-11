@@ -74,7 +74,7 @@ export default function Quotes() {
   const [author, setAuthor] = useState("");
 
   const saveSetting = useMutation({
-    mutationFn: (body: Partial<Pick<Settings, "quotes_enabled" | "quotes_interval">>) => api.put<Settings>("/settings", body),
+    mutationFn: (body: Partial<Pick<Settings, "quotes_on_dashboard" | "quotes_on_board" | "quotes_interval">>) => api.put<Settings>("/settings", body),
     onSuccess: (s) => qc.setQueryData(["settings"], s),
     onError: (e: Error) => toast(e.message, "error"),
   });
@@ -107,20 +107,31 @@ export default function Quotes() {
                 </option>
               ))}
             </Select>
-            <label className="flex h-9 items-center gap-2.5 rounded-md border border-line px-3 text-[13px]">
-              Show in top bar
-              <Switch
-                checked={settings?.quotes_enabled ?? true}
-                onChange={(v) => saveSetting.mutate({ quotes_enabled: v })}
-                label="Show quotes in the top bar"
-              />
-            </label>
+            <div className="flex h-9 items-center gap-4 rounded-md border border-line px-3 text-[13px]">
+              <span className="text-fg-3">Show on</span>
+              <label className="flex items-center gap-2">
+                Dashboard
+                <Switch
+                  checked={settings?.quotes_on_dashboard ?? true}
+                  onChange={(v) => saveSetting.mutate({ quotes_on_dashboard: v })}
+                  label="Show quotes on the Dashboard"
+                />
+              </label>
+              <label className="flex items-center gap-2">
+                Board
+                <Switch
+                  checked={settings?.quotes_on_board ?? true}
+                  onChange={(v) => saveSetting.mutate({ quotes_on_board: v })}
+                  label="Show quotes on the Board"
+                />
+              </label>
+            </div>
           </>
         }
       />
       <div className="space-y-5 px-4 md:px-6 lg:px-8">
         <p className="-mt-3 text-[13px] text-fg-3">
-          Shown one at a time in the top bar, in this order. Hover over the dock to pause and read, click it for the next quote.
+          Shown one at a time at the top of the Dashboard and the Board, in this order. Hover over a quote to pause it, click it for the next one.
         </p>
 
         <Card className="p-4">

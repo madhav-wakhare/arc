@@ -319,7 +319,7 @@ def test_quotes(client):
     assert len(client.get("/api/quotes").json()) == 1
 
     s = client.get("/api/settings").json()
-    assert s["quotes_enabled"] is True and s["quotes_interval"] == 20
-    s = client.put("/api/settings", json={"quotes_enabled": False, "quotes_interval": 60}).json()
-    assert s["quotes_enabled"] is False and s["quotes_interval"] == 60
+    assert s["quotes_on_dashboard"] is True and s["quotes_on_board"] is True and s["quotes_interval"] == 20
+    s = client.put("/api/settings", json={"quotes_on_board": False, "quotes_interval": 60}).json()
+    assert s["quotes_on_board"] is False and s["quotes_on_dashboard"] is True and s["quotes_interval"] == 60
     assert client.put("/api/settings", json={"quotes_interval": 1}).status_code == 422

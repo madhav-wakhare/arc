@@ -29,7 +29,7 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] pb-10">
-      <PageHeader title="Dashboard" />
+      <PageHeader title="Dashboard" quotes="dashboard" />
       <div className="space-y-5 px-4 md:px-6 lg:px-8">
         <p className="-mt-3 text-[13px] text-fg-3">{fmtDate(todayIso(), { weekday: "long", month: "long", day: "numeric" })}</p>
 

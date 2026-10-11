@@ -148,7 +148,8 @@ export interface Settings {
   auto_reexport: boolean;
   monthly_backup: boolean;
   trash_days: number;
-  quotes_enabled: boolean;
+  quotes_on_dashboard: boolean;
+  quotes_on_board: boolean;
   quotes_interval: number;
 }
 export interface Quote {

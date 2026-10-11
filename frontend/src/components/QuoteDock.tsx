@@ -12,7 +12,7 @@ let skipped = 0;
  * The quote shown depends on the clock, so every page shows the same one and the order continues.
  * Hover pauses it (and shows the full quote if it is cut off); a click shows the next quote.
  */
-export function QuoteDock() {
+export function QuoteDock({ page }: { page: "dashboard" | "board" }) {
   const settings = useQuery({ queryKey: ["settings"], queryFn: () => api.get<Settings>("/settings") });
   const quotes = useQuery({ queryKey: ["quotes"], queryFn: () => api.get<Quote[]>("/quotes") });
   const [now, setNow] = useState(Date.now());
@@ -37,11 +37,12 @@ export function QuoteDock() {
     setClipped(!!el && el.scrollHeight > el.clientHeight + 1);
   }, [q?.id, q?.text]);
 
-  if (!settings.data?.quotes_enabled || !q) return null;
+  const enabled = page === "dashboard" ? settings.data?.quotes_on_dashboard : settings.data?.quotes_on_board;
+  if (!enabled || !q) return null;
 
   return (
     <div
-      className="relative hidden min-w-0 max-w-full @5xl/hdr:block"
+      className="relative hidden min-w-0 max-w-[720px] @[22rem]/dock:block"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >

@@ -165,7 +165,8 @@ class SettingsIn(BaseModel):
     obsidian_folder: str | None = Field(default=None, min_length=1, max_length=200)
     auto_reexport: bool | None = None
     monthly_backup: bool | None = None
-    quotes_enabled: bool | None = None
+    quotes_on_dashboard: bool | None = None
+    quotes_on_board: bool | None = None
     quotes_interval: int | None = Field(default=None, ge=5, le=3600)
 
 
@@ -1088,7 +1089,8 @@ def get_settings(conn=Depends(get_db)):
         "auto_reexport": get_setting(conn, "auto_reexport", "1") == "1",
         "monthly_backup": get_setting(conn, "monthly_backup", "1") == "1",
         "trash_days": TRASH_DAYS,
-        "quotes_enabled": get_setting(conn, "quotes_enabled", "1") == "1",
+        "quotes_on_dashboard": get_setting(conn, "quotes_on_dashboard", "1") == "1",
+        "quotes_on_board": get_setting(conn, "quotes_on_board", "1") == "1",
         "quotes_interval": int(get_setting(conn, "quotes_interval", "20")),
     }
 
@@ -1100,7 +1102,7 @@ def save_settings(data: SettingsIn, conn=Depends(get_db)):
         if not folder or ".." in folder.split("/"):
             raise HTTPException(422, "Folder must be inside the vault.")
         set_setting(conn, "obsidian_folder", folder)
-    for key in ("auto_reexport", "monthly_backup", "quotes_enabled"):
+    for key in ("auto_reexport", "monthly_backup", "quotes_on_dashboard", "quotes_on_board"):
         value = getattr(data, key)
         if value is not None:
             set_setting(conn, key, "1" if value else "0")
