@@ -148,7 +148,7 @@ function TopicPanel({ jot, onGone, onClose }: { jot: Jot; onGone: () => void; on
   });
 
   return (
-    <div className="space-y-7">
+    <div className="anim-panel space-y-7">
       <div className="flex items-start justify-between gap-3 border-b border-line pb-5">
         <div className="min-w-0">
           <h2 className="truncate text-lg font-semibold tracking-tight">{jot.body}</h2>

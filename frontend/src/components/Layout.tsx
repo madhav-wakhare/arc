@@ -163,7 +163,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
     );
 
   return (
-    <aside className={clsx("flex h-full flex-col bg-sidebar", compact ? "w-[60px]" : "w-[264px]")}>
+    <aside className={clsx("flex h-full flex-col overflow-hidden bg-sidebar transition-[width] duration-200 ease-out", compact ? "w-[60px]" : "w-[264px]")}>
       <div className={clsx("flex h-16 items-center", compact ? "justify-center" : "justify-between pl-5 pr-3")}>
         {compact ? (
           <button onClick={onToggle} title="Expand sidebar">
@@ -305,6 +305,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
 }
 
 export function Layout() {
+  const location = useLocation();
   const [compact, setCompact] = useLocalState("smriti-sidebar-compact", false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -356,8 +357,8 @@ export function Layout() {
         </div>
         {mobileOpen && (
           <div className="fixed inset-0 z-40 md:hidden">
-            <div className="absolute inset-0 bg-[var(--overlay)]" onClick={() => setMobileOpen(false)} />
-            <div className="absolute inset-y-0 left-0 border-r border-line shadow-[var(--shadow)]">
+            <div className="anim-fade absolute inset-0 bg-[var(--overlay)]" onClick={() => setMobileOpen(false)} />
+            <div className="anim-sidebar absolute inset-y-0 left-0 border-r border-line shadow-[var(--shadow)]">
               <Sidebar compact={false} onToggle={() => setMobileOpen(false)} onNavigate={() => setMobileOpen(false)} />
             </div>
           </div>
@@ -380,7 +381,9 @@ export function Layout() {
             </IconButton>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
-            <Outlet />
+            <div key={location.pathname} className="anim-page h-full">
+              <Outlet />
+            </div>
           </div>
         </main>
       </div>

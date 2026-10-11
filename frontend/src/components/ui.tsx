@@ -166,7 +166,7 @@ export function Menu({
             ref={menuRef}
             role="menu"
             style={{ top: pos.top, left: pos.left, width: WIDTH, transform: pos.up ? "translateY(-100%)" : undefined }}
-            className="fixed z-[70] rounded-lg border border-line bg-surface p-1 shadow-[var(--shadow)]"
+            className="anim-drop fixed z-[70] rounded-lg border border-line bg-surface p-1 shadow-[var(--shadow)]"
             onClick={(e) => e.stopPropagation()}
           >
             {items.map((it, i) => (
@@ -448,10 +448,10 @@ export function Modal({
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 pt-[10vh]">
-      <div className="fixed inset-0 bg-[var(--overlay)]" onClick={onClose} />
+      <div className="anim-fade fixed inset-0 bg-[var(--overlay)]" onClick={onClose} />
       <div
         role="dialog"
-        className={clsx("relative w-full rounded-xl border border-line bg-surface shadow-[var(--shadow)]", width)}
+        className={clsx("anim-pop relative w-full rounded-xl border border-line bg-surface shadow-[var(--shadow)]", width)}
       >
         <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
           <h2 className="text-[15px] font-semibold">{title}</h2>
@@ -480,8 +480,8 @@ export function Drawer({
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-40">
-      <div className="absolute inset-0 bg-[var(--overlay)]" onClick={onClose} />
-      <div className="absolute inset-y-0 right-0 flex w-full max-w-[860px] flex-col border-l border-line bg-bg shadow-[var(--shadow)]">
+      <div className="anim-fade absolute inset-0 bg-[var(--overlay)]" onClick={onClose} />
+      <div className="anim-drawer absolute inset-y-0 right-0 flex w-full max-w-[860px] flex-col border-l border-line bg-bg shadow-[var(--shadow)]">
         {children}
       </div>
     </div>,
@@ -512,7 +512,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={t.id}
               className={clsx(
-                "pointer-events-auto flex max-w-sm items-center gap-3 rounded-lg border bg-surface px-4 py-3 text-[13px] shadow-[var(--shadow)]",
+                "anim-toast pointer-events-auto flex max-w-sm items-center gap-3 rounded-lg border bg-surface px-4 py-3 text-[13px] shadow-[var(--shadow)]",
                 t.tone === "error" ? "border-critical/50 text-critical" : "border-line text-fg",
               )}
             >

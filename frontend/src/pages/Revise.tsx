@@ -97,7 +97,7 @@ function RevisionPanel({ rev, onClose }: { rev: Revision; onClose: () => void })
   const active = rev.status === "active";
 
   return (
-    <div className="flex flex-col">
+    <div className="anim-panel flex flex-col">
       {/* Title row */}
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">

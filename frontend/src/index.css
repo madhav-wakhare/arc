@@ -136,3 +136,50 @@
 .recharts-tooltip-cursor {
   fill: var(--surface-2);
 }
+
+/* ---------------------------------------------------------------- motion
+   Short entrance animations only (120-200 ms). Closing is instant so the app
+   never waits on an animation. Turned off when the OS asks for reduced motion.
+   Fill mode is "backwards" so no transform stays on an element afterwards
+   (a lingering transform would break fixed-position children such as drag previews). */
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+@keyframes drop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(32px); }
+}
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+@keyframes page-in {
+  from { opacity: 0; }
+}
+
+@layer utilities {
+  .anim-fade { animation: fade-in 150ms ease-out backwards; }
+  .anim-pop { animation: pop-in 170ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+  .anim-drop { animation: drop-in 130ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+  .anim-drawer { animation: slide-in-right 200ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+  .anim-sidebar { animation: slide-in-left 200ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+  .anim-toast { animation: rise-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+  .anim-page { animation: page-in 140ms ease-out backwards; }
+  .anim-panel { animation: fade-in 140ms ease-out backwards; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}

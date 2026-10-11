@@ -144,8 +144,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[12vh]">
-      <div className="fixed inset-0 bg-[var(--overlay)]" onClick={onClose} />
-      <div className="relative w-full max-w-xl overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow)]">
+      <div className="anim-fade fixed inset-0 bg-[var(--overlay)]" onClick={onClose} />
+      <div className="anim-pop relative w-full max-w-xl overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow)]">
         <div className="flex items-center gap-3 border-b border-line px-4">
           <Search size={16} className="text-fg-3" />
           <input
