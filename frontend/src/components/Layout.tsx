@@ -78,16 +78,29 @@ function useTheme() {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))] as const;
 }
 
-function Logo({ compact }: { compact?: boolean }) {
+/** The "i" of Smriti in the accent colour, its dot drawn as an upward arrow. */
+function ArrowI({ className }: { className?: string }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <svg viewBox="0 0 32 32" className="size-7 shrink-0">
-        <path d="M7 9h10M7 16h17M7 23h10" stroke="var(--fg)" strokeWidth="3.2" strokeLinecap="round" />
-        <circle cx="23.5" cy="9" r="2.6" fill="var(--accent)" />
-        <circle cx="23.5" cy="23" r="2.6" fill="var(--accent)" />
-      </svg>
-      {!compact && <span className="text-[22px] font-medium tracking-tight">Smriti</span>}
-    </div>
+    <svg viewBox="0 0 12 34" className={className} aria-hidden>
+      <path d="M6 33.5V15" stroke="var(--accent)" strokeWidth="4.4" />
+      <path d="M1.6 9.6 6 4.6l4.4 5" fill="none" stroke="var(--accent)" strokeWidth="3.6" />
+    </svg>
+  );
+}
+
+/** Wordmark "Smriti" with the arrow-i. The collapsed sidebar shows the arrow-i alone. */
+function Logo({ compact }: { compact?: boolean }) {
+  if (compact)
+    return (
+      <span className="flex size-8 items-center justify-center rounded-lg border border-line bg-surface-2">
+        <ArrowI className="h-5 w-2" />
+      </span>
+    );
+  return (
+    <span className="flex items-baseline text-[22px] leading-none font-extrabold tracking-[-0.045em]" aria-label="Smriti">
+      Smrit
+      <ArrowI className="ml-[0.02em] h-[0.98em] w-[0.36em] self-end" />
+    </span>
   );
 }
 
