@@ -40,7 +40,7 @@ import {
 } from "../lib/meta";
 import { Thumb } from "./ItemCard";
 import { ObsidianIcon } from "./ObsidianIcon";
-import { Button, Checkbox, Drawer, Field, IconButton, Input, Modal, Select, Tabs, Textarea, useToast } from "./ui";
+import { Button, Checkbox, DateInput, Drawer, Field, IconButton, Input, Modal, Select, Tabs, Textarea, useToast } from "./ui";
 import { ProjectIcon } from "../lib/projectIcons";
 
 // ---------------------------------------------------------------- time tracking (Jira style)
@@ -549,7 +549,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                   </Select>
                 </Prop>
                 <Prop label="Due date">
-                  <Input type="date" value={item.due_date ?? ""} onChange={(e) => patch({ due_date: e.target.value || null })} />
+                  <DateInput value={item.due_date ?? ""} onChange={(v) => patch({ due_date: v || null })} placeholder="No due date" />
                 </Prop>
                 <Prop label="Repeat">
                   <Select icon={<Repeat size={13} />} value={item.recurrence} onChange={(e) => patch({ recurrence: e.target.value as Item["recurrence"] })}>

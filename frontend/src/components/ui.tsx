@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ChevronDown, X } from "lucide-react";
+import { CalendarDays, ChevronDown, X } from "lucide-react";
 import {
   createContext,
   forwardRef,
@@ -235,6 +235,58 @@ export function Select({
         {children}
       </select>
       <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-3" />
+    </div>
+  );
+}
+
+/**
+ * Date field that shows "Oct 12, 2026" (or a grey placeholder) instead of the browser's
+ * dd/mm/yyyy text. A transparent native date input on top keeps the system date picker.
+ */
+export function DateInput({
+  value,
+  onChange,
+  placeholder = "Set date",
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const label = value
+    ? new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : placeholder;
+  return (
+    <div className={clsx("relative", className)}>
+      <div className={clsx(fieldBase, "flex h-9 items-center gap-2 pr-8")}>
+        <CalendarDays size={14} className="shrink-0 text-fg-3" />
+        <span className={clsx("truncate", !value && "text-fg-3")}>{label}</span>
+      </div>
+      <input
+        type="date"
+        aria-label={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onClick={(e) => {
+          try {
+            e.currentTarget.showPicker?.();
+          } catch {
+            /* older browsers open the picker on their own */
+          }
+        }}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+      />
+      {value && (
+        <button
+          type="button"
+          title="Clear date"
+          onClick={() => onChange("")}
+          className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded p-0.5 text-fg-3 hover:bg-surface-2 hover:text-fg"
+        >
+          <X size={13} />
+        </button>
+      )}
     </div>
   );
 }

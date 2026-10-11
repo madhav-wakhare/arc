@@ -5,7 +5,7 @@ import { api, type Item, type ItemType, type Priority, type Recurrence, type Sta
 import { useProjects, useRefreshItems } from "../lib/hooks";
 import { PRIORITIES, RECURRENCES, STATUSES, TYPES, parseDuration } from "../lib/meta";
 import type { NewItemDefaults } from "./Layout";
-import { Button, Checkbox, Field, Input, Modal, Select, Tabs, Textarea, useToast } from "./ui";
+import { Button, Checkbox, DateInput, Field, Input, Modal, Select, Tabs, Textarea, useToast } from "./ui";
 
 const blank = (d: NewItemDefaults, fallbackProject?: number) => ({
   type: d.type ?? ("task" as ItemType),
@@ -163,7 +163,7 @@ export function NewItemModal({ defaults, onClose }: { defaults: NewItemDefaults 
             </Select>
           </Field>
           <Field label="Due date">
-            <Input type="date" value={form.due_date} onChange={(e) => set("due_date", e.target.value)} />
+            <DateInput value={form.due_date} onChange={(v) => set("due_date", v)} placeholder="No due date" />
           </Field>
           <Field label="Original estimate" hint={Number.isNaN(estimate) ? "Use 2h 30m, 45m or 1d" : undefined}>
             <Input placeholder="e.g. 2h 30m" value={form.estimate} onChange={(e) => set("estimate", e.target.value)} />
