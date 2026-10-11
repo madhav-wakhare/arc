@@ -78,22 +78,15 @@ function useTheme() {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))] as const;
 }
 
-/** Smriti mark: a rounded tile with an "S" cut out of it and an accent dot ("a spark of memory"). */
 function Logo({ compact }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <svg viewBox="0 0 32 32" className="size-7 shrink-0" aria-hidden>
-        <rect width="32" height="32" rx="8.5" fill="var(--fg)" />
-        <path
-          d="M20.5 11.5A4.5 4.5 0 1 0 16 16A4.5 4.5 0 1 1 11.5 20.5"
-          fill="none"
-          stroke="var(--sidebar)"
-          strokeWidth="2.8"
-          strokeLinecap="round"
-        />
-        <circle cx="22.6" cy="8.6" r="1.9" fill="var(--accent)" />
+      <svg viewBox="0 0 32 32" className="size-7 shrink-0">
+        <path d="M7 9h10M7 16h17M7 23h10" stroke="var(--fg)" strokeWidth="3.2" strokeLinecap="round" />
+        <circle cx="23.5" cy="9" r="2.6" fill="var(--accent)" />
+        <circle cx="23.5" cy="23" r="2.6" fill="var(--accent)" />
       </svg>
-      {!compact && <span className="text-[21px] font-semibold tracking-tight">Smriti</span>}
+      {!compact && <span className="text-[22px] font-medium tracking-tight">Smriti</span>}
     </div>
   );
 }
