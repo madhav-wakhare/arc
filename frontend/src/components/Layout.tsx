@@ -81,10 +81,13 @@ function useTheme() {
 function Logo({ compact }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <svg viewBox="0 0 32 32" className="size-7 shrink-0">
-        <path d="M7 9h10M7 16h17M7 23h10" stroke="var(--fg)" strokeWidth="3.2" strokeLinecap="round" />
-        <circle cx="23.5" cy="9" r="2.6" fill="var(--accent)" />
-        <circle cx="23.5" cy="23" r="2.6" fill="var(--accent)" />
+      {/* Stepped "S" built from blocks, in the style of the Bifrost mark. */}
+      <svg viewBox="0 0 28 33" className="size-7 shrink-0" fill="var(--fg)" aria-hidden>
+        <rect x="10" y="2" width="14" height="5" />
+        <rect x="4" y="8" width="6" height="5" />
+        <rect x="10" y="14" width="8" height="5" />
+        <rect x="18" y="20" width="6" height="5" />
+        <rect x="4" y="26" width="14" height="5" />
       </svg>
       {!compact && <span className="text-[22px] font-medium tracking-tight">Smriti</span>}
     </div>
