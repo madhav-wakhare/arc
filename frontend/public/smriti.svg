@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#0f0f0f"/><path d="M9 10h9M9 16h14M9 22h9" stroke="#56b4e9" stroke-width="3" stroke-linecap="round"/><circle cx="23" cy="10" r="2.2" fill="#56b4e9"/><circle cx="23" cy="22" r="2.2" fill="#56b4e9"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .tile { fill: #161616; } .s { stroke: #ededed; } .dot { fill: #56b4e9; }
+    @media (prefers-color-scheme: dark) { .tile { fill: #ededed; } .s { stroke: #0c0c0c; } .dot { fill: #0b78b8; } }
+  </style>
+  <rect class="tile" width="32" height="32" rx="8.5"/>
+  <path class="s" d="M20.5 11.5A4.5 4.5 0 1 0 16 16A4.5 4.5 0 1 1 11.5 20.5" fill="none" stroke-width="3" stroke-linecap="round"/>
+  <circle class="dot" cx="22.6" cy="8.6" r="2"/>
+</svg>
