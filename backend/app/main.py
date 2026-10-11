@@ -1071,6 +1071,71 @@ def weekly_report(week_start: date | None = None, conn=Depends(get_db)):
 # --------------------------------------------------------------------------- settings and backups
 
 
+# --------------------------------------------------------------------------- notification digests
+# Short texts for the macOS notifications (scripts/notify.sh). Built here so the wording lives in one place.
+
+_PRIORITY_RANK = {"urgent": 0, "high": 1, "medium": 2, "low": 3, "none": 4}
+
+
+def _plural(n: int, word: str) -> str:
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+@app.get("/api/digest/morning")
+def morning_digest(conn=Depends(get_db)):
+    t = today()
+    planned = [_decode(r) for r in rows(conn.execute(
+        ITEM_SELECT + """ WHERE i.status != 'done'
+            AND (i.status IN ('today', 'in_progress') OR i.due_date <= ?)""", (t,)))]
+    overdue = sum(1 for i in planned if i["due_date"] and i["due_date"] < t)
+    revisit = conn.execute("SELECT count(*) FROM revisions WHERE status = 'active'").fetchone()[0]
+    radar = conn.execute("SELECT count(*) FROM jots WHERE status = 'open'").fetchone()[0]
+    planned.sort(key=lambda i: (i["due_date"] is None or i["due_date"] >= t, _PRIORITY_RANK[i["priority"]], i["created_at"]))
+
+    parts = [_plural(len(planned), "item") + " planned"]
+    if overdue:
+        parts.append(f"{overdue} overdue")
+    if revisit:
+        parts.append(f"{revisit} to revisit")
+    if radar:
+        parts.append(_plural(radar, "Radar topic"))
+    first = f"Start with: {planned[0]['title']}" if planned else "Nothing planned yet. Pick something from the backlog."
+    day = date.fromisoformat(t).strftime("%A, %b %-d")
+    return {
+        "title": "Smriti · Morning plan",
+        "subtitle": day,
+        "message": " · ".join(parts) + "\n" + first,
+        "path": "/today",
+    }
+
+
+@app.get("/api/digest/weekly")
+def weekly_digest(conn=Depends(get_db)):
+    w = weekly_report(None, conn)
+    cur = w["current"]
+    parts = [f"{cur['completed']} done", f"{fmt_minutes(cur['minutes'])} logged"]
+    if cur["learning_minutes"]:
+        parts.append(f"{fmt_minutes(cur['learning_minutes'])} learning")
+    second = []
+    if w["unfinished"]:
+        second.append(f"{len(w['unfinished'])} carried over")
+    if w["jots_captured"]:
+        second.append(f"{_plural(w['jots_captured'], 'new topic')}")
+    start = date.fromisoformat(w["week_start"]).strftime("%b %-d")
+    end = date.fromisoformat(w["week_end"]).strftime("%b %-d")
+    return {
+        "title": "Smriti · Your week",
+        "subtitle": f"{start} – {end}",
+        "message": " · ".join(parts) + ("\n" + " · ".join(second) if second else ""),
+        "path": "/reports",
+    }
+
+
+def fmt_minutes(m: int) -> str:
+    h, mm = divmod(int(m or 0), 60)
+    return f"{h}h {mm}m" if h and mm else f"{h}h" if h else f"{mm}m"
+
+
 @app.get("/api/settings")
 def get_settings(conn=Depends(get_db)):
     return {

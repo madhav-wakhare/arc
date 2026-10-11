@@ -11,13 +11,16 @@ SMRITI_PORT ?= $(or $(call env_get,SMRITI_PORT),8080)
 SMRITI_BIND ?= $(or $(call env_get,SMRITI_BIND),0.0.0.0)
 TZ ?= $(or $(call env_get,TZ),Asia/Kolkata)
 DEV_API_PORT ?= 8765
+MORNING_TIME ?= $(or $(call env_get,SMRITI_MORNING_TIME),09:00)
+WEEKLY_DAY ?= $(or $(call env_get,SMRITI_WEEKLY_DAY),5)
+WEEKLY_TIME ?= $(or $(call env_get,SMRITI_WEEKLY_TIME),18:00)
 URL := http://localhost:$(SMRITI_PORT)
 COMPOSE := docker compose
 DEV_ENV := DATA_DIR=../.dev/data VAULT_DIR=../.dev/vault BACKUP_DIR=../.dev/backups TZ=$(TZ)
 
 .DEFAULT_GOAL := help
 .PHONY: help check check-dev env up down restart logs status open backup restore \
-        install dev dev-api dev-ui test build-ui ci clean
+        install dev dev-api dev-ui test build-ui ci clean notify-install notify-uninstall notify-test
 
 help: ## List all commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36mmake %-10s\033[0m %s\n", $$1, $$2}'
@@ -91,6 +94,20 @@ restore: ## Restore a backup: make restore FILE=backups/2026-10/smriti-2026-10-1
 	rm -f data/smriti.db-wal data/smriti.db-shm
 	cp "$(FILE)" data/smriti.db
 	$(COMPOSE) start smriti
+
+# ---------------------------------------------------------------- macOS notifications
+
+notify-install: ## Turn on macOS notifications (morning plan, weekly summary)
+	@command -v terminal-notifier >/dev/null || echo "Tip: brew install terminal-notifier, so a click opens Smriti."
+	bash scripts/notify-launchd.sh install $(SMRITI_PORT) $(MORNING_TIME) $(WEEKLY_DAY) $(WEEKLY_TIME)
+
+notify-uninstall: ## Turn off macOS notifications
+	bash scripts/notify-launchd.sh uninstall
+
+notify-test: ## Show both notifications now
+	/usr/bin/python3 scripts/notify.py morning $(SMRITI_PORT)
+	@sleep 2
+	/usr/bin/python3 scripts/notify.py weekly $(SMRITI_PORT)
 
 # ---------------------------------------------------------------- local development
 

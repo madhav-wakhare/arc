@@ -39,6 +39,24 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 - **Backups**: once a month, Smriti copies the database to `backups/YYYY-MM/smriti-YYYY-MM-DD.db`. Settings has a "Back up now" button and a switch for the monthly backup.
 - **Themes**: dark and light. The layout works on a phone on the same Wi-Fi.
 
+## macOS notifications
+
+Smriti can send two notifications on your Mac:
+
+- **Morning plan**, every day at 9:00: items planned for today, overdue items, topics to revisit and Radar topics, plus the item to start with.
+- **Weekly summary**, every Friday at 18:00: items done, time logged, learning time, items carried over and new topics.
+
+Clicking a notification opens Smriti (Today page or Weekly report).
+
+```bash
+brew install terminal-notifier
+make notify-install
+```
+
+`make notify-test` shows both notifications now. `make notify-uninstall` turns them off. Change the times in `.env` (`SMRITI_MORNING_TIME`, `SMRITI_WEEKLY_DAY`, `SMRITI_WEEKLY_TIME`) and run `make notify-install` again.
+
+The first time, allow notifications for **terminal-notifier** in System Settings → Notifications. The jobs run with macOS launchd; if the Mac is asleep at that time, the notification comes when it wakes. Smriti must be running (`make up`).
+
 ## Keyboard shortcuts
 
 | Key | Action |
@@ -76,6 +94,8 @@ Run `make` to see all commands:
 | `make dev` | Run backend and UI locally with live reload |
 | `make test` | Run backend tests |
 | `make ci` | Install from lockfiles, test and build |
+| `make notify-install` / `make notify-uninstall` | Turn macOS notifications on / off |
+| `make notify-test` | Show both notifications now |
 | `make clean` | Remove build output and dev data (keeps `data/` and `backups/`) |
 
 > **Security:** Smriti has no login. With the default `SMRITI_BIND=0.0.0.0`, any device on the same network can read and change your data. On a shared or office network, set `SMRITI_BIND=127.0.0.1` in `.env`.
