@@ -488,7 +488,8 @@ def delete_subtask(subtask_id: int, conn=Depends(get_db)):
 
 @app.get("/api/items/{item_id}/comments")
 def list_comments(item_id: int, conn=Depends(get_db)):
-    return rows(conn.execute("SELECT * FROM comments WHERE item_id = ? ORDER BY created_at DESC, id DESC", (item_id,)))
+    # Oldest first: comments read top to bottom like a conversation.
+    return rows(conn.execute("SELECT * FROM comments WHERE item_id = ? ORDER BY created_at, id", (item_id,)))
 
 
 @app.post("/api/items/{item_id}/comments", status_code=201)
@@ -496,6 +497,14 @@ def add_comment(item_id: int, data: CommentIn, conn=Depends(get_db)):
     load_item(conn, item_id)
     cur = conn.execute("INSERT INTO comments (item_id, body, created_at) VALUES (?, ?, ?)", (item_id, data.body, now()))
     return row(conn.execute("SELECT * FROM comments WHERE id = ?", (cur.lastrowid,)))
+
+
+@app.patch("/api/comments/{comment_id}")
+def edit_comment(comment_id: int, data: CommentIn, conn=Depends(get_db)):
+    if not conn.execute("SELECT 1 FROM comments WHERE id = ?", (comment_id,)).fetchone():
+        raise HTTPException(404, "Comment not found")
+    conn.execute("UPDATE comments SET body = ?, edited_at = ? WHERE id = ?", (data.body.strip(), now(), comment_id))
+    return row(conn.execute("SELECT * FROM comments WHERE id = ?", (comment_id,)))
 
 
 @app.delete("/api/comments/{comment_id}", status_code=204)

@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY,
     item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
     body TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    edited_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS worklogs (
@@ -196,6 +197,7 @@ MIGRATIONS = [
     ("projects", "icon", "TEXT"),
     ("revisions", "priority", "TEXT NOT NULL DEFAULT 'none'"),
     ("revisions", "timer_started_at", "TEXT"),
+    ("comments", "edited_at", "TEXT"),
 ]
 
 # Project icons (Lucide names). New projects take the first one not in use.

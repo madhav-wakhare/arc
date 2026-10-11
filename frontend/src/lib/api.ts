@@ -61,6 +61,7 @@ export interface Comment {
   item_id: number;
   body: string;
   created_at: string;
+  edited_at: string | null;
 }
 export interface Worklog {
   id: number;

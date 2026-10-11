@@ -295,3 +295,15 @@ def test_split_topic(client):
     assert len(client.get("/api/jots").json()) == 2  # original removed
     single = client.post("/api/jots", json={"body": "tmux"}).json()
     assert client.post(f"/api/jots/{single['id']}/split").status_code == 422
+
+
+def test_edit_comment(client):
+    item = _learning(client)
+    c1 = client.post(f"/api/items/{item['id']}/comments", json={"body": "first"}).json()
+    client.post(f"/api/items/{item['id']}/comments", json={"body": "second"})
+    edited = client.patch(f"/api/comments/{c1['id']}", json={"body": "first, fixed"}).json()
+    assert edited["body"] == "first, fixed" and edited["edited_at"]
+    assert [c["body"] for c in client.get(f"/api/items/{item['id']}/comments").json()] == ["first, fixed", "second"]
+    assert client.patch("/api/comments/999", json={"body": "x"}).status_code == 404
+    # search finds the edited text
+    assert client.get("/api/search", params={"q": "fixed"}).json()[0]["match"] == "comment"

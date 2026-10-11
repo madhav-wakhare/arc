@@ -10,6 +10,7 @@ import {
   History as HistoryIcon,
   Link2,
   MessageSquare,
+  Pencil,
   Play,
   Plus,
   Repeat,
@@ -40,7 +41,7 @@ import {
 } from "../lib/meta";
 import { Thumb } from "./ItemCard";
 import { ObsidianIcon } from "./ObsidianIcon";
-import { Button, Checkbox, DateInput, Drawer, Field, IconButton, Input, Modal, Select, Tabs, Textarea, useToast } from "./ui";
+import { Button, Checkbox, DateInput, Drawer, Field, IconButton, Input, Modal, Select, Textarea, useToast } from "./ui";
 import { ProjectIcon } from "../lib/projectIcons";
 
 // ---------------------------------------------------------------- time tracking (Jira style)
@@ -148,8 +149,96 @@ function Prop({ label, children }: { label: string; children: ReactNode }) {
 
 // ---------------------------------------------------------------- activity
 
+type ActivityTab = "comments" | "worklog" | "history";
+
+function CommentRow({ c, onSaved }: { c: Comment; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(c.body);
+  const [confirm, setConfirm] = useState(false);
+  const toast = useToast();
+  const save = useMutation({
+    mutationFn: () => api.patch(`/comments/${c.id}`, { body: text }),
+    onSuccess: () => {
+      setEditing(false);
+      onSaved();
+    },
+    onError: (e: Error) => toast(e.message, "error"),
+  });
+  const remove = useMutation({ mutationFn: () => api.del(`/comments/${c.id}`), onSuccess: onSaved });
+
+  return (
+    <div className="group py-3">
+      <div className="flex items-center gap-2 text-xs text-fg-3">
+        <span className="font-medium text-fg-2">You</span>
+        <span title={fmtDateTime(c.created_at)}>{timeAgo(c.created_at)}</span>
+        {c.edited_at && <span title={`Edited ${fmtDateTime(c.edited_at)}`}>· edited</span>}
+        {!editing && (
+          <span className="ml-auto flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            <IconButton
+              className="size-6"
+              title="Edit"
+              onClick={() => {
+                setText(c.body);
+                setEditing(true);
+              }}
+            >
+              <Pencil size={12} />
+            </IconButton>
+            <IconButton className="size-6 hover:text-critical" title="Delete" onClick={() => setConfirm(true)}>
+              <Trash2 size={12} />
+            </IconButton>
+          </span>
+        )}
+      </div>
+      {editing ? (
+        <div className="mt-2">
+          <textarea
+            autoFocus
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && text.trim()) save.mutate();
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                setEditing(false);
+              }
+            }}
+            className="field-sizing-content min-h-16 w-full resize-none rounded-md border border-line bg-surface px-3 py-2 text-[13px] leading-relaxed outline-none focus:border-accent/60"
+          />
+          <div className="mt-2 flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" variant="primary" disabled={!text.trim() || text === c.body || save.isPending} onClick={() => save.mutate()}>
+              Save
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed">{c.body}</p>
+      )}
+      <Modal
+        open={confirm}
+        onClose={() => setConfirm(false)}
+        title="Delete comment?"
+        width="max-w-sm"
+        footer={
+          <>
+            <Button onClick={() => setConfirm(false)}>Cancel</Button>
+            <Button variant="danger" onClick={() => remove.mutate()}>
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-[13px] text-fg-2">This comment is deleted for good.</p>
+      </Modal>
+    </div>
+  );
+}
+
 function Activity({ item }: { item: Item }) {
-  const [tab, setTab] = useState<"comments" | "worklog" | "history">("comments");
+  const [tab, setTab] = useState<ActivityTab>("comments");
   const [body, setBody] = useState("");
   const refresh = useRefreshItems();
   const toast = useToast();
@@ -195,7 +284,7 @@ function Activity({ item }: { item: Item }) {
     if (h.field === "revise") return <>added to Revisit</>;
     if (h.field === "description") return <>edited the description</>;
     if (h.field === "worklog") return <>logged {h.new_value}</>;
-    if (h.field === "obsidian") return <>exported to Obsidian · <span className="font-mono text-xs">{h.new_value}</span></>;
+    if (h.field === "obsidian") return <>exported to Obsidian</>;
     const pretty = (v: string | null) =>
       h.field === "status"
         ? STATUSES.find((s) => s.value === v)?.label
@@ -210,86 +299,103 @@ function Activity({ item }: { item: Item }) {
     );
   };
 
+  const tabs: { value: ActivityTab; label: string; count?: number }[] = [
+    { value: "comments", label: "Comments", count: comments.data?.length },
+    { value: "worklog", label: "Work log", count: worklogs.data?.length },
+    { value: "history", label: "History" },
+  ];
+
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-[15px] font-semibold">Activity</h3>
-        <Tabs
-          value={tab}
-          onChange={setTab}
-          tabs={[
-            { value: "comments", label: `Comments ${comments.data?.length ? `· ${comments.data.length}` : ""}` },
-            { value: "worklog", label: `Work log ${worklogs.data?.length ? `· ${worklogs.data.length}` : ""}` },
-            { value: "history", label: "History" },
-          ]}
-        />
+    <section>
+      <div className="flex items-center gap-5 border-b border-line">
+        <h3 className="mr-auto text-[14px] font-semibold">Activity</h3>
+        {tabs.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setTab(t.value)}
+            className={clsx(
+              "-mb-px flex items-center gap-1.5 border-b-2 pb-2.5 pt-1 text-[13px] transition-colors",
+              tab === t.value ? "border-fg text-fg" : "border-transparent text-fg-3 hover:text-fg-2",
+            )}
+          >
+            {t.label}
+            {!!t.count && <span className="tabular-nums text-fg-3">{t.count}</span>}
+          </button>
+        ))}
       </div>
 
       {tab === "comments" && (
-        <div className="space-y-3">
-          <div className="rounded-lg border border-line bg-surface p-2">
+        <div>
+          {comments.data?.length ? (
+            <div className="divide-y divide-line">
+              {comments.data.map((c) => (
+                <CommentRow key={c.id} c={c} onSaved={refresh} />
+              ))}
+            </div>
+          ) : (
+            <p className="py-4 text-[13px] text-fg-3">No comments yet.</p>
+          )}
+          <div className="mt-2 rounded-lg border border-line bg-surface transition-colors focus-within:border-line-strong">
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && body.trim()) addComment.mutate();
               }}
-              placeholder="Add a comment or a learning note..."
+              placeholder="Leave a comment…"
               rows={1}
-              className="field-sizing-content min-h-9 w-full resize-none bg-transparent px-1 py-1 text-[13px] outline-none placeholder:text-fg-3"
+              className="field-sizing-content block min-h-10 w-full resize-none bg-transparent px-3 py-2.5 text-[13px] leading-relaxed outline-none placeholder:text-fg-3"
             />
-            <div className="flex justify-end">
-              <Button size="sm" variant="primary" disabled={!body.trim()} onClick={() => addComment.mutate()}>
-                Comment
-              </Button>
-            </div>
-          </div>
-          {comments.data?.map((c) => (
-            <div key={c.id} className="group rounded-lg border border-line bg-surface px-3 py-2.5">
-              <div className="mb-1 flex items-center justify-between text-xs text-fg-3">
-                <span>{timeAgo(c.created_at)}</span>
-                <button className="opacity-0 hover:text-critical group-hover:opacity-100" onClick={() => del.mutate(`/comments/${c.id}`)}>
-                  <Trash2 size={13} />
-                </button>
+            {body.trim() && (
+              <div className="flex items-center justify-end gap-3 px-2 pb-2">
+                <span className="text-xs text-fg-3">⌘ Enter</span>
+                <Button size="sm" variant="primary" disabled={addComment.isPending} onClick={() => addComment.mutate()}>
+                  Comment
+                </Button>
               </div>
-              <p className="whitespace-pre-wrap text-[13px] leading-relaxed">{c.body}</p>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
       )}
 
-      {tab === "worklog" && (
-        <div className="divide-y divide-line rounded-lg border border-line bg-surface">
-          {!worklogs.data?.length && <p className="p-4 text-center text-[13px] text-fg-3">No work logged yet.</p>}
-          {worklogs.data?.map((w) => (
-            <div key={w.id} className="group flex items-start gap-3 px-3 py-2.5">
-              <Clock size={14} className="mt-0.5 text-fg-3" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 text-[13px]">
-                  <span className="font-medium">{fmtMinutes(w.minutes)}</span>
-                  <span className="text-fg-3">· {fmtDateTime(w.started_at)}</span>
+      {tab === "worklog" &&
+        (worklogs.data?.length ? (
+          <div className="divide-y divide-line">
+            {worklogs.data.map((w) => (
+              <div key={w.id} className="group flex items-start gap-4 py-3 text-[13px]">
+                <span className="w-16 shrink-0 font-medium tabular-nums">{fmtMinutes(w.minutes)}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-fg-3">{fmtDateTime(w.started_at)}</p>
+                  {w.comment && <p className="mt-0.5 text-fg-2">{w.comment}</p>}
                 </div>
-                {w.comment && <p className="mt-0.5 text-[13px] text-fg-2">{w.comment}</p>}
+                <IconButton
+                  className="size-6 opacity-0 hover:text-critical group-hover:opacity-100"
+                  title="Delete"
+                  onClick={() => del.mutate(`/worklogs/${w.id}`)}
+                >
+                  <Trash2 size={12} />
+                </IconButton>
               </div>
-              <button className="text-fg-3 opacity-0 hover:text-critical group-hover:opacity-100" onClick={() => del.mutate(`/worklogs/${w.id}`)}>
-                <Trash2 size={13} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          <p className="py-4 text-[13px] text-fg-3">No work logged yet.</p>
+        ))}
 
       {tab === "history" && (
-        <ol className="relative ml-2 space-y-3 border-l border-line pl-5">
+        <ul className="py-1">
           {history.data?.map((h) => (
-            <li key={h.id} className="relative text-[13px] text-fg-2">
-              <span className="absolute -left-[25px] top-1.5 size-2 rounded-full border border-line-strong bg-surface" />
-              {describe(h)} <span className="text-xs text-fg-3">· {timeAgo(h.created_at)}</span>
+            <li key={h.id} className="flex items-baseline gap-3 py-1.5 text-[13px] text-fg-2">
+              <span className="size-1.5 shrink-0 translate-y-[-2px] rounded-full bg-line-strong" />
+              <span className="min-w-0 flex-1">{describe(h)}</span>
+              <span className="shrink-0 text-xs text-fg-3" title={fmtDateTime(h.created_at)}>
+                {timeAgo(h.created_at)}
+              </span>
             </li>
           ))}
-        </ol>
+        </ul>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -470,17 +576,17 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                 </div>
               )}
 
-              <Textarea
+              <textarea
                 value={desc}
-                placeholder="Add a description..."
+                placeholder="Add a description…"
                 onChange={(e) => setDesc(e.target.value)}
                 onBlur={() => desc !== item.description && patch({ description: desc })}
-                className="field-sizing-content min-h-16 border-transparent bg-transparent px-0 hover:border-line focus:px-3"
+                className="field-sizing-content block min-h-12 w-full resize-none bg-transparent text-[14px] leading-relaxed text-fg-2 outline-none placeholder:text-fg-3"
               />
 
               <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-[15px] font-semibold">Checklist</h3>
+                <div className="mb-1 flex items-center justify-between">
+                  <h3 className="text-[14px] font-semibold">Checklist</h3>
                   {item.subtask_count > 0 && (
                     <span className="text-xs text-fg-3">
                       {item.subtask_done}/{item.subtask_count}
@@ -489,7 +595,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                 </div>
                 <div className="space-y-1">
                   {item.subtasks?.map((s) => (
-                    <div key={s.id} className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-2">
+                    <div key={s.id} className="group -mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface-2">
                       <Checkbox
                         checked={!!s.done}
                         onChange={(v) => subPatch.mutate({ id: s.id, done: v })}
@@ -502,7 +608,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                     </div>
                   ))}
                   <form
-                    className="flex items-center gap-2 px-2"
+                    className="flex items-center gap-3"
                     onSubmit={(e) => {
                       e.preventDefault();
                       if (newSub.trim()) subAdd.mutate();
@@ -512,7 +618,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                     <input
                       value={newSub}
                       onChange={(e) => setNewSub(e.target.value)}
-                      placeholder="Add an item"
+                      placeholder="Add item"
                       className="h-8 flex-1 bg-transparent text-[13px] outline-none placeholder:text-fg-3"
                     />
                   </form>
