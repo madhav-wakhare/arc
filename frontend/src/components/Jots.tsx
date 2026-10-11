@@ -3,7 +3,8 @@ import { Link2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api, type ItemType, type Jot, type Project } from "../lib/api";
 import { useRefreshItems } from "../lib/hooks";
-import { Button, Field, Input, Kbd, Modal, Textarea, useToast } from "./ui";
+import { splitTopic } from "../lib/meta";
+import { Button, Checkbox, Field, Input, Kbd, Modal, Textarea, useToast } from "./ui";
 
 /** Default project for a new ticket: LRN for learning, WORK for tasks, else the first active one. */
 export function defaultProject(projects: Project[], type: ItemType) {
@@ -17,6 +18,7 @@ export function AddTopicModal({ open, onClose, onAdded }: { open: boolean; onClo
   const [body, setBody] = useState("");
   const [details, setDetails] = useState("");
   const [url, setUrl] = useState("");
+  const [keepOne, setKeepOne] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   const refresh = useRefreshItems();
   const toast = useToast();
@@ -26,16 +28,25 @@ export function AddTopicModal({ open, onClose, onAdded }: { open: boolean; onClo
       setBody("");
       setDetails("");
       setUrl("");
+      setKeepOne(false);
     }
   }, [open]);
 
+  // "wireguard, openvpn" becomes two topics unless you choose to keep it as one.
+  const parts = splitTopic(body);
+  const bodies = parts.length > 1 && !keepOne ? parts : [body];
+
   const save = useMutation({
-    mutationFn: () => api.post<Jot>("/jots", { body, details, url: url.trim() || null }),
-    onSuccess: (j) => {
+    mutationFn: async () => {
+      const added: Jot[] = [];
+      for (const b of bodies) added.push(await api.post<Jot>("/jots", { body: b, details, url: url.trim() || null }));
+      return added;
+    },
+    onSuccess: (added) => {
       refresh();
-      toast(`Added “${j.body}” to Radar`);
+      toast(added.length > 1 ? `Added ${added.length} topics to Radar` : `Added “${added[0].body}” to Radar`);
       onClose();
-      onAdded?.(j);
+      onAdded?.(added[0]);
     },
     onError: (e: Error) => toast(e.message, "error"),
   });
@@ -54,7 +65,7 @@ export function AddTopicModal({ open, onClose, onAdded }: { open: boolean; onClo
           <div className="flex gap-2">
             <Button onClick={onClose}>Cancel</Button>
             <Button variant="primary" disabled={!body.trim() || save.isPending} onClick={submit}>
-              Add topic
+              {bodies.length > 1 ? `Add ${bodies.length} topics` : "Add topic"}
             </Button>
           </div>
         </div>
@@ -68,9 +79,17 @@ export function AddTopicModal({ open, onClose, onAdded }: { open: boolean; onClo
         }}
       >
         <p className="-mt-1 text-[13px] text-fg-3">A tool, concept or idea you want to look at later.</p>
-        <Field label="Topic">
+        <Field label="Topic" hint={parts.length < 2 ? "Separate several topics with commas." : undefined}>
           <Input ref={ref} autoFocus value={body} onChange={(e) => setBody(e.target.value)} placeholder="e.g. vLLM" />
         </Field>
+        {parts.length > 1 && (
+          <div className="flex items-center justify-between gap-3 rounded-md border border-line bg-surface-2/50 px-3 py-2">
+            <p className="min-w-0 truncate text-[13px] text-fg-2">
+              {keepOne ? "Adds one topic" : `Adds ${parts.length} topics: ${parts.join(" · ")}`}
+            </p>
+            <Checkbox checked={keepOne} onChange={setKeepOne} label={<span className="whitespace-nowrap text-xs text-fg-3">Keep as one</span>} />
+          </div>
+        )}
         <Field label="Notes (optional)" hint="Use #tags to add labels, for example #gpu.">
           <Textarea
             value={details}

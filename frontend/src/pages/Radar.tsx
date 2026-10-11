@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowUpRight, Ban, BookmarkPlus, ExternalLink, Link2, Plus, Radar as RadarIcon, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { ArrowUpRight, Ban, BookmarkPlus, Split, ExternalLink, Link2, Plus, Radar as RadarIcon, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { AddTopicModal, defaultProject } from "../components/Jots";
 import { useActions } from "../components/Layout";
@@ -21,7 +21,7 @@ import {
 } from "../components/ui";
 import { api, type Item, type ItemType, type Jot, type JotStatus, type Priority, type Status } from "../lib/api";
 import { useJots, useProjects, useRefreshItems } from "../lib/hooks";
-import { PRIORITIES, STATUSES, TYPES, TypeIcon, daysBetween, fmtDate, fmtDateTime, hostOf } from "../lib/meta";
+import { PRIORITIES, STATUSES, TYPES, TypeIcon, daysBetween, fmtDate, fmtDateTime, hostOf, splitTopic } from "../lib/meta";
 
 const TAB_LABEL: Record<JotStatus, string> = { open: "To review", converted: "Ticketed", archived: "Dismissed" };
 
@@ -101,6 +101,19 @@ function TopicPanel({ jot, onGone, onClose }: { jot: Jot; onGone: () => void; on
       onGone();
     },
   });
+  const parts = splitTopic(body);
+  const split = useMutation({
+    mutationFn: async () => {
+      if (dirty) await api.patch(`/jots/${jot.id}`, { body, details, url });
+      return api.post<Jot[]>(`/jots/${jot.id}/split`);
+    },
+    onSuccess: (made) => {
+      refresh();
+      toast(`Split into ${made.length} topics`);
+      onGone();
+    },
+    onError: (e: Error) => toast(e.message, "error"),
+  });
   const toRevise = useMutation({
     mutationFn: async () => {
       if (dirty) await api.patch(`/jots/${jot.id}`, { body, details, url });
@@ -176,6 +189,11 @@ function TopicPanel({ jot, onGone, onClose }: { jot: Jot; onGone: () => void; on
             {jot.status === "open" && (
               <Button icon={<Ban size={14} />} onClick={() => setJotStatus.mutate("archived")}>
                 Dismiss
+              </Button>
+            )}
+            {jot.status !== "converted" && parts.length > 1 && (
+              <Button icon={<Split size={14} />} onClick={() => split.mutate()} disabled={split.isPending} title={parts.join(" · ")}>
+                Split into {parts.length}
               </Button>
             )}
             {jot.status !== "converted" && (

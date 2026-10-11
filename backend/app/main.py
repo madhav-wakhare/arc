@@ -723,6 +723,38 @@ def delete_jot(jot_id: int, conn=Depends(get_db)):
     conn.execute("DELETE FROM jots WHERE id = ?", (jot_id,))
 
 
+def split_topic(text: str) -> list[str]:
+    """'wireguard, openvpn' -> ['wireguard', 'openvpn']. Splits on commas and new lines, drops repeats."""
+    parts, seen = [], set()
+    for part in re.split(r"[,\n]", text):
+        part = part.strip(" -\t")
+        if part and part.lower() not in seen:
+            seen.add(part.lower())
+            parts.append(part)
+    return parts
+
+
+@app.post("/api/jots/{jot_id}/split", status_code=201)
+def split_jot(jot_id: int, conn=Depends(get_db)):
+    """Turn one topic with several names into one topic per name. Notes and link are copied."""
+    j = load_jot(conn, jot_id)
+    if j["status"] == "converted":
+        raise HTTPException(409, "This topic is already a ticket.")
+    parts = split_topic(j["body"])
+    if len(parts) < 2:
+        raise HTTPException(422, "Nothing to split. Separate names with commas.")
+    ts = now()
+    new_ids = []
+    for part in parts:
+        cur = conn.execute(
+            "INSERT INTO jots (body, details, url, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (part, j["details"], j["url"], j["status"], j["created_at"], ts),
+        )
+        new_ids.append(cur.lastrowid)
+    conn.execute("DELETE FROM jots WHERE id = ?", (jot_id,))
+    return [load_jot(conn, i) for i in new_ids]
+
+
 @app.post("/api/jots/{jot_id}/convert", status_code=201)
 def convert_jot(jot_id: int, data: JotConvert, conn=Depends(get_db)):
     """Turn a note into a board item. Fields not given come from the note."""

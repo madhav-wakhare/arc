@@ -153,3 +153,17 @@ export function parseDuration(text: string): number | null {
   });
   return rest.trim() || total <= 0 ? NaN : Math.round(total);
 }
+
+/** "wireguard, openvpn" -> ["wireguard", "openvpn"]. Same rule as split_topic in the backend. */
+export function splitTopic(text: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of text.split(/[,\n]/)) {
+    const part = raw.replace(/^[\s-]+|[\s-]+$/g, "");
+    if (part && !seen.has(part.toLowerCase())) {
+      seen.add(part.toLowerCase());
+      out.push(part);
+    }
+  }
+  return out;
+}

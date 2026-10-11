@@ -285,3 +285,13 @@ def test_revision_sessions_priority_and_timer(client):
     sessions = client.get(f"/api/revisions/{low['id']}/sessions").json()
     client.delete(f"/api/revision-sessions/{sessions[0]['id']}")
     assert client.patch(f"/api/revisions/{low['id']}", json={"priority": "urgent"}).json()["total_minutes"] == 0
+
+
+def test_split_topic(client):
+    j = client.post("/api/jots", json={"body": "wireguard, openvpn,  WireGuard ,", "details": "VPNs", "url": "https://x.io"}).json()
+    parts = client.post(f"/api/jots/{j['id']}/split").json()
+    assert [p["body"] for p in parts] == ["wireguard", "openvpn"]
+    assert all(p["details"] == "VPNs" and p["url"] == "https://x.io" for p in parts)
+    assert len(client.get("/api/jots").json()) == 2  # original removed
+    single = client.post("/api/jots", json={"body": "tmux"}).json()
+    assert client.post(f"/api/jots/{single['id']}/split").status_code == 422
