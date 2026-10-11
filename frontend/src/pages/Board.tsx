@@ -46,7 +46,15 @@ function DraggableCard({ item }: { item: Item }) {
   );
 }
 
-function Column({ status, items }: { status: Status; items: Item[] }) {
+function Column({
+  status,
+  items,
+  footer,
+}: {
+  status: Status;
+  items: Item[];
+  footer?: React.ReactNode;
+}) {
   const meta = STATUSES.find((s) => s.value === status)!;
   const { setNodeRef, isOver } = useDroppable({ id: `col-${status}`, data: { status } });
   const { newItem } = useActions();
@@ -73,6 +81,7 @@ function Column({ status, items }: { status: Status; items: Item[] }) {
         {items.map((i) => (
           <DraggableCard key={i.id} item={i} />
         ))}
+        {footer}
       </div>
     </div>
   );
@@ -107,11 +116,14 @@ export default function Board() {
   const labels = useMemo(() => [...new Set(items.flatMap((i) => i.labels))].sort(), [items]);
 
   const visible = applyFilters(items, { ...filters, status: [] }, text);
+  // The Done column shows the last 7 days; older done items appear only on request.
   const weekAgo = Date.now() - 7 * 86_400_000;
+  const isOldDone = (i: Item) => i.status === "done" && !!i.completed_at && new Date(i.completed_at).getTime() < weekAgo;
+  const olderDone = visible.filter(isOldDone).length;
   const byStatus = (s: Status) =>
     visible
       .filter((i) => i.status === s)
-      .filter((i) => !(s === "done" && hideOldDone && i.completed_at && new Date(i.completed_at).getTime() < weekAgo))
+      .filter((i) => !(hideOldDone && isOldDone(i)))
       .sort((a, b) => a.position - b.position);
 
   const sensors = useSensors(
@@ -187,9 +199,6 @@ export default function Board() {
                 onChange={(e) => setText(e.target.value)}
                 className="w-56"
               />
-              <Button onClick={() => setHideOldDone(!hideOldDone)}>
-                {hideOldDone ? "Show all done" : "Hide old done"}
-              </Button>
               <Button variant="primary" icon={<Plus size={14} />} onClick={() => newItem({ project_id: projectParam ?? undefined })}>
                 New
               </Button>
@@ -204,7 +213,22 @@ export default function Board() {
         >
           <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto px-4 pb-4 md:px-6 lg:px-8">
             {STATUSES.map((s) => (
-              <Column key={s.value} status={s.value} items={byStatus(s.value)} />
+              <Column
+                key={s.value}
+                status={s.value}
+                items={byStatus(s.value)}
+                footer={
+                  s.value === "done" &&
+                  olderDone > 0 && (
+                    <button
+                      onClick={() => setHideOldDone(!hideOldDone)}
+                      className="mt-1 rounded-md py-1.5 text-xs text-fg-3 hover:bg-surface-2 hover:text-fg"
+                    >
+                      {hideOldDone ? `Show ${olderDone} older` : "Hide older than 7 days"}
+                    </button>
+                  )
+                }
+              />
             ))}
           </div>
           <DragOverlay>{active && <ItemCard item={active} onOpen={() => {}} dragging />}</DragOverlay>
