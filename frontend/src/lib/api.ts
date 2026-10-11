@@ -148,6 +148,14 @@ export interface Settings {
   auto_reexport: boolean;
   monthly_backup: boolean;
   trash_days: number;
+  quotes_enabled: boolean;
+  quotes_interval: number;
+}
+export interface Quote {
+  id: number;
+  text: string;
+  author: string;
+  created_at: string;
 }
 export type JotStatus = "open" | "converted" | "archived";
 export interface Jot {

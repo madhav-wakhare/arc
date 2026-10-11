@@ -143,6 +143,14 @@ CREATE TABLE IF NOT EXISTS revision_sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_revision_sessions_rev ON revision_sessions(revision_id);
 
+-- Quotes shown one at a time in the top bar.
+CREATE TABLE IF NOT EXISTS quotes (
+    id INTEGER PRIMARY KEY,
+    text TEXT NOT NULL,
+    author TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL

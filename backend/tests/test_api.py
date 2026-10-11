@@ -307,3 +307,19 @@ def test_edit_comment(client):
     assert client.patch("/api/comments/999", json={"body": "x"}).status_code == 404
     # search finds the edited text
     assert client.get("/api/search", params={"q": "fixed"}).json()[0]["match"] == "comment"
+
+
+def test_quotes(client):
+    q = client.post("/api/quotes", json={"text": "  Stay hungry.  ", "author": "Steve Jobs"}).json()
+    assert q["text"] == "Stay hungry."
+    client.post("/api/quotes", json={"text": "Make it work, then make it right."})
+    assert [x["text"] for x in client.get("/api/quotes").json()] == ["Stay hungry.", "Make it work, then make it right."]
+    assert client.patch(f"/api/quotes/{q['id']}", json={"text": "Stay hungry, stay foolish.", "author": "Steve Jobs"}).json()["text"].endswith("foolish.")
+    client.delete(f"/api/quotes/{q['id']}")
+    assert len(client.get("/api/quotes").json()) == 1
+
+    s = client.get("/api/settings").json()
+    assert s["quotes_enabled"] is True and s["quotes_interval"] == 20
+    s = client.put("/api/settings", json={"quotes_enabled": False, "quotes_interval": 60}).json()
+    assert s["quotes_enabled"] is False and s["quotes_interval"] == 60
+    assert client.put("/api/settings", json={"quotes_interval": 1}).status_code == 422

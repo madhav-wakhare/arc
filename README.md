@@ -37,6 +37,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 - **Obsidian export**: for items with a link, "Export to Obsidian" writes one note named after the item title. If you later change the title or link, Smriti overwrites the note. You can turn this off in Settings.
 - **Trash**: deleted items and projects stay in Trash for 30 days. You can restore them or delete them for good. After 30 days, Smriti removes them automatically.
 - **Backups**: once a month, Smriti copies the database to `backups/YYYY-MM/smriti-YYYY-MM-DD.db`. Settings has a "Back up now" button and a switch for the monthly backup.
+- **Quotes**: your own quotes in a glass dock at the top of every page, one at a time. Add them, turn them on or off and set how often they change in Settings → Quotes.
 - **Themes**: dark and light. The layout works on a phone on the same Wi-Fi.
 
 ## Keyboard shortcuts

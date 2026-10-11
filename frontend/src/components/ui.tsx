@@ -15,6 +15,7 @@ import {
   type TextareaHTMLAttributes,
 } from "react";
 import { createPortal } from "react-dom";
+import { QuoteDock } from "./QuoteDock";
 
 // ---------------------------------------------------------------- buttons
 
@@ -340,12 +341,15 @@ export function Card({ className, children }: { className?: string; children: Re
 
 export function PageHeader({ title, icon, actions }: { title: ReactNode; icon?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 lg:px-8">
-      <h1 className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
+    <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 lg:flex-nowrap lg:px-8">
+      <h1 className="flex shrink-0 items-center gap-2.5 text-lg font-semibold tracking-tight">
         {icon && <span className="text-fg-2">{icon}</span>}
         {title}
       </h1>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      <div className="hidden min-w-0 flex-1 justify-center px-4 lg:flex">
+        <QuoteDock />
+      </div>
+      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }

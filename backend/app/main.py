@@ -165,6 +165,13 @@ class SettingsIn(BaseModel):
     obsidian_folder: str | None = Field(default=None, min_length=1, max_length=200)
     auto_reexport: bool | None = None
     monthly_backup: bool | None = None
+    quotes_enabled: bool | None = None
+    quotes_interval: int | None = Field(default=None, ge=5, le=3600)
+
+
+class QuoteIn(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+    author: str = Field(default="", max_length=120)
 
 
 # --------------------------------------------------------------------------- helpers
@@ -1081,6 +1088,8 @@ def get_settings(conn=Depends(get_db)):
         "auto_reexport": get_setting(conn, "auto_reexport", "1") == "1",
         "monthly_backup": get_setting(conn, "monthly_backup", "1") == "1",
         "trash_days": TRASH_DAYS,
+        "quotes_enabled": get_setting(conn, "quotes_enabled", "1") == "1",
+        "quotes_interval": int(get_setting(conn, "quotes_interval", "20")),
     }
 
 
@@ -1091,11 +1100,44 @@ def save_settings(data: SettingsIn, conn=Depends(get_db)):
         if not folder or ".." in folder.split("/"):
             raise HTTPException(422, "Folder must be inside the vault.")
         set_setting(conn, "obsidian_folder", folder)
-    for key in ("auto_reexport", "monthly_backup"):
+    for key in ("auto_reexport", "monthly_backup", "quotes_enabled"):
         value = getattr(data, key)
         if value is not None:
             set_setting(conn, key, "1" if value else "0")
+    if data.quotes_interval is not None:
+        set_setting(conn, "quotes_interval", str(data.quotes_interval))
     return get_settings(conn)
+
+
+# --------------------------------------------------------------------------- quotes
+
+
+@app.get("/api/quotes")
+def list_quotes(conn=Depends(get_db)):
+    return rows(conn.execute("SELECT * FROM quotes ORDER BY id"))
+
+
+@app.post("/api/quotes", status_code=201)
+def add_quote(data: QuoteIn, conn=Depends(get_db)):
+    cur = conn.execute(
+        "INSERT INTO quotes (text, author, created_at) VALUES (?, ?, ?)",
+        (data.text.strip(), data.author.strip(), now()),
+    )
+    return row(conn.execute("SELECT * FROM quotes WHERE id = ?", (cur.lastrowid,)))
+
+
+@app.patch("/api/quotes/{quote_id}")
+def edit_quote(quote_id: int, data: QuoteIn, conn=Depends(get_db)):
+    conn.execute("UPDATE quotes SET text = ?, author = ? WHERE id = ?", (data.text.strip(), data.author.strip(), quote_id))
+    q = row(conn.execute("SELECT * FROM quotes WHERE id = ?", (quote_id,)))
+    if not q:
+        raise HTTPException(404, "Quote not found")
+    return q
+
+
+@app.delete("/api/quotes/{quote_id}", status_code=204)
+def delete_quote(quote_id: int, conn=Depends(get_db)):
+    conn.execute("DELETE FROM quotes WHERE id = ?", (quote_id,))
 
 
 @app.get("/api/backups")
