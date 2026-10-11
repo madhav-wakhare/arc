@@ -6,10 +6,10 @@ import {
   CircleDashed,
   CircleDot,
   StickyNote,
-  SignalHigh,
-  SignalLow,
-  SignalMedium,
-  AlertOctagon,
+  ChevronsUp,
+  ChevronUp,
+  ChevronDown,
+  Equal,
   Minus,
   type LucideIcon,
 } from "lucide-react";
@@ -29,10 +29,11 @@ export const TYPES: { value: ItemType; label: string; icon: LucideIcon; tone: st
 ];
 
 export const PRIORITIES: { value: Priority; label: string; icon: LucideIcon; tone: string }[] = [
-  { value: "urgent", label: "Urgent", icon: AlertOctagon, tone: "text-critical" },
-  { value: "high", label: "High", icon: SignalHigh, tone: "text-fg" },
-  { value: "medium", label: "Medium", icon: SignalMedium, tone: "text-fg-2" },
-  { value: "low", label: "Low", icon: SignalLow, tone: "text-fg-3" },
+  // Jira-style: each level has its own shape and colour so they are easy to tell apart.
+  { value: "urgent", label: "Urgent", icon: ChevronsUp, tone: "text-critical" },
+  { value: "high", label: "High", icon: ChevronUp, tone: "text-serious" },
+  { value: "medium", label: "Medium", icon: Equal, tone: "text-warning" },
+  { value: "low", label: "Low", icon: ChevronDown, tone: "text-task" },
   { value: "none", label: "No priority", icon: Minus, tone: "text-fg-3" },
 ];
 
@@ -58,7 +59,11 @@ export function TypeIcon({ type, size = 14 }: { type: ItemType; size?: number })
 }
 export function PriorityIcon({ priority, size = 14 }: { priority: Priority; size?: number }) {
   const m = priorityMeta(priority);
-  return <m.icon size={size} className={m.tone} strokeWidth={2} />;
+  return (
+    <span title={`${m.label} priority`} className="inline-flex shrink-0">
+      <m.icon size={size} className={m.tone} strokeWidth={2.5} />
+    </span>
+  );
 }
 
 // ---------------------------------------------------------------- formatting

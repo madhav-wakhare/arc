@@ -30,6 +30,7 @@
   /* status (fixed) */
   --good: #0ca30c;
   --warning: #c98500;
+  --serious: #d9622b;
   --critical: #d03b3b;
 }
 
@@ -56,6 +57,7 @@
   --series-note: #199e70;
   --good: #0ca30c;
   --warning: #fab219;
+  --serious: #ec835a;
   --critical: #e66767;
 }
 
@@ -78,6 +80,7 @@
   --color-accent-fg: var(--accent-fg);
   --color-good: var(--good);
   --color-warning: var(--warning);
+  --color-serious: var(--serious);
   --color-critical: var(--critical);
   --color-task: var(--series-task);
   --color-learning: var(--series-learning);
