@@ -36,7 +36,7 @@ function Row({ item, onLog }: { item: Item; onLog: (i: Item) => void }) {
       <button onClick={() => openItem(item.id)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
         <TypeIcon type={item.type} />
         <span className="hidden font-mono text-xs text-fg-3 sm:inline">{item.key}</span>
-        <span className={clsx("truncate text-[14px]", done && "text-fg-3 line-through")}>{item.title}</span>
+        <span className="truncate text-[14px]">{item.title}</span>
       </button>
       <div className="flex shrink-0 items-center gap-3 text-xs text-fg-3">
         {item.priority !== "none" && <span className="hidden sm:inline"><PriorityIcon priority={item.priority} /></span>}

@@ -41,7 +41,7 @@ export function ItemCard({ item, onOpen, dragging }: { item: Item; onOpen: () =>
         <div className="flex-1" />
         <PendingBadge item={item} />
       </div>
-      <p className={clsx("text-[13px] leading-snug", item.status === "done" && "text-fg-3 line-through")}>{item.title}</p>
+      <p className="text-[13px] leading-snug">{item.title}</p>
       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-fg-3">
         {item.priority !== "none" && <PriorityIcon priority={item.priority} size={13} />}
         {item.due_date && (
