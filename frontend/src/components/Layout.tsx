@@ -185,15 +185,22 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
     <aside className={clsx("flex h-full flex-col overflow-hidden bg-sidebar transition-[width] duration-200 ease-out", compact ? "w-[60px]" : "w-[264px]")}>
       <div className={clsx("flex h-16 items-center", compact ? "justify-center" : "justify-between pl-5 pr-3")}>
         {compact ? (
-          <NavLink to="/" onClick={onNavigate} title="Dashboard" className="logo-link rounded-md">
-            <Logo compact />
-          </NavLink>
+          // Collapsed: the logo expands the sidebar (it turns into the expand icon on hover).
+          <button onClick={onToggle} title={"Open sidebar (⌘\\)"} aria-label="Open sidebar" className="logo-link group relative rounded-md">
+            <span className="block transition-opacity duration-150 group-hover:opacity-0 group-focus-visible:opacity-0">
+              <Logo compact />
+            </span>
+            <span className="absolute inset-0 flex items-center justify-center rounded-md text-fg-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+              <PanelLeft size={18} />
+            </span>
+          </button>
         ) : (
           <>
+            {/* Expanded: the logo goes home, the button next to it collapses the sidebar. */}
             <NavLink to="/" onClick={onNavigate} title="Dashboard" className="logo-link rounded-md">
               <Logo />
             </NavLink>
-            <IconButton onClick={onToggle} title="Collapse sidebar" className="hidden md:inline-flex">
+            <IconButton onClick={onToggle} title={"Close sidebar (⌘\\)"} className="hidden md:inline-flex">
               <PanelLeft size={17} />
             </IconButton>
           </>
@@ -203,9 +210,6 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
       <div className={clsx("space-y-2", compact ? "px-2.5" : "px-3")}>
         {compact ? (
           <>
-            <IconButton onClick={onToggle} title="Expand sidebar" className="w-full">
-              <PanelLeft size={16} />
-            </IconButton>
             <IconButton onClick={openSearch} title="Search" className="w-full">
               <Search size={16} />
             </IconButton>
@@ -363,6 +367,9 @@ export function Layout() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setSearchOpen((v) => !v);
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
+        e.preventDefault();
+        setCompact((c) => !c);
       } else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "c") {
         e.preventDefault();
         setNewDefaults({});
