@@ -21,7 +21,7 @@ import {
   SquareKanban,
   Sun,
 } from "lucide-react";
-import { createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, type ItemType, type Quote, type Status } from "../lib/api";
@@ -151,7 +151,17 @@ function RunningTimer({ compact }: { compact: boolean }) {
   );
 }
 
-function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle: () => void; onNavigate?: () => void }) {
+function Sidebar({
+  compact,
+  onToggle,
+  onNavigate,
+  toggleTitle = "Collapse sidebar",
+}: {
+  compact: boolean;
+  onToggle: () => void;
+  onNavigate?: () => void;
+  toggleTitle?: string;
+}) {
   const { data: projects } = useProjects();
   const { data: settings } = useSettings();
   const { data: trash } = useTrash();
@@ -193,7 +203,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
             <NavLink to="/" onClick={onNavigate} title="Dashboard" className="logo-link rounded-md">
               <Logo />
             </NavLink>
-            <IconButton onClick={onToggle} title="Collapse sidebar" className="hidden md:inline-flex">
+            <IconButton onClick={onToggle} title={toggleTitle} className="hidden md:inline-flex">
               <PanelLeft size={17} />
             </IconButton>
           </>
@@ -336,6 +346,17 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
 export function Layout() {
   const location = useLocation();
   const [compact, setCompact] = useLocalState("smriti-sidebar-compact", false);
+  // Collapsed sidebar: resting the mouse on the icon strip "peeks" the full sidebar over the page.
+  const [peek, setPeek] = useState(false);
+  const peekTimer = useRef<number>();
+  const schedulePeek = (open: boolean) => {
+    window.clearTimeout(peekTimer.current);
+    // A short delay on open avoids flashing the panel when the mouse only passes by.
+    peekTimer.current = window.setTimeout(() => setPeek(open), open ? 180 : 220);
+  };
+  useEffect(() => {
+    if (!compact) setPeek(false);
+  }, [compact]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -382,7 +403,23 @@ export function Layout() {
     <ActionsCtx.Provider value={actions}>
       <div className="flex h-full">
         <div className="hidden border-r border-line md:block">
-          <Sidebar compact={compact} onToggle={() => setCompact(!compact)} />
+          <div
+            className="relative h-full"
+            onMouseEnter={() => compact && schedulePeek(true)}
+            onMouseLeave={() => compact && schedulePeek(false)}
+          >
+            <Sidebar compact={compact} onToggle={() => setCompact(!compact)} />
+            {compact && peek && (
+              <div className="anim-sidebar absolute inset-y-0 left-0 z-50 border-r border-line shadow-[var(--shadow)]">
+                <Sidebar
+                  compact={false}
+                  toggleTitle="Keep sidebar open"
+                  onToggle={() => setCompact(false)}
+                  onNavigate={() => setPeek(false)}
+                />
+              </div>
+            )}
+          </div>
         </div>
         {mobileOpen && (
           <div className="fixed inset-0 z-40 md:hidden">
