@@ -172,12 +172,14 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
     <aside className={clsx("flex h-full flex-col overflow-hidden bg-sidebar transition-[width] duration-200 ease-out", compact ? "w-[60px]" : "w-[264px]")}>
       <div className={clsx("flex h-16 items-center", compact ? "justify-center" : "justify-between pl-5 pr-3")}>
         {compact ? (
-          <button onClick={onToggle} title="Expand sidebar">
+          <NavLink to="/" onClick={onNavigate} title="Dashboard" className="rounded-md transition-opacity hover:opacity-80">
             <Logo compact />
-          </button>
+          </NavLink>
         ) : (
           <>
-            <Logo />
+            <NavLink to="/" onClick={onNavigate} title="Dashboard" className="rounded-md transition-opacity hover:opacity-80">
+              <Logo />
+            </NavLink>
             <IconButton onClick={onToggle} title="Collapse sidebar" className="hidden md:inline-flex">
               <PanelLeft size={17} />
             </IconButton>
@@ -188,6 +190,9 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
       <div className={clsx("space-y-2", compact ? "px-2.5" : "px-3")}>
         {compact ? (
           <>
+            <IconButton onClick={onToggle} title="Expand sidebar" className="w-full">
+              <PanelLeft size={16} />
+            </IconButton>
             <IconButton onClick={openSearch} title="Search" className="w-full">
               <Search size={16} />
             </IconButton>
