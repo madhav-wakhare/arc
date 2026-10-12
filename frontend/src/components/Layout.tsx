@@ -21,7 +21,7 @@ import {
   SquareKanban,
   Sun,
 } from "lucide-react";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, type ItemType, type Quote, type Status } from "../lib/api";
@@ -79,18 +79,31 @@ function useTheme() {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))] as const;
 }
 
+const LOGO_BLOCKS = [
+  { x: 10, y: 2, w: 14 },
+  { x: 4, y: 8, w: 6 },
+  { x: 10, y: 14, w: 8 },
+  { x: 18, y: 20, w: 6 },
+  { x: 4, y: 26, w: 14 },
+];
+
+/**
+ * Stepped "S" built from blocks, in the style of the Bifrost mark.
+ * The blocks build in one by one on load; on hover an accent shimmer runs down them
+ * (see .logo-mark in index.css). Each block is a <g> (build-in) around a <rect> (shimmer),
+ * so the two animations never restart each other.
+ */
 function Logo({ compact }: { compact?: boolean }) {
   return (
-    <div className="flex items-center gap-2.5">
-      {/* Stepped "S" built from blocks, in the style of the Bifrost mark. */}
-      <svg viewBox="0 0 28 33" className="size-7 shrink-0" fill="var(--fg)" aria-hidden>
-        <rect x="10" y="2" width="14" height="5" />
-        <rect x="4" y="8" width="6" height="5" />
-        <rect x="10" y="14" width="8" height="5" />
-        <rect x="18" y="20" width="6" height="5" />
-        <rect x="4" y="26" width="14" height="5" />
+    <div className="logo-mark flex items-center gap-2.5">
+      <svg viewBox="0 0 28 33" className="size-7 shrink-0 overflow-visible" fill="var(--fg)" aria-hidden>
+        {LOGO_BLOCKS.map((b, i) => (
+          <g key={i} className="logo-block" style={{ "--i": i } as CSSProperties}>
+            <rect x={b.x} y={b.y} width={b.w} height="5" />
+          </g>
+        ))}
       </svg>
-      {!compact && <span className="text-[22px] font-medium tracking-tight">Smriti</span>}
+      {!compact && <span className="logo-word text-[22px] font-medium tracking-tight">Smriti</span>}
     </div>
   );
 }
@@ -172,12 +185,12 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
     <aside className={clsx("flex h-full flex-col overflow-hidden bg-sidebar transition-[width] duration-200 ease-out", compact ? "w-[60px]" : "w-[264px]")}>
       <div className={clsx("flex h-16 items-center", compact ? "justify-center" : "justify-between pl-5 pr-3")}>
         {compact ? (
-          <NavLink to="/" onClick={onNavigate} title="Dashboard" className="rounded-md transition-opacity hover:opacity-80">
+          <NavLink to="/" onClick={onNavigate} title="Dashboard" className="logo-link rounded-md">
             <Logo compact />
           </NavLink>
         ) : (
           <>
-            <NavLink to="/" onClick={onNavigate} title="Dashboard" className="rounded-md transition-opacity hover:opacity-80">
+            <NavLink to="/" onClick={onNavigate} title="Dashboard" className="logo-link rounded-md">
               <Logo />
             </NavLink>
             <IconButton onClick={onToggle} title="Collapse sidebar" className="hidden md:inline-flex">
