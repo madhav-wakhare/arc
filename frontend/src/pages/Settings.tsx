@@ -150,7 +150,6 @@ export default function Settings() {
           <div className="grid gap-2 text-[13px] sm:grid-cols-2">
             {[
               ["Search and commands", "⌘K / Ctrl K"],
-              ["Open or close the sidebar", "⌘\\ / Ctrl \\"],
               ["New work item", "C"],
               ["Add topic to Radar", "N"],
               ["Add to Revisit", "R"],
