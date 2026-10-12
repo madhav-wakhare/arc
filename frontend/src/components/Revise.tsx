@@ -1,9 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { api, type Priority, type Revision } from "../lib/api";
-import { PRIORITIES, PriorityIcon } from "../lib/meta";
-import { useRefreshItems } from "../lib/hooks";
-import { Button, Input, Kbd, Modal, Select, Textarea, useToast } from "./ui";
+import { api, type Item, type ItemType, type Priority, type Revision, type Status } from "../lib/api";
+import { PRIORITIES, PriorityIcon, STATUSES, TYPES } from "../lib/meta";
+import { useProjects, useRefreshItems } from "../lib/hooks";
+import { defaultProject } from "./Jots";
+import { Button, Input, Kbd, Modal, Select, Tabs, Textarea, useToast } from "./ui";
 
 export type RevisionFields = { title: string; question: string; notes: string; url: string; priority: Priority };
 
@@ -99,6 +100,115 @@ export function AddRevisionModal({ open, onClose, onAdded }: { open: boolean; on
         }}
       >
         <RevisionForm value={form} onChange={setForm} />
+      </div>
+    </Modal>
+  );
+}
+
+/** Turn a Revisit topic into a board ticket. The topic stays on Revisit, linked to the ticket. */
+export function ConvertRevisionModal({
+  rev,
+  open,
+  onClose,
+  onDone,
+}: {
+  rev: Revision;
+  open: boolean;
+  onClose: () => void;
+  onDone?: (item: Item) => void;
+}) {
+  const { data: projects = [] } = useProjects();
+  const active = projects.filter((p) => !p.archived);
+  const refresh = useRefreshItems();
+  const toast = useToast();
+  const [type, setType] = useState<ItemType>("learning");
+  const [projectId, setProjectId] = useState(0);
+  const [status, setStatus] = useState<Status>("backlog");
+  const [priority, setPriority] = useState<Priority>(rev.priority);
+
+  useEffect(() => {
+    if (open) {
+      setType("learning");
+      setStatus("backlog");
+      setPriority(rev.priority);
+    }
+  }, [open, rev.priority]);
+  useEffect(() => setProjectId(defaultProject(projects, type)?.id ?? 0), [type, projects]);
+
+  const create = useMutation({
+    mutationFn: () =>
+      api.post<{ item: Item }>(`/revisions/${rev.id}/convert`, { project_id: projectId, type, status, priority }),
+    onSuccess: ({ item }) => {
+      refresh();
+      toast(`${item.key} created from “${rev.title}”`);
+      onClose();
+      onDone?.(item);
+    },
+    onError: (e: Error) => toast(e.message, "error"),
+  });
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Create ticket"
+      footer={
+        <>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="primary" disabled={!projectId || create.isPending} onClick={() => create.mutate()}>
+            Create ticket
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="-mt-1 text-[13px] text-fg-3">
+          “{rev.title}” goes to the board with its notes and link. It also stays on Revisit.
+        </p>
+        <Tabs
+          value={type}
+          onChange={setType}
+          tabs={(["learning", "task"] as ItemType[]).map((v) => {
+            const t = TYPES.find((x) => x.value === v)!;
+            return {
+              value: v,
+              label: (
+                <span className="flex items-center gap-1.5">
+                  <t.icon size={13} className={t.tone} /> {t.label}
+                </span>
+              ),
+            };
+          })}
+        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Row label="Project">
+            <Select value={projectId} onChange={(e) => setProjectId(Number(e.target.value))}>
+              {active.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </Select>
+          </Row>
+          <Row label="Status">
+            <Select value={status} onChange={(e) => setStatus(e.target.value as Status)}>
+              {STATUSES.filter((s) => s.value !== "done").map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </Select>
+          </Row>
+          <Row label="Priority">
+            <Select value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
+              {PRIORITIES.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </Select>
+          </Row>
+        </div>
       </div>
     </Modal>
   );

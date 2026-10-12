@@ -920,6 +920,36 @@ def delete_revision(rid: int, conn=Depends(get_db)):
     conn.execute("DELETE FROM revisions WHERE id = ?", (rid,))
 
 
+class RevisionConvert(BaseModel):
+    project_id: int
+    type: ItemType = "learning"
+    status: Status = "backlog"
+    priority: Priority | None = None
+
+
+@app.post("/api/revisions/{rid}/convert", status_code=201)
+def convert_revision(rid: int, data: RevisionConvert, conn=Depends(get_db)):
+    """Create a ticket from a Revisit topic. The topic stays on Revisit, linked to the ticket."""
+    rev = load_revision(conn, rid)
+    if rev["item_id"] and not rev["item_deleted"]:
+        raise HTTPException(409, f"This topic already has ticket {rev['item_key']}.")
+    description = rev["notes"]
+    if rev["question"]:
+        description = f"{rev['question']}\n\n{description}".strip()
+    item_id = insert_item(conn, ItemIn(
+        project_id=data.project_id,
+        type=data.type,
+        title=rev["title"][:300],
+        description=description,
+        status=data.status,
+        priority=data.priority or rev["priority"],
+        url=rev["url"],
+    ))
+    log_history(conn, item_id, "from_revisit", None, rev["title"][:200])
+    conn.execute("UPDATE revisions SET item_id = ?, updated_at = ? WHERE id = ?", (item_id, now(), rid))
+    return {"revision": load_revision(conn, rid), "item": load_item(conn, item_id)}
+
+
 @app.post("/api/items/{item_id}/revise", status_code=201)
 def revise_item(item_id: int, conn=Depends(get_db)):
     """Put a ticket on the Revise list (once)."""

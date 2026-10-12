@@ -323,3 +323,16 @@ def test_quotes(client):
     s = client.put("/api/settings", json={"quotes_on_board": False, "quotes_interval": 60}).json()
     assert s["quotes_on_board"] is False and s["quotes_on_dashboard"] is True and s["quotes_interval"] == 60
     assert client.put("/api/settings", json={"quotes_interval": 1}).status_code == 422
+
+
+def test_revisit_topic_to_ticket(client):
+    lrn = next(p for p in client.get("/api/projects").json() if p["key"] == "LRN")
+    r = client.post("/api/revisions", json={"title": "KV cache", "question": "Why so big?", "notes": "past tokens", "url": "https://x.io", "priority": "high"}).json()
+    out = client.post(f"/api/revisions/{r['id']}/convert", json={"project_id": lrn["id"], "type": "task", "status": "today"}).json()
+    item = out["item"]
+    assert item["title"] == "KV cache" and item["type"] == "task" and item["status"] == "today"
+    assert item["priority"] == "high" and item["url"] == "https://x.io"
+    assert item["description"] == "Why so big?\n\npast tokens"
+    assert out["revision"]["item_key"] == item["key"] and out["revision"]["status"] == "active"
+    assert client.get(f"/api/items/{item['id']}").json()["revision_id"] == r["id"]
+    assert client.post(f"/api/revisions/{r['id']}/convert", json={"project_id": lrn["id"]}).status_code == 409

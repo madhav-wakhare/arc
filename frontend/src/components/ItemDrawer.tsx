@@ -300,6 +300,7 @@ function Activity({ item }: { item: Item }) {
     if (h.field === "from_inbox") return <>created from Radar topic “{h.new_value}”</>;
     if (h.field === "restored") return <>restored from Trash</>;
     if (h.field === "revise") return <>added to Revisit</>;
+    if (h.field === "from_revisit") return <>created from Revisit topic “{h.new_value}”</>;
     if (h.field === "description") return <>edited the description</>;
     if (h.field === "worklog") return <>logged {h.new_value}</>;
     if (h.field === "obsidian") return <>exported to Obsidian</>;

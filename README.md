@@ -25,6 +25,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
   - Add a topic with `R`, from any ticket, from Radar, or when you mark a Learning ticket Done.
   - Start a session timer or log time by hand. Each topic shows when you last revisited it, the total time and the number of sessions.
   - "Mark as revisited" moves the topic to the Revisited tab. "Revisit again" brings it back.
+  - "Create ticket" turns a topic into a Learning or Task ticket with its notes and link. The topic stays on Revisit, linked to the ticket.
 
 ### Overview
 

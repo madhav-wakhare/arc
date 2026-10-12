@@ -1,10 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowUpRight, BookMarked, Check, ChevronDown, Pencil, Play, Plus, RotateCcw, Search, Square, Trash2, X } from "lucide-react";
+import { ArrowUpRight, BookMarked, Check, ChevronDown, Pencil, Play, Plus, RotateCcw, Search, Square, Ticket, Trash2, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
-import { AddRevisionModal, RevisionForm, type RevisionFields } from "../components/Revise";
+import { AddRevisionModal, ConvertRevisionModal, RevisionForm, type RevisionFields } from "../components/Revise";
 import { Button, Card, Drawer, IconButton, Input, Kbd, Modal, PageHeader, Tabs, useToast } from "../components/ui";
 import { api, type Priority, type Revision, type RevisionSession } from "../lib/api";
 import { useNow, useRefreshItems, useRevisions } from "../lib/hooks";
@@ -67,6 +67,7 @@ function RevisionPanel({ rev, onClose }: { rev: Revision; onClose: () => void })
   const [logOpen, setLogOpen] = useState(false);
   const [spent, setSpent] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
   const minutes = parseDuration(spent);
 
   useEffect(() => {
@@ -260,9 +261,9 @@ function RevisionPanel({ rev, onClose }: { rev: Revision; onClose: () => void })
       {/* Action bar */}
       {!editing && (
         <div className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
-          {active ? (
-            <div className="flex items-center gap-2">
-              {rev.timer_started_at ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {active &&
+              (rev.timer_started_at ? (
                 <Button
                   icon={<Square size={10} fill="currentColor" />}
                   onClick={() => call.mutate({ method: "post", path: `/revisions/${rev.id}/timer/stop`, done: "Session logged" })}
@@ -274,16 +275,22 @@ function RevisionPanel({ rev, onClose }: { rev: Revision; onClose: () => void })
                 <Button icon={<Play size={12} />} onClick={() => call.mutate({ method: "post", path: `/revisions/${rev.id}/timer/start` })}>
                   Start session
                 </Button>
-              )}
-              {!rev.timer_started_at && (
-                <Button variant="ghost" onClick={() => setLogOpen(true)}>
-                  Log time
-                </Button>
-              )}
-            </div>
-          ) : (
-            <span />
-          )}
+              ))}
+            {active && !rev.timer_started_at && (
+              <Button variant="ghost" onClick={() => setLogOpen(true)}>
+                Log time
+              </Button>
+            )}
+            {rev.item_id && !rev.item_deleted ? (
+              <Button variant="ghost" icon={<Ticket size={14} />} onClick={() => openItem(rev.item_id!)}>
+                Open {rev.item_key}
+              </Button>
+            ) : (
+              <Button variant="ghost" icon={<Ticket size={14} />} onClick={() => setConvertOpen(true)}>
+                Create ticket
+              </Button>
+            )}
+          </div>
           {active ? (
             <Button
               variant="primary"
@@ -302,6 +309,8 @@ function RevisionPanel({ rev, onClose }: { rev: Revision; onClose: () => void })
           )}
         </div>
       )}
+
+      <ConvertRevisionModal rev={rev} open={convertOpen} onClose={() => setConvertOpen(false)} onDone={(item) => openItem(item.id)} />
 
       <Modal
         open={logOpen}
