@@ -8,6 +8,7 @@ import {
   Radar as RadarIcon,
   BookMarked,
   ListTodo,
+  CirclePlus,
   Menu,
   Moon,
   PanelLeft,
@@ -20,7 +21,7 @@ import {
   SquareKanban,
   Sun,
 } from "lucide-react";
-import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, type ItemType, type Quote, type Status } from "../lib/api";
@@ -92,7 +93,7 @@ const LOGO_BLOCKS = [
  * (see .logo-mark in index.css). Each block is a <g> (build-in) around a <rect> (shimmer),
  * so the two animations never restart each other.
  */
-function Logo() {
+function Logo({ compact }: { compact?: boolean }) {
   return (
     <div className="logo-mark flex items-center gap-2.5">
       <svg viewBox="0 0 28 33" className="size-7 shrink-0 overflow-visible" fill="var(--fg)" aria-hidden>
@@ -102,12 +103,12 @@ function Logo() {
           </g>
         ))}
       </svg>
-      <span className="logo-word text-[22px] font-medium tracking-tight">Smriti</span>
+      {!compact && <span className="logo-word text-[22px] font-medium tracking-tight">Smriti</span>}
     </div>
   );
 }
 
-function RunningTimer() {
+function RunningTimer({ compact }: { compact: boolean }) {
   const { data: timer } = useTimer();
   const now = useNow();
   const refresh = useRefreshItems();
@@ -119,6 +120,12 @@ function RunningTimer() {
   const mm = String(Math.floor((secs % 3600) / 60)).padStart(2, "0");
   const ss = String(secs % 60).padStart(2, "0");
   const clock = `${hh ? hh + ":" : ""}${mm}:${ss}`;
+  if (compact)
+    return (
+      <IconButton title={`Stop timer ${timer.key}`} onClick={() => stop.mutate()} className="mx-auto text-accent">
+        <Square size={14} fill="currentColor" />
+      </IconButton>
+    );
   return (
     <div className="mx-3 mb-3 rounded-lg border border-line bg-surface p-3">
       <div className="flex items-center justify-between">
@@ -144,15 +151,7 @@ function RunningTimer() {
   );
 }
 
-function Sidebar({
-  onToggle,
-  toggleTitle,
-  onNavigate,
-}: {
-  onToggle: () => void;
-  toggleTitle: string;
-  onNavigate?: () => void;
-}) {
+function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle: () => void; onNavigate?: () => void }) {
   const { data: projects } = useProjects();
   const { data: settings } = useSettings();
   const { data: trash } = useTrash();
@@ -177,69 +176,101 @@ function Sidebar({
 
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     clsx(
-      "flex h-9 items-center gap-3 rounded-md px-3 text-[14px] transition-colors",
+      "flex h-9 items-center gap-3 rounded-md text-[14px] transition-colors",
+      compact ? "justify-center" : "px-3",
       isActive ? "bg-surface-3 text-fg" : "text-fg-2 hover:bg-surface-2 hover:text-fg",
     );
 
   return (
-    <aside className="flex h-full w-[264px] flex-col overflow-hidden bg-sidebar">
-      <div className="flex h-16 items-center justify-between pl-5 pr-3">
-        <NavLink to="/" onClick={onNavigate} title="Dashboard" className="logo-link rounded-md">
-          <Logo />
-        </NavLink>
-        <Tooltip label={toggleTitle} shortcut={isMac ? "⌘B" : "Ctrl B"}>
-          <IconButton onClick={onToggle} aria-label={toggleTitle}>
-            <PanelLeft size={17} />
-          </IconButton>
-        </Tooltip>
+    <aside className={clsx("flex h-full flex-col overflow-hidden bg-sidebar transition-[width] duration-200 ease-out", compact ? "w-[60px]" : "w-[264px]")}>
+      <div className={clsx("flex h-16 items-center", compact ? "justify-center" : "justify-between pl-5 pr-3")}>
+        {compact ? (
+          // Collapsed: the logo expands the sidebar (it turns into the expand icon on hover).
+          <button onClick={onToggle} title={"Open sidebar (⌘\\)"} aria-label="Open sidebar" className="logo-link group relative rounded-md">
+            <span className="block transition-opacity duration-150 group-hover:opacity-0 group-focus-visible:opacity-0">
+              <Logo compact />
+            </span>
+            <span className="absolute inset-0 flex items-center justify-center rounded-md text-fg-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+              <PanelLeft size={18} />
+            </span>
+          </button>
+        ) : (
+          <>
+            {/* Expanded: the logo goes home, the button next to it collapses the sidebar. */}
+            <NavLink to="/" onClick={onNavigate} title="Dashboard" className="logo-link rounded-md">
+              <Logo />
+            </NavLink>
+            <IconButton onClick={onToggle} title={"Close sidebar (⌘\\)"} className="hidden md:inline-flex">
+              <PanelLeft size={17} />
+            </IconButton>
+          </>
+        )}
       </div>
 
-      <div className="space-y-2 px-3">
-        <button
-          onClick={openSearch}
-          className="flex h-9 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-[14px] text-fg-3 hover:border-line-strong"
-        >
-          <Search size={15} />
-          <span className="flex-1 text-left">Search...</span>
-          <span className="flex gap-1">
-            <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
-            <Kbd>K</Kbd>
-          </span>
-        </button>
-        <button
-          onClick={() => newItem()}
-          className="flex h-9 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-[14px] text-fg hover:bg-surface-2"
-        >
-          <Plus size={15} />
-          <span className="flex-1 text-left">New work item</span>
-          <Kbd>C</Kbd>
-        </button>
-        <button
-          onClick={quickNote}
-          className="flex h-9 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-[14px] text-fg hover:bg-surface-2"
-        >
-          <RadarIcon size={15} />
-          <span className="flex-1 text-left">Add topic</span>
-          <Kbd>N</Kbd>
-        </button>
+      <div className={clsx("space-y-2", compact ? "px-2.5" : "px-3")}>
+        {compact ? (
+          <>
+            <IconButton onClick={openSearch} title="Search" className="w-full">
+              <Search size={16} />
+            </IconButton>
+            <IconButton onClick={() => newItem()} title="New work item" className="w-full">
+              <Plus size={16} />
+            </IconButton>
+            <IconButton onClick={quickNote} title="Add topic to Radar (N)" className="w-full">
+              <CirclePlus size={16} />
+            </IconButton>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={openSearch}
+              className="flex h-9 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-[14px] text-fg-3 hover:border-line-strong"
+            >
+              <Search size={15} />
+              <span className="flex-1 text-left">Search...</span>
+              <span className="flex gap-1">
+                <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
+                <Kbd>K</Kbd>
+              </span>
+            </button>
+            <button
+              onClick={() => newItem()}
+              className="flex h-9 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-[14px] text-fg hover:bg-surface-2"
+            >
+              <Plus size={15} />
+              <span className="flex-1 text-left">New work item</span>
+              <Kbd>C</Kbd>
+            </button>
+            <button
+              onClick={quickNote}
+              className="flex h-9 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-[14px] text-fg hover:bg-surface-2"
+            >
+              <RadarIcon size={15} />
+              <span className="flex-1 text-left">Add topic</span>
+              <Kbd>N</Kbd>
+            </button>
+          </>
+        )}
       </div>
 
-      <nav className="mt-4 flex-1 overflow-y-auto px-3 pb-4">
-        <button
-          onClick={() => setGroupOpen(!groupOpen)}
-          className="flex h-9 w-full items-center gap-3 rounded-md border border-line bg-surface-2 px-3 text-[14px] font-medium"
-        >
-          <SquareKanban size={16} />
-          <span className="flex-1 text-left">Workspace</span>
-          <ChevronDown size={15} className={clsx("transition-transform", !groupOpen && "-rotate-90")} />
-        </button>
-        {groupOpen && (
-          <div className="ml-[18px] mt-1 space-y-0.5 border-l border-line pl-3">
+      <nav className={clsx("mt-4 flex-1 overflow-y-auto pb-4", compact ? "px-2.5" : "px-3")}>
+        {!compact && (
+          <button
+            onClick={() => setGroupOpen(!groupOpen)}
+            className="flex h-9 w-full items-center gap-3 rounded-md border border-line bg-surface-2 px-3 text-[14px] font-medium"
+          >
+            <SquareKanban size={16} />
+            <span className="flex-1 text-left">Workspace</span>
+            <ChevronDown size={15} className={clsx("transition-transform", !groupOpen && "-rotate-90")} />
+          </button>
+        )}
+        {(groupOpen || compact) && (
+          <div className={clsx("space-y-0.5", compact ? "" : "ml-[18px] mt-1 border-l border-line pl-3")}>
             {NAV.map((n) => (
-              <NavLink key={n.to} to={n.to} end={n.end} className={linkCls} onClick={onNavigate}>
+              <NavLink key={n.to} to={n.to} end={n.end} className={linkCls} onClick={onNavigate} title={n.label}>
                 <n.icon size={16} strokeWidth={1.75} />
-                <span className="flex-1">{n.label}</span>
-                {!!counts[n.to] && (
+                {!compact && <span className="flex-1">{n.label}</span>}
+                {!compact && !!counts[n.to] && (
                   <span className="rounded bg-surface-3 px-1.5 font-mono text-[11px] text-fg-2">{counts[n.to]}</span>
                 )}
               </NavLink>
@@ -247,53 +278,57 @@ function Sidebar({
           </div>
         )}
 
-        <div className="mt-6">
-          <div className="flex items-center justify-between px-3 pb-1">
-            <NavLink to="/projects" onClick={onNavigate} className="text-xs font-medium text-fg-3 hover:text-fg">
-              Projects
-            </NavLink>
-            <IconButton className="size-6" onClick={() => setNewProject(true)} title="New project">
-              <Plus size={14} />
-            </IconButton>
+        {!compact && (
+          <div className="mt-6">
+            <div className="flex items-center justify-between px-3 pb-1">
+              <NavLink to="/projects" onClick={onNavigate} className="text-xs font-medium text-fg-3 hover:text-fg">
+                Projects
+              </NavLink>
+              <IconButton className="size-6" onClick={() => setNewProject(true)} title="New project">
+                <Plus size={14} />
+              </IconButton>
+            </div>
+            {projects?.filter((p) => !p.archived).map((p) => (
+              <NavLink
+                key={p.id}
+                to={`/board?project=${p.id}`}
+                onClick={onNavigate}
+                className={() => linkCls({ isActive: activeProject === String(p.id) })}
+              >
+                <ProjectIcon icon={p.icon} size={16} />
+                <span className="flex-1 truncate">{p.name}</span>
+                <span className="font-mono text-[11px] text-fg-3">{p.open_count}</span>
+              </NavLink>
+            ))}
           </div>
-          {projects?.filter((p) => !p.archived).map((p) => (
-            <NavLink
-              key={p.id}
-              to={`/board?project=${p.id}`}
-              onClick={onNavigate}
-              className={() => linkCls({ isActive: activeProject === String(p.id) })}
-            >
-              <ProjectIcon icon={p.icon} size={16} />
-              <span className="flex-1 truncate">{p.name}</span>
-              <span className="font-mono text-[11px] text-fg-3">{p.open_count}</span>
-            </NavLink>
-          ))}
-        </div>
+        )}
         <div className="mt-6">
-          <NavLink to="/quotes" className={linkCls} onClick={onNavigate}>
+          <NavLink to="/quotes" className={linkCls} onClick={onNavigate} title="Quotes">
             <QuoteIcon size={16} strokeWidth={1.75} />
-            <span className="flex-1">Quotes</span>
-            {!!quoteCount && <span className="font-mono text-[11px] text-fg-3">{quoteCount}</span>}
+            {!compact && <span className="flex-1">Quotes</span>}
+            {!compact && !!quoteCount && <span className="font-mono text-[11px] text-fg-3">{quoteCount}</span>}
           </NavLink>
-          <NavLink to="/trash" className={linkCls} onClick={onNavigate}>
+          <NavLink to="/trash" className={linkCls} onClick={onNavigate} title="Trash">
             <Trash2 size={16} strokeWidth={1.75} />
-            <span className="flex-1">Trash</span>
-            {trashCount > 0 && <span className="font-mono text-[11px] text-fg-3">{trashCount}</span>}
+            {!compact && <span className="flex-1">Trash</span>}
+            {!compact && trashCount > 0 && <span className="font-mono text-[11px] text-fg-3">{trashCount}</span>}
           </NavLink>
-          <NavLink to="/settings" className={linkCls} onClick={onNavigate}>
+          <NavLink to="/settings" className={linkCls} onClick={onNavigate} title="Settings">
             <SettingsIcon size={16} strokeWidth={1.75} />
-            Settings
+            {!compact && "Settings"}
           </NavLink>
         </div>
       </nav>
 
-      <RunningTimer />
+      <RunningTimer compact={compact} />
 
-      <div className="border-t border-line px-4 py-3">
-        <div className="flex items-center justify-between">
-          <IconButton onClick={toggleTheme} title={theme === "dark" ? "Light theme" : "Dark theme"}>
-            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-          </IconButton>
+      <div className={clsx("border-t border-line py-3", compact ? "space-y-2 px-2.5" : "px-4")}>
+        <div className={clsx("flex items-center", compact ? "flex-col gap-1" : "justify-between")}>
+          <div className={clsx("flex items-center", compact ? "flex-col" : "gap-1")}>
+            <IconButton onClick={toggleTheme} title={theme === "dark" ? "Light theme" : "Dark theme"}>
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            </IconButton>
+          </div>
           <span className="font-mono text-[11px] text-fg-3">v{settings?.version ?? "0.1.0"}</span>
         </div>
       </div>
@@ -302,35 +337,9 @@ function Sidebar({
   );
 }
 
-/** Small dark label under a control, like the Claude desktop app ("Show sidebar ⌘B"). */
-function Tooltip({ label, shortcut, children }: { label: string; shortcut?: string; children: ReactNode }) {
-  return (
-    <span className="group/tip relative inline-flex">
-      {children}
-      <span className="pointer-events-none absolute left-1/2 top-full z-[80] mt-1.5 hidden -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-md border border-line bg-surface px-2 py-1 text-xs text-fg shadow-[var(--shadow)] group-hover/tip:flex">
-        {label}
-        {shortcut && <span className="font-mono text-[11px] text-fg-3">{shortcut}</span>}
-      </span>
-    </span>
-  );
-}
-
 export function Layout() {
   const location = useLocation();
-  // Hidden sidebar, like the Claude desktop app: only a toggle button stays; hovering it or the
-  // left edge "peeks" the sidebar over the page, clicking the button pins it open again.
-  const [hidden, setHidden] = useLocalState("smriti-sidebar-compact", false);
-  const [peek, setPeek] = useState(false);
-  const peekTimer = useRef<number>();
-  const showPeek = () => {
-    window.clearTimeout(peekTimer.current);
-    setPeek(true);
-  };
-  const hidePeek = () => {
-    window.clearTimeout(peekTimer.current);
-    peekTimer.current = window.setTimeout(() => setPeek(false), 220);
-  };
-  const isMac = navigator.platform.toLowerCase().includes("mac");
+  const [compact, setCompact] = useLocalState("smriti-sidebar-compact", false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
@@ -358,10 +367,9 @@ export function Layout() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setSearchOpen((v) => !v);
-      } else if ((e.metaKey || e.ctrlKey) && (e.key === "\\" || e.key.toLowerCase() === "b")) {
+      } else if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
         e.preventDefault();
-        setPeek(false);
-        setHidden((h) => !h);
+        setCompact((c) => !c);
       } else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && e.key.toLowerCase() === "c") {
         e.preventDefault();
         setNewDefaults({});
@@ -380,57 +388,18 @@ export function Layout() {
   return (
     <ActionsCtx.Provider value={actions}>
       <div className="flex h-full">
-        {!hidden && (
-          <div className="hidden border-r border-line md:block">
-            <Sidebar toggleTitle="Hide sidebar" onToggle={() => setHidden(true)} />
-          </div>
-        )}
-        {hidden && (
-          <>
-            {/* Thin hover zone on the left edge, and the toggle button in the top-left corner. */}
-            <div className="fixed inset-y-0 left-0 z-40 hidden w-2 md:block" onMouseEnter={showPeek} onMouseLeave={hidePeek} />
-            <div className="fixed left-3 top-3.5 z-40 hidden md:block" onMouseEnter={showPeek} onMouseLeave={hidePeek}>
-              <Tooltip label="Show sidebar" shortcut={isMac ? "⌘B" : "Ctrl B"}>
-                <IconButton
-                  aria-label="Show sidebar"
-                  className="border border-line bg-surface"
-                  onClick={() => {
-                    setPeek(false);
-                    setHidden(false);
-                  }}
-                >
-                  <PanelLeft size={17} />
-                </IconButton>
-              </Tooltip>
-            </div>
-            {peek && (
-              <div
-                className="anim-sidebar fixed inset-y-2 left-2 z-50 hidden overflow-hidden rounded-xl border border-line shadow-[var(--shadow)] md:block"
-                onMouseEnter={showPeek}
-                onMouseLeave={hidePeek}
-              >
-                <Sidebar
-                  toggleTitle="Keep sidebar open"
-                  onToggle={() => {
-                    setPeek(false);
-                    setHidden(false);
-                  }}
-                  onNavigate={() => setPeek(false)}
-                />
-              </div>
-            )}
-          </>
-        )}
+        <div className="hidden border-r border-line md:block">
+          <Sidebar compact={compact} onToggle={() => setCompact(!compact)} />
+        </div>
         {mobileOpen && (
           <div className="fixed inset-0 z-40 md:hidden">
             <div className="anim-fade absolute inset-0 bg-[var(--overlay)]" onClick={() => setMobileOpen(false)} />
             <div className="anim-sidebar absolute inset-y-0 left-0 border-r border-line shadow-[var(--shadow)]">
-              <Sidebar toggleTitle="Close menu" onToggle={() => setMobileOpen(false)} onNavigate={() => setMobileOpen(false)} />
+              <Sidebar compact={false} onToggle={() => setMobileOpen(false)} onNavigate={() => setMobileOpen(false)} />
             </div>
           </div>
         )}
-        {/* With the sidebar hidden, leave room on the left for the toggle button. */}
-        <main className={clsx("flex min-w-0 flex-1 flex-col", hidden && "md:pl-12")}>
+        <main className="flex min-w-0 flex-1 flex-col">
           <div className="flex h-12 items-center gap-2 border-b border-line px-3 md:hidden">
             <IconButton onClick={() => setMobileOpen(true)} aria-label="Menu">
               <Menu size={18} />
