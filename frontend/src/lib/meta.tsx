@@ -169,3 +169,19 @@ export function splitTopic(text: string): string[] {
   }
   return out;
 }
+
+/**
+ * Colour ramp for "pending N days": calm at first, warmer the longer an item waits.
+ * 0-9 neutral, 10-14 amber, 15-29 orange, 30+ red. Returns badge and plain-text classes.
+ */
+export const PENDING_STEPS = { amber: 10, orange: 15, red: 30 };
+
+export function pendingTone(days: number): { badge: string; text: string; label: string } {
+  if (days >= PENDING_STEPS.red)
+    return { badge: "border-critical/40 bg-critical/10 text-critical", text: "text-critical", label: "waiting over 30 days" };
+  if (days >= PENDING_STEPS.orange)
+    return { badge: "border-serious/40 bg-serious/10 text-serious", text: "text-serious", label: "waiting over 15 days" };
+  if (days >= PENDING_STEPS.amber)
+    return { badge: "border-warning/35 bg-warning/10 text-warning", text: "text-warning", label: "waiting over 10 days" };
+  return { badge: "border-line bg-surface-2 text-fg-2", text: "", label: "" };
+}

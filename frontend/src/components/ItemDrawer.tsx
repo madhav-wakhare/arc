@@ -37,6 +37,7 @@ import {
   hostOf,
   parseDuration,
   pendingDays,
+  pendingTone,
   timeAgo,
 } from "../lib/meta";
 import { Thumb } from "./ItemCard";
@@ -719,7 +720,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                 {pending !== null && (
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-fg-3"><CalendarClock size={14} /> Pending for</span>
-                    <span className={clsx("font-medium", pending >= 14 ? "text-critical" : pending >= 7 ? "text-warning" : "")}>
+                    <span className={clsx("font-medium", pendingTone(pending).text)}>
                       {pending} {pending === 1 ? "day" : "days"}
                     </span>
                   </div>

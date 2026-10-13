@@ -3,22 +3,20 @@ import { BookOpen, CalendarDays, CheckSquare, Clock, Hourglass, Link2, MessageSq
 import { useState } from "react";
 import type { Item } from "../lib/api";
 import { ObsidianIcon } from "./ObsidianIcon";
-import { PriorityIcon, TypeIcon, dueTone, fmtDate, fmtMinutes, pendingDays, youtubeId } from "../lib/meta";
+import { PriorityIcon, TypeIcon, dueTone, fmtDate, fmtMinutes, pendingDays, pendingTone, youtubeId } from "../lib/meta";
 
-/** "Pending N days" chip. Amber after 7 days, red after 14. */
+/** "Pending N days" chip. Neutral, then amber (10d), orange (15d) and red (30d). */
 export function PendingBadge({ item, long }: { item: Item; long?: boolean }) {
   const d = pendingDays(item);
   if (d === null) return null;
-  const tone =
-    d >= 14
-      ? "border-critical/40 bg-critical/10 text-critical"
-      : d >= 7
-        ? "border-warning/40 bg-warning/10 text-warning"
-        : "border-line bg-surface-2 text-fg-2";
+  const tone = pendingTone(d);
   return (
     <span
-      title={`Pending for ${d} ${d === 1 ? "day" : "days"} (since created)`}
-      className={clsx("inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono text-[11px] font-medium", tone)}
+      title={`Pending for ${d} ${d === 1 ? "day" : "days"} since created${tone.label ? ` · ${tone.label}` : ""}`}
+      className={clsx(
+        "inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono text-[11px] font-medium transition-colors",
+        tone.badge,
+      )}
     >
       <Hourglass size={10} />
       {d}d{long && " pending"}
