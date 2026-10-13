@@ -336,3 +336,45 @@ def test_revisit_topic_to_ticket(client):
     assert out["revision"]["item_key"] == item["key"] and out["revision"]["status"] == "active"
     assert client.get(f"/api/items/{item['id']}").json()["revision_id"] == r["id"]
     assert client.post(f"/api/revisions/{r['id']}/convert", json={"project_id": lrn["id"]}).status_code == 409
+
+
+def test_weekend_plan_and_ideas(client):
+    c = client
+    assert c.get("/api/settings").json()["weekend_mode"] is False
+    assert c.put("/api/settings", json={"weekend_mode": True}).json()["weekend_mode"] is True
+
+    # A Wednesday maps to the coming weekend; Sunday maps back to its Saturday.
+    wk = c.get("/api/weekend?day=2026-10-14").json()
+    assert (wk["saturday"], wk["sunday"]) == ("2026-10-17", "2026-10-18")
+    assert c.get("/api/weekend?day=2026-10-18").json()["saturday"] == "2026-10-17"
+
+    # Weekdays are rejected.
+    assert c.post("/api/weekend/entries", json={"day": "2026-10-16", "slot": "morning", "title": "x"}).status_code == 422
+
+    idea = c.post("/api/weekend/ideas", json={"title": "Watch Interstellar", "category": "movie"}).json()
+    item = _learning(c)
+    rev = c.post("/api/revisions", json={"title": "Raft consensus"}).json()
+
+    life = c.post("/api/weekend/entries", json={"day": "2026-10-17", "slot": "evening", "idea_id": idea["id"]}).json()
+    assert (life["kind"], life["title"], life["category"]) == ("life", "Watch Interstellar", "movie")
+    study = c.post("/api/weekend/entries", json={"day": "2026-10-17", "slot": "morning", "item_id": item["id"]}).json()
+    assert (study["kind"], study["item_key"]) == ("study", "LRN-1")
+    revise = c.post("/api/weekend/entries", json={"day": "2026-10-18", "slot": "morning", "revision_id": rev["id"]}).json()
+    assert revise["kind"] == "revise"
+
+    # Renaming the ticket shows the new name in the plan.
+    c.patch(f"/api/items/{item['id']}", json={"title": "Kubernetes Pods"})
+    entries = c.get("/api/weekend?day=2026-10-17").json()["entries"]
+    assert {e["title"] for e in entries} == {"Kubernetes Pods", "Watch Interstellar", "Raft consensus"}
+
+    # Doing a planned idea ticks it off the ideas list; undoing brings it back.
+    c.patch(f"/api/weekend/entries/{life['id']}", json={"done": True})
+    assert c.get("/api/weekend/ideas").json()[0]["done_at"]
+    c.patch(f"/api/weekend/entries/{life['id']}", json={"done": False})
+    assert c.get("/api/weekend/ideas").json()[0]["done_at"] is None
+
+    # Move to Sunday afternoon, then delete.
+    moved = c.patch(f"/api/weekend/entries/{life['id']}", json={"day": "2026-10-18", "slot": "afternoon"}).json()
+    assert (moved["day"], moved["slot"]) == ("2026-10-18", "afternoon")
+    assert c.delete(f"/api/weekend/entries/{life['id']}").status_code == 204
+    assert len(c.get("/api/weekend?day=2026-10-17").json()["entries"]) == 2

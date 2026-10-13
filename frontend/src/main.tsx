@@ -8,6 +8,7 @@ import "./index.css";
 import Board from "./pages/Board";
 import Dashboard from "./pages/Dashboard";
 import Quotes from "./pages/Quotes";
+import Weekend from "./pages/Weekend";
 import Radar from "./pages/Radar";
 import Revise from "./pages/Revise";
 import Learning from "./pages/Learning";
@@ -40,6 +41,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="learning" element={<Learning />} />
               <Route path="reports" element={<Reports />} />
               <Route path="projects" element={<Projects />} />
+              <Route path="weekend" element={<Weekend />} />
               <Route path="quotes" element={<Quotes />} />
               <Route path="trash" element={<Trash />} />
               <Route path="settings" element={<Settings />} />

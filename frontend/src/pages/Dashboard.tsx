@@ -5,8 +5,10 @@ import { Link } from "react-router-dom";
 import { ItemRows, Panel, Stat, StatRow } from "../components/dash";
 import { useActions } from "../components/Layout";
 import { RevisePreview } from "../components/RevisePreview";
+import { WeekendTodayPanel } from "../components/Weekend";
 import { PageHeader } from "../components/ui";
 import { api, type Item, type Overview, type Weekly } from "../lib/api";
+import { useSettings } from "../lib/hooks";
 import { fmtDate, fmtMinutes, statusMeta, todayIso } from "../lib/meta";
 
 function PanelLink({ to, children }: { to: string; children: ReactNode }) {
@@ -24,6 +26,9 @@ export default function Dashboard() {
   const { data: today = [] } = useQuery({ queryKey: ["items", "today"], queryFn: () => api.get<Item[]>("/items?view=today") });
   const { data: week } = useQuery({ queryKey: ["weekly", todayIso()], queryFn: () => api.get<Weekly>("/reports/weekly") });
 
+  const { data: settings } = useSettings();
+  const weekday = new Date().getDay();
+  const showWeekend = !!settings?.weekend_mode && (weekday === 0 || weekday === 6);
   const planned = today.filter((i) => i.status !== "done");
   const inProgress = now?.by_status.find((s) => s.status === "in_progress")?.count ?? 0;
 
@@ -32,6 +37,8 @@ export default function Dashboard() {
       <PageHeader title="Dashboard" quotes="dashboard" />
       <div className="space-y-5 px-4 md:px-6 lg:px-8">
         <p className="-mt-3 text-[13px] text-fg-3">{fmtDate(todayIso(), { weekday: "long", month: "long", day: "numeric" })}</p>
+
+        {showWeekend && <WeekendTodayPanel action={<PanelLink to="/weekend">Weekend plan</PanelLink>} />}
 
         <StatRow>
           <Stat label="Open items" value={now?.open ?? "–"} to="/board" />

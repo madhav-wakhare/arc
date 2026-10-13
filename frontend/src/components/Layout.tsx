@@ -2,6 +2,7 @@ import clsx from "clsx";
 import {
   BookOpen,
   CalendarCheck,
+  CalendarHeart,
   ChevronDown,
   FileBarChart,
   LayoutDashboard,
@@ -59,6 +60,7 @@ const NAV = [
   { to: "/board", label: "Board", icon: SquareKanban },
   { to: "/radar", label: "Radar", icon: RadarIcon },
   { to: "/today", label: "Today", icon: CalendarCheck },
+  { to: "/weekend", label: "Weekend", icon: CalendarHeart, weekendOnly: true },
   { to: "/list", label: "All items", icon: ListTodo },
   { to: "/learning", label: "Learning", icon: BookOpen },
   { to: "/revisit", label: "Revisit", icon: BookMarked },
@@ -262,7 +264,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
         )}
         {(groupOpen || compact) && (
           <div className={clsx("space-y-0.5", compact ? "" : "ml-[18px] mt-1 border-l border-line pl-3")}>
-            {NAV.map((n) => (
+            {NAV.filter((n) => !n.weekendOnly || settings?.weekend_mode).map((n) => (
               <NavLink key={n.to} to={n.to} end={n.end} className={linkCls} onClick={onNavigate} title={n.label}>
                 <n.icon size={16} strokeWidth={1.75} />
                 {!compact && <span className="flex-1">{n.label}</span>}

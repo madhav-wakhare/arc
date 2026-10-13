@@ -27,6 +27,17 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
   - "Mark as revisited" moves the topic to the Revisited tab. "Revisit again" brings it back.
   - "Create ticket" turns a topic into a Learning or Task ticket with its notes and link. The topic stays on Revisit, linked to the ticket.
 
+### Weekend
+
+- **Weekend mode** (Settings, off by default): adds a Weekend page to the sidebar and, on Saturday and Sunday, shows the day's plan at the top of the Dashboard.
+- **Weekend page**: Saturday and Sunday, each split into morning, afternoon and evening. Put three kinds of things in a slot:
+  - **Study**: an open ticket. Click it to open the ticket.
+  - **Revise**: a Revisit topic.
+  - **Life**: travel, a movie, an outing, friends and family, fitness, a hobby, chores or rest.
+- A bar at the top shows the mix of study, revise and life, with a nudge when the weekend is all learning. Tick activities as you do them. Drag them between slots, or use the `⋯` menu.
+- **Ideas**: collect movies, places and things to try during the week, then drag them into a slot. Doing a planned idea ticks it off the list. An idea you did not get to stays on the list.
+- Use the arrows to plan the next weekend or look back at earlier ones.
+
 ### Overview
 
 - **Dashboard**: where things stand right now. Open items, in progress, overdue, time logged today, topics to review, today's plan, items waiting longest, the Revisit list and a short summary of this week.

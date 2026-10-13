@@ -151,6 +151,35 @@ CREATE TABLE IF NOT EXISTS quotes (
     created_at TEXT NOT NULL
 );
 
+-- Weekend: an ideas list (movies, places, things to try) and a plan per weekend day.
+CREATE TABLE IF NOT EXISTS weekend_ideas (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'other',
+    note TEXT NOT NULL DEFAULT '',
+    url TEXT,
+    done_at TEXT,
+    created_at TEXT NOT NULL
+);
+
+-- One activity in a weekend slot. Study points at a ticket, revise at a Revisit topic,
+-- life is free text (optionally from an idea). The title is a snapshot for display.
+CREATE TABLE IF NOT EXISTS weekend_plan (
+    id INTEGER PRIMARY KEY,
+    day TEXT NOT NULL,
+    slot TEXT NOT NULL CHECK (slot IN ('morning', 'afternoon', 'evening')),
+    kind TEXT NOT NULL CHECK (kind IN ('study', 'revise', 'life')),
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'other',
+    item_id INTEGER REFERENCES items(id) ON DELETE SET NULL,
+    revision_id INTEGER REFERENCES revisions(id) ON DELETE SET NULL,
+    idea_id INTEGER REFERENCES weekend_ideas(id) ON DELETE SET NULL,
+    done INTEGER NOT NULL DEFAULT 0,
+    position REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_weekend_plan_day ON weekend_plan(day);
+
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL

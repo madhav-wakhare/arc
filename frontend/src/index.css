@@ -32,6 +32,9 @@
   --warning: #c98500;
   --serious: #d9622b;
   --critical: #d03b3b;
+  /* weekend: life activities (violet, apart from the sky-blue study accent) */
+  --life: #7c5cd6;
+  --life-soft: #f1edfc;
 }
 
 :root[data-theme="dark"] {
@@ -59,6 +62,8 @@
   --warning: #fab219;
   --serious: #ec835a;
   --critical: #e66767;
+  --life: #a48cf0;
+  --life-soft: #1f1a33;
 }
 
 @theme {
@@ -82,6 +87,8 @@
   --color-warning: var(--warning);
   --color-serious: var(--serious);
   --color-critical: var(--critical);
+  --color-life: var(--life);
+  --color-life-soft: var(--life-soft);
   --color-task: var(--series-task);
   --color-learning: var(--series-learning);
   --color-note: var(--series-note);

@@ -3,6 +3,7 @@ import clsx from "clsx";
 import {
   BookOpen,
   CalendarCheck,
+  CalendarHeart,
   CornerDownLeft,
   FileBarChart,
   LayoutDashboard,
@@ -92,6 +93,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       { id: "p-board", icon: <SquareKanban size={15} />, label: "Go to Board", run: go("/board") },
       { id: "p-radar", icon: <Radar size={15} />, label: "Go to Radar", run: go("/radar") },
       { id: "p-today", icon: <CalendarCheck size={15} />, label: "Go to Today", run: go("/today") },
+      { id: "p-weekend", icon: <CalendarHeart size={15} />, label: "Go to Weekend", run: go("/weekend") },
       { id: "p-list", icon: <ListTodo size={15} />, label: "Go to All items", run: go("/list") },
       { id: "p-learn", icon: <BookOpen size={15} />, label: "Go to Learning", run: go("/learning") },
       { id: "p-revise", icon: <BookMarked size={15} />, label: "Go to Revisit", run: go("/revisit") },

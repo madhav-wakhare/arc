@@ -168,6 +168,7 @@ class SettingsIn(BaseModel):
     quotes_on_dashboard: bool | None = None
     quotes_on_board: bool | None = None
     quotes_interval: int | None = Field(default=None, ge=5, le=3600)
+    weekend_mode: bool | None = None
 
 
 class QuoteIn(BaseModel):
@@ -1122,6 +1123,7 @@ def get_settings(conn=Depends(get_db)):
         "quotes_on_dashboard": get_setting(conn, "quotes_on_dashboard", "1") == "1",
         "quotes_on_board": get_setting(conn, "quotes_on_board", "1") == "1",
         "quotes_interval": int(get_setting(conn, "quotes_interval", "20")),
+        "weekend_mode": get_setting(conn, "weekend_mode", "0") == "1",
     }
 
 
@@ -1132,7 +1134,7 @@ def save_settings(data: SettingsIn, conn=Depends(get_db)):
         if not folder or ".." in folder.split("/"):
             raise HTTPException(422, "Folder must be inside the vault.")
         set_setting(conn, "obsidian_folder", folder)
-    for key in ("auto_reexport", "monthly_backup", "quotes_on_dashboard", "quotes_on_board"):
+    for key in ("auto_reexport", "monthly_backup", "quotes_on_dashboard", "quotes_on_board", "weekend_mode"):
         value = getattr(data, key)
         if value is not None:
             set_setting(conn, key, "1" if value else "0")
@@ -1170,6 +1172,199 @@ def edit_quote(quote_id: int, data: QuoteIn, conn=Depends(get_db)):
 @app.delete("/api/quotes/{quote_id}", status_code=204)
 def delete_quote(quote_id: int, conn=Depends(get_db)):
     conn.execute("DELETE FROM quotes WHERE id = ?", (quote_id,))
+
+
+# --------------------------------------------------------------------------- weekend
+
+Slot = Literal["morning", "afternoon", "evening"]
+LifeCategory = Literal["travel", "movie", "outing", "social", "fitness", "hobby", "chores", "rest", "other"]
+
+
+class IdeaIn(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    category: LifeCategory = "other"
+    note: str = Field(default="", max_length=2000)
+    url: str | None = None
+
+
+class IdeaPatch(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    category: LifeCategory | None = None
+    note: str | None = Field(default=None, max_length=2000)
+    url: str | None = None
+    done: bool | None = None
+
+
+class PlanIn(BaseModel):
+    day: date
+    slot: Slot
+    kind: Literal["study", "revise", "life"] = "life"
+    title: str | None = Field(default=None, max_length=300)
+    category: LifeCategory = "other"
+    item_id: int | None = None
+    revision_id: int | None = None
+    idea_id: int | None = None
+
+
+class PlanPatch(BaseModel):
+    day: date | None = None
+    slot: Slot | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    category: LifeCategory | None = None
+    done: bool | None = None
+    position: float | None = None
+
+
+PLAN_SELECT = """
+SELECT w.id, w.day, w.slot, w.kind, w.category, w.item_id, w.revision_id, w.idea_id, w.done, w.position,
+       w.created_at, p.key || '-' || i.number AS item_key, i.type AS item_type, i.status AS item_status,
+       coalesce(i.title, r.title, w.title) AS title
+FROM weekend_plan w
+LEFT JOIN live_items i ON i.id = w.item_id
+LEFT JOIN projects p ON p.id = i.project_id
+LEFT JOIN revisions r ON r.id = w.revision_id
+"""
+
+
+def weekend_of(day: date) -> date:
+    """Saturday of the weekend that contains `day`, or the next one on a weekday."""
+    if day.weekday() == 6:
+        return day - timedelta(days=1)
+    return day + timedelta(days=(5 - day.weekday()) % 7)
+
+
+def _check_weekend_day(day: date) -> None:
+    if day.weekday() not in (5, 6):
+        raise HTTPException(422, "Weekend plans are for Saturday or Sunday.")
+
+
+def load_plan_entry(conn, eid: int) -> dict:
+    e = row(conn.execute(PLAN_SELECT + " WHERE w.id = ?", (eid,)))
+    if not e:
+        raise HTTPException(404, "Plan entry not found")
+    return e
+
+
+def load_idea(conn, iid: int) -> dict:
+    idea = row(conn.execute("SELECT * FROM weekend_ideas WHERE id = ?", (iid,)))
+    if not idea:
+        raise HTTPException(404, "Idea not found")
+    return idea
+
+
+@app.get("/api/weekend")
+def get_weekend(day: date | None = None, conn=Depends(get_db)):
+    sat = weekend_of(day or date.fromisoformat(today()))
+    sun = sat + timedelta(days=1)
+    entries = rows(conn.execute(
+        PLAN_SELECT + " WHERE w.day BETWEEN ? AND ? ORDER BY w.day, w.position, w.id", (sat.isoformat(), sun.isoformat())))
+    return {
+        "saturday": sat.isoformat(),
+        "sunday": sun.isoformat(),
+        "entries": entries,
+        "previous": (sat - timedelta(days=7)).isoformat(),
+        "next": (sat + timedelta(days=7)).isoformat(),
+    }
+
+
+@app.post("/api/weekend/entries", status_code=201)
+def add_plan_entry(data: PlanIn, conn=Depends(get_db)):
+    _check_weekend_day(data.day)
+    kind, title, category = data.kind, (data.title or "").strip(), data.category
+    if data.item_id:
+        item = row(conn.execute("SELECT title FROM live_items WHERE id = ?", (data.item_id,)))
+        if not item:
+            raise HTTPException(404, "Item not found")
+        kind, title = "study", item["title"]
+    elif data.revision_id:
+        rev = row(conn.execute("SELECT title FROM revisions WHERE id = ?", (data.revision_id,)))
+        if not rev:
+            raise HTTPException(404, "Revisit topic not found")
+        kind, title = "revise", rev["title"]
+    elif data.idea_id:
+        idea = load_idea(conn, data.idea_id)
+        kind, title, category = "life", idea["title"], idea["category"]
+    if not title:
+        raise HTTPException(422, "Give the activity a name.")
+    last = conn.execute(
+        "SELECT max(position) FROM weekend_plan WHERE day = ? AND slot = ?", (data.day.isoformat(), data.slot)).fetchone()[0]
+    cur = conn.execute(
+        """INSERT INTO weekend_plan (day, slot, kind, title, category, item_id, revision_id, idea_id, position, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (data.day.isoformat(), data.slot, kind, title, category, data.item_id, data.revision_id, data.idea_id,
+         (last or 0) + 1000, now()),
+    )
+    return load_plan_entry(conn, cur.lastrowid)
+
+
+@app.patch("/api/weekend/entries/{eid}")
+def update_plan_entry(eid: int, data: PlanPatch, conn=Depends(get_db)):
+    entry = load_plan_entry(conn, eid)
+    updates = data.model_dump(exclude_unset=True)
+    if "day" in updates:
+        _check_weekend_day(updates["day"])
+        updates["day"] = updates["day"].isoformat()
+    if "title" in updates:
+        updates["title"] = updates["title"].strip()
+    if "done" in updates:
+        updates["done"] = 1 if updates["done"] else 0
+        if entry["idea_id"]:  # doing an idea ticks it off the ideas list
+            conn.execute("UPDATE weekend_ideas SET done_at = ? WHERE id = ?",
+                         (now() if updates["done"] else None, entry["idea_id"]))
+    if updates:
+        sets = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(f"UPDATE weekend_plan SET {sets} WHERE id = ?", (*updates.values(), eid))
+    return load_plan_entry(conn, eid)
+
+
+@app.delete("/api/weekend/entries/{eid}", status_code=204)
+def delete_plan_entry(eid: int, conn=Depends(get_db)):
+    conn.execute("DELETE FROM weekend_plan WHERE id = ?", (eid,))
+
+
+@app.get("/api/weekend/ideas")
+def list_ideas(conn=Depends(get_db)):
+    # planned_day: the next upcoming weekend day this idea is planned for and not yet done.
+    return rows(conn.execute(
+        """SELECT d.*, (SELECT min(w.day) FROM weekend_plan w
+                        WHERE w.idea_id = d.id AND w.done = 0 AND w.day >= ?) AS planned_day
+           FROM weekend_ideas d ORDER BY d.done_at IS NOT NULL, coalesce(d.done_at, '') DESC, d.id DESC""",
+        (today(),)))
+
+
+@app.post("/api/weekend/ideas", status_code=201)
+def add_idea(data: IdeaIn, conn=Depends(get_db)):
+    cur = conn.execute(
+        "INSERT INTO weekend_ideas (title, category, note, url, created_at) VALUES (?, ?, ?, ?, ?)",
+        (data.title.strip(), data.category, data.note.strip(), (data.url or "").strip() or None, now()),
+    )
+    return load_idea(conn, cur.lastrowid)
+
+
+@app.patch("/api/weekend/ideas/{iid}")
+def update_idea(iid: int, data: IdeaPatch, conn=Depends(get_db)):
+    load_idea(conn, iid)
+    updates = data.model_dump(exclude_unset=True)
+    if "done" in updates:
+        updates["done_at"] = now() if updates.pop("done") else None
+    if "url" in updates:
+        updates["url"] = (updates["url"] or "").strip() or None
+    for key in ("title", "note"):
+        if key in updates:
+            updates[key] = updates[key].strip()
+    if updates:
+        sets = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(f"UPDATE weekend_ideas SET {sets} WHERE id = ?", (*updates.values(), iid))
+        if "title" in updates or "category" in updates:  # keep planned copies in step
+            idea = load_idea(conn, iid)
+            conn.execute("UPDATE weekend_plan SET title = ?, category = ? WHERE idea_id = ?",
+                         (idea["title"], idea["category"], iid))
+    return load_idea(conn, iid)
+
+
+@app.delete("/api/weekend/ideas/{iid}", status_code=204)
+def delete_idea(iid: int, conn=Depends(get_db)):
+    conn.execute("DELETE FROM weekend_ideas WHERE id = ?", (iid,))
 
 
 @app.get("/api/backups")

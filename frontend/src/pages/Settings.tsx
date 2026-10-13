@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Archive, CheckCircle2, FolderOpen, Settings as SettingsIcon, XCircle } from "lucide-react";
+import { Archive, CalendarHeart, CheckCircle2, FolderOpen, Settings as SettingsIcon, XCircle } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { ObsidianIcon } from "../components/ObsidianIcon";
 import { Button, Card, Field, Input, PageHeader, Switch, useToast } from "../components/ui";
@@ -52,7 +52,7 @@ export default function Settings() {
   }, [data]);
 
   const save = useMutation({
-    mutationFn: (body: Partial<{ obsidian_folder: string; auto_reexport: boolean; monthly_backup: boolean }>) =>
+    mutationFn: (body: Partial<{ obsidian_folder: string; auto_reexport: boolean; monthly_backup: boolean; weekend_mode: boolean }>) =>
       api.put<SettingsT>("/settings", body),
     onSuccess: (s) => {
       qc.setQueryData(["settings"], s);
@@ -143,6 +143,22 @@ export default function Settings() {
               </div>
             ))}
           </div>
+        </Card>
+
+        <Card className="p-5 [&>*:last-child]:mb-0">
+          <h3 className="mb-1 flex items-center gap-2 text-[15px] font-medium">
+            <CalendarHeart size={16} /> Weekend
+          </h3>
+          <p className="mb-4 text-[13px] text-fg-3">
+            Plan Saturday and Sunday in morning, afternoon and evening slots, mixing study and revision with life: travel,
+            movies, people, rest.
+          </p>
+          <ToggleRow
+            title="Weekend mode"
+            hint="Adds Weekend to the sidebar and shows the day's plan at the top of the Dashboard on Saturday and Sunday."
+            checked={data?.weekend_mode ?? false}
+            onChange={(v) => save.mutate({ weekend_mode: v })}
+          />
         </Card>
 
         <Card className="p-5">

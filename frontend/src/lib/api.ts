@@ -151,6 +151,44 @@ export interface Settings {
   quotes_on_dashboard: boolean;
   quotes_on_board: boolean;
   quotes_interval: number;
+  weekend_mode: boolean;
+}
+export type WeekendSlot = "morning" | "afternoon" | "evening";
+export type WeekendKind = "study" | "revise" | "life";
+export type LifeCategory = "travel" | "movie" | "outing" | "social" | "fitness" | "hobby" | "chores" | "rest" | "other";
+export interface PlanEntry {
+  id: number;
+  day: string;
+  slot: WeekendSlot;
+  kind: WeekendKind;
+  title: string;
+  category: LifeCategory;
+  item_id: number | null;
+  item_key: string | null;
+  item_type: ItemType | null;
+  item_status: Status | null;
+  revision_id: number | null;
+  idea_id: number | null;
+  done: number;
+  position: number;
+  created_at: string;
+}
+export interface Weekend {
+  saturday: string;
+  sunday: string;
+  previous: string;
+  next: string;
+  entries: PlanEntry[];
+}
+export interface Idea {
+  id: number;
+  title: string;
+  category: LifeCategory;
+  note: string;
+  url: string | null;
+  done_at: string | null;
+  planned_day: string | null;
+  created_at: string;
 }
 export interface Quote {
   id: number;
