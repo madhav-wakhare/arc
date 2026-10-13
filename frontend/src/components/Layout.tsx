@@ -178,14 +178,14 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
 
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     clsx(
-      "flex h-9 items-center gap-3 rounded-md text-[14px] transition-colors",
-      compact ? "justify-center" : "px-3",
+      "flex h-8 items-center gap-2.5 rounded-md text-[13px] transition-colors",
+      compact ? "justify-center" : "px-2.5",
       isActive ? "bg-surface-3 text-fg" : "text-fg-2 hover:bg-surface-2 hover:text-fg",
     );
 
   return (
-    <aside className={clsx("flex h-full flex-col overflow-hidden bg-sidebar transition-[width] duration-200 ease-out", compact ? "w-[60px]" : "w-[264px]")}>
-      <div className={clsx("flex h-16 items-center", compact ? "justify-center" : "justify-between pl-5 pr-3")}>
+    <aside className={clsx("flex h-full flex-col overflow-hidden bg-sidebar transition-[width] duration-200 ease-out", compact ? "w-[60px]" : "w-[232px]")}>
+      <div className={clsx("flex h-14 items-center", compact ? "justify-center" : "justify-between pl-4 pr-2.5")}>
         {compact ? (
           <NavLink to="/" onClick={onNavigate} title="Dashboard" className="logo-link rounded-md">
             <Logo compact />
@@ -202,7 +202,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
         )}
       </div>
 
-      <div className={clsx("space-y-2", compact ? "px-2.5" : "px-3")}>
+      <div className={clsx(compact ? "space-y-2 px-2.5" : "space-y-1.5 px-2.5")}>
         {compact ? (
           <>
             <IconButton onClick={onToggle} title="Expand sidebar" className="w-full">
@@ -222,9 +222,9 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
           <>
             <button
               onClick={openSearch}
-              className="flex h-9 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-[14px] text-fg-3 hover:border-line-strong"
+              className="flex h-8 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-2.5 text-[13px] text-fg-3 hover:border-line-strong"
             >
-              <Search size={15} />
+              <Search size={14} />
               <span className="flex-1 text-left">Search...</span>
               <span className="flex gap-1">
                 <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
@@ -233,17 +233,17 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
             </button>
             <button
               onClick={() => newItem()}
-              className="flex h-9 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-[14px] text-fg hover:bg-surface-2"
+              className="flex h-8 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-2.5 text-[13px] text-fg hover:bg-surface-2"
             >
-              <Plus size={15} />
+              <Plus size={14} />
               <span className="flex-1 text-left">New work item</span>
               <Kbd>C</Kbd>
             </button>
             <button
               onClick={quickNote}
-              className="flex h-9 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-[14px] text-fg hover:bg-surface-2"
+              className="flex h-8 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-2.5 text-[13px] text-fg hover:bg-surface-2"
             >
-              <RadarIcon size={15} />
+              <RadarIcon size={14} />
               <span className="flex-1 text-left">Add topic</span>
               <Kbd>N</Kbd>
             </button>
@@ -251,19 +251,19 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
         )}
       </div>
 
-      <nav className={clsx("mt-4 flex-1 overflow-y-auto pb-4", compact ? "px-2.5" : "px-3")}>
+      <nav className={clsx("mt-4 flex-1 overflow-y-auto pb-4", compact ? "px-2.5" : "px-2.5")}>
         {!compact && (
           <button
             onClick={() => setGroupOpen(!groupOpen)}
-            className="flex h-9 w-full items-center gap-3 rounded-md border border-line bg-surface-2 px-3 text-[14px] font-medium"
+            className="flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium text-fg hover:bg-surface-2"
           >
-            <SquareKanban size={16} />
+            <SquareKanban size={16} strokeWidth={1.75} />
             <span className="flex-1 text-left">Workspace</span>
-            <ChevronDown size={15} className={clsx("transition-transform", !groupOpen && "-rotate-90")} />
+            <ChevronDown size={14} className={clsx("transition-transform", !groupOpen && "-rotate-90")} />
           </button>
         )}
         {(groupOpen || compact) && (
-          <div className={clsx("space-y-0.5", compact ? "" : "ml-[18px] mt-1 border-l border-line pl-3")}>
+          <div className={clsx("space-y-0.5", compact ? "" : "ml-[17px] mt-0.5 border-l border-line pl-2")}>
             {NAV.filter((n) => !n.weekendOnly || settings?.weekend_mode).map((n) => (
               <NavLink key={n.to} to={n.to} end={n.end} className={linkCls} onClick={onNavigate} title={n.label}>
                 <n.icon size={16} strokeWidth={1.75} />
@@ -277,8 +277,8 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
         )}
 
         {!compact && (
-          <div className="mt-6">
-            <div className="flex items-center justify-between px-3 pb-1">
+          <div className="mt-5">
+            <div className="flex items-center justify-between pb-1 pl-2.5 pr-1">
               <NavLink to="/projects" onClick={onNavigate} className="text-xs font-medium text-fg-3 hover:text-fg">
                 Projects
               </NavLink>
@@ -293,14 +293,14 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
                 onClick={onNavigate}
                 className={() => linkCls({ isActive: activeProject === String(p.id) })}
               >
-                <ProjectIcon icon={p.icon} size={16} />
+                <ProjectIcon icon={p.icon} size={15} />
                 <span className="flex-1 truncate">{p.name}</span>
                 <span className="font-mono text-[11px] text-fg-3">{p.open_count}</span>
               </NavLink>
             ))}
           </div>
         )}
-        <div className="mt-6">
+        <div className="mt-5">
           <NavLink to="/quotes" className={linkCls} onClick={onNavigate} title="Quotes">
             <QuoteIcon size={16} strokeWidth={1.75} />
             {!compact && <span className="flex-1">Quotes</span>}
@@ -320,7 +320,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
 
       <RunningTimer compact={compact} />
 
-      <div className={clsx("border-t border-line py-3", compact ? "space-y-2 px-2.5" : "px-4")}>
+      <div className={clsx("border-t border-line py-3", compact ? "space-y-2 px-2.5" : "px-2.5")}>
         <div className={clsx("flex items-center", compact ? "flex-col gap-1" : "justify-between")}>
           <div className={clsx("flex items-center", compact ? "flex-col" : "gap-1")}>
             <IconButton onClick={toggleTheme} title={theme === "dark" ? "Light theme" : "Dark theme"}>
