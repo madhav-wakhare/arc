@@ -8,7 +8,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 
 ### Work
 
-- **Board**: Kanban board with Backlog, Today, In Progress and Done. Drag cards between columns. Each open card shows how many days it has been pending: neutral at first, amber after 10 days, orange after 15 and red after 30.
+- **Board**: Kanban board with Backlog, In Progress, Today and Done. Drag cards between columns. The Done column shows items completed in the last 7 days by default; switch it to 30 days or Lifetime from its header. Each open card shows how many days it has been pending: neutral at first, amber after 10 days, orange after 15 and red after 30.
 - **Today**: today's plan, overdue items, a quick pick from the backlog, a "Keep in mind" list from Revisit, and an end-of-day review.
 - **All items**: a sortable table of every item with filters.
 - **Item types**: tasks, learning items (videos, articles, courses, books) and notes.

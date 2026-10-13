@@ -11,14 +11,14 @@ import {
 } from "@dnd-kit/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Filter, Plus, Search, Settings2, SquareKanban, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Filter, Plus, Search, Settings2, SquareKanban, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ItemCard } from "../components/ItemCard";
 import { FilterPanel, applyFilters, emptyFilters, type Filters } from "../components/FilterPanel";
 import { useActions } from "../components/Layout";
 import { DeleteProjectModal, ProjectModal } from "../components/ProjectModal";
-import { Button, IconButton, Input, PageHeader } from "../components/ui";
+import { Button, IconButton, Input, Menu, PageHeader } from "../components/ui";
 import { api, type Item, type Status } from "../lib/api";
 import { useLocalState, useProjects, useUpdateItem } from "../lib/hooks";
 import { STATUSES, StatusIcon, fmtMinutes } from "../lib/meta";
@@ -46,13 +46,49 @@ function DraggableCard({ item }: { item: Item }) {
   );
 }
 
+// How far back the Done column looks, like Jira's "completed issues" window.
+type DoneRange = "7" | "30" | "all";
+const DONE_RANGES: { value: DoneRange; label: string; short: string }[] = [
+  { value: "7", label: "Last 7 days", short: "7 days" },
+  { value: "30", label: "Last 30 days", short: "30 days" },
+  { value: "all", label: "Lifetime", short: "Lifetime" },
+];
+
+function DoneRangeMenu({ value, onChange }: { value: DoneRange; onChange: (v: DoneRange) => void }) {
+  const current = DONE_RANGES.find((r) => r.value === value)!;
+  return (
+    <Menu
+      trigger={
+        <button
+          title="Show done items completed in…"
+          className="flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-1.5 text-xs text-fg-3 transition-colors hover:bg-surface-2 hover:text-fg"
+        >
+          {current.short}
+          <ChevronDown size={12} />
+        </button>
+      }
+      items={DONE_RANGES.map((r) => ({
+        label: (
+          <span className="flex w-full items-center justify-between">
+            {r.label}
+            {r.value === value && <Check size={13} className="text-accent" />}
+          </span>
+        ),
+        onClick: () => onChange(r.value),
+      }))}
+    />
+  );
+}
+
 function Column({
   status,
   items,
+  extra,
   footer,
 }: {
   status: Status;
   items: Item[];
+  extra?: React.ReactNode;
   footer?: React.ReactNode;
 }) {
   const meta = STATUSES.find((s) => s.value === status)!;
@@ -65,8 +101,9 @@ function Column({
         <StatusIcon status={status} size={15} />
         <span className="text-[14px] font-medium">{meta.label}</span>
         <span className="font-mono text-xs text-fg-3">{items.length}</span>
-        {minutes > 0 && <span className="text-xs text-fg-3">· {fmtMinutes(minutes)}</span>}
+        {minutes > 0 && <span className="truncate whitespace-nowrap text-xs text-fg-3">· {fmtMinutes(minutes)}</span>}
         <div className="flex-1" />
+        {extra}
         <button onClick={() => newItem({ status })} className="rounded p-1 text-fg-3 hover:bg-surface-2 hover:text-fg" title="Add item">
           <Plus size={15} />
         </button>
@@ -97,7 +134,7 @@ export default function Board() {
   const [active, setActive] = useState<Item | null>(null);
   const [editProject, setEditProject] = useState(false);
   const [deleteProject, setDeleteProject] = useState(false);
-  const [hideOldDone, setHideOldDone] = useLocalState("smriti-hide-old-done", true);
+  const [doneRange, setDoneRange] = useLocalState<DoneRange>("smriti-done-range", "7");
   const update = useUpdateItem();
   const qc = useQueryClient();
   const { newItem } = useActions();
@@ -116,14 +153,13 @@ export default function Board() {
   const labels = useMemo(() => [...new Set(items.flatMap((i) => i.labels))].sort(), [items]);
 
   const visible = applyFilters(items, { ...filters, status: [] }, text);
-  // The Done column shows the last 7 days; older done items appear only on request.
-  const weekAgo = Date.now() - 7 * 86_400_000;
-  const isOldDone = (i: Item) => i.status === "done" && !!i.completed_at && new Date(i.completed_at).getTime() < weekAgo;
-  const olderDone = visible.filter(isOldDone).length;
+  // The Done column only shows items completed within the chosen window (7 days by default).
+  const cutoff = doneRange === "all" ? 0 : Date.now() - Number(doneRange) * 86_400_000;
+  const isOldDone = (i: Item) => i.status === "done" && !!i.completed_at && new Date(i.completed_at).getTime() < cutoff;
+  const hiddenDone = visible.filter(isOldDone).length;
   const byStatus = (s: Status) =>
     visible
-      .filter((i) => i.status === s)
-      .filter((i) => !(hideOldDone && isOldDone(i)))
+      .filter((i) => i.status === s && !isOldDone(i))
       .sort((a, b) => a.position - b.position);
 
   const sensors = useSensors(
@@ -218,15 +254,13 @@ export default function Board() {
                 key={s.value}
                 status={s.value}
                 items={byStatus(s.value)}
+                extra={s.value === "done" && <DoneRangeMenu value={doneRange} onChange={setDoneRange} />}
                 footer={
                   s.value === "done" &&
-                  olderDone > 0 && (
-                    <button
-                      onClick={() => setHideOldDone(!hideOldDone)}
-                      className="mt-1 rounded-md py-1.5 text-xs text-fg-3 hover:bg-surface-2 hover:text-fg"
-                    >
-                      {hideOldDone ? `Show ${olderDone} older` : "Hide older than 7 days"}
-                    </button>
+                  hiddenDone > 0 && (
+                    <p className="mt-1 py-1.5 text-center text-xs text-fg-3">
+                      {hiddenDone} older {hiddenDone === 1 ? "item" : "items"} hidden
+                    </p>
                   )
                 }
               />
