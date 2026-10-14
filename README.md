@@ -21,6 +21,9 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 
 - **Radar**: topics you hear about, such as vLLM, Langfuse or tmux. Press `N` anywhere to add one. Topics stay off the board. Review each one, then create a Learning or Task ticket from it, move it to Revisit, or dismiss it. Its link and `#tags` become the ticket link and labels.
 - **Learning**: your queue of videos, articles and courses, with YouTube thumbnails. Paste a link to add one.
+- **Reading**: good articles and blog posts. "Add article" takes a link and fills in the title, site, author and summary from the page. Add tags and notes, then move each one through To read, Reading and Read, or star it as a favourite. Search and tag filters find old ones.
+  - "Save to Obsidian" writes one note per article (link, tags, status, summary and your notes) into its own folder. The first time, Smriti asks which folder to use, for example `Smriti/Articles`. Change it later on the Reading page or in Settings.
+  - Edits to an article update its note. Deleting an article keeps the note in the vault.
 - **Revisit**: things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (the notes stay hidden until you show them), a link and a priority.
   - Add a topic with `R`, from any ticket, from Radar, or when you mark a Learning ticket Done.
   - Start a session timer or log time by hand. Each topic shows when you last revisited it, the total time and the number of sessions.

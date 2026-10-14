@@ -44,15 +44,19 @@ export default function Settings() {
   const { data } = useSettings();
   const { data: backups = [] } = useQuery({ queryKey: ["backups"], queryFn: () => api.get<Backup[]>("/backups") });
   const [folder, setFolder] = useState("");
+  const [articlesFolder, setArticlesFolder] = useState("");
   const toast = useToast();
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (data) setFolder(data.obsidian.folder);
+    if (data) {
+      setFolder(data.obsidian.folder);
+      setArticlesFolder(data.obsidian.articles_folder ?? "");
+    }
   }, [data]);
 
   const save = useMutation({
-    mutationFn: (body: Partial<{ obsidian_folder: string; auto_reexport: boolean; monthly_backup: boolean; weekend_mode: boolean }>) =>
+    mutationFn: (body: Partial<{ obsidian_articles_folder: string; obsidian_folder: string; auto_reexport: boolean; monthly_backup: boolean; weekend_mode: boolean }>) =>
       api.put<SettingsT>("/settings", body),
     onSuccess: (s) => {
       qc.setQueryData(["settings"], s);
@@ -78,7 +82,7 @@ export default function Settings() {
             <ObsidianIcon size={16} /> Obsidian
           </h3>
           <p className="mb-4 text-[13px] text-fg-3">
-            Each exported link becomes one note, named after the item title. A change to the title or link overwrites the note.
+            Exported videos, links and articles each become one note, named after the title. A later change overwrites the note.
           </p>
           {data && (
             <div className="mb-4 space-y-1.5 rounded-md border border-line bg-surface-2/50 p-3">
@@ -101,11 +105,31 @@ export default function Settings() {
           />
           <div className="flex items-end gap-2">
             <div className="flex-1">
-            <Field label="Export folder inside the vault">
+            <Field label="Videos and links folder">
               <Input icon={<FolderOpen size={14} />} value={folder} onChange={(e) => setFolder(e.target.value)} placeholder="Smriti/Videos" />
             </Field>
             </div>
             <Button variant="primary" className="h-9" disabled={!folder.trim() || folder === data?.obsidian.folder} onClick={() => save.mutate({ obsidian_folder: folder })}>
+              Save
+            </Button>
+          </div>
+          <div className="mt-3 flex items-end gap-2">
+            <div className="flex-1">
+              <Field label="Articles folder" hint="Where the Reading list saves its notes.">
+                <Input
+                  icon={<FolderOpen size={14} />}
+                  value={articlesFolder}
+                  onChange={(e) => setArticlesFolder(e.target.value)}
+                  placeholder="Smriti/Articles"
+                />
+              </Field>
+            </div>
+            <Button
+              variant="primary"
+              className="mb-5 h-9"
+              disabled={!articlesFolder.trim() || articlesFolder === (data?.obsidian.articles_folder ?? "")}
+              onClick={() => save.mutate({ obsidian_articles_folder: articlesFolder })}
+            >
               Save
             </Button>
           </div>

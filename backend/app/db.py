@@ -151,6 +151,27 @@ CREATE TABLE IF NOT EXISTS quotes (
     created_at TEXT NOT NULL
 );
 
+-- Reading list: articles and blog posts, each one optionally saved as a note in Obsidian.
+CREATE TABLE IF NOT EXISTS articles (
+    id INTEGER PRIMARY KEY,
+    url TEXT NOT NULL,
+    title TEXT NOT NULL,
+    site TEXT NOT NULL DEFAULT '',
+    author TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '',
+    image TEXT,
+    notes TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]',
+    status TEXT NOT NULL DEFAULT 'unread' CHECK (status IN ('unread', 'reading', 'read')),
+    favorite INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    read_at TEXT,
+    obsidian_path TEXT,
+    exported_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
+
 -- Weekend: an ideas list (movies, places, things to try) and a plan per weekend day.
 CREATE TABLE IF NOT EXISTS weekend_ideas (
     id INTEGER PRIMARY KEY,

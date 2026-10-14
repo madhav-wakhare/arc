@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import backup, obsidian
+from . import backup, linkpreview, obsidian
 from .db import (
     PROJECT_ICONS, TRASH_DAYS, get_db, next_icon, get_setting, hard_delete_items, init_db, needs_migration, now, purge_trash, row, rows,
     set_setting, today,
@@ -169,6 +169,7 @@ class SettingsIn(BaseModel):
     quotes_on_board: bool | None = None
     quotes_interval: int | None = Field(default=None, ge=5, le=3600)
     weekend_mode: bool | None = None
+    obsidian_articles_folder: str | None = Field(default=None, min_length=1, max_length=200)
 
 
 class QuoteIn(BaseModel):
@@ -1134,6 +1135,11 @@ def save_settings(data: SettingsIn, conn=Depends(get_db)):
         if not folder or ".." in folder.split("/"):
             raise HTTPException(422, "Folder must be inside the vault.")
         set_setting(conn, "obsidian_folder", folder)
+    if data.obsidian_articles_folder is not None:
+        folder = data.obsidian_articles_folder.strip().strip("/")
+        if not folder or ".." in folder.split("/"):
+            raise HTTPException(422, "Folder must be inside the vault.")
+        set_setting(conn, "obsidian_articles_folder", folder)
     for key in ("auto_reexport", "monthly_backup", "quotes_on_dashboard", "quotes_on_board", "weekend_mode"):
         value = getattr(data, key)
         if value is not None:
@@ -1172,6 +1178,143 @@ def edit_quote(quote_id: int, data: QuoteIn, conn=Depends(get_db)):
 @app.delete("/api/quotes/{quote_id}", status_code=204)
 def delete_quote(quote_id: int, conn=Depends(get_db)):
     conn.execute("DELETE FROM quotes WHERE id = ?", (quote_id,))
+
+
+# --------------------------------------------------------------------------- reading list
+
+ArticleStatus = Literal["unread", "reading", "read"]
+
+
+class ArticleIn(BaseModel):
+    url: str = Field(min_length=4, max_length=2000)
+    title: str = Field(default="", max_length=300)
+    site: str = Field(default="", max_length=120)
+    author: str = Field(default="", max_length=120)
+    description: str = Field(default="", max_length=1000)
+    image: str | None = Field(default=None, max_length=2000)
+    notes: str = Field(default="", max_length=50_000)
+    tags: list[str] = []
+    status: ArticleStatus = "unread"
+    export: bool = False
+
+
+class ArticlePatch(BaseModel):
+    url: str | None = Field(default=None, min_length=4, max_length=2000)
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    site: str | None = Field(default=None, max_length=120)
+    author: str | None = Field(default=None, max_length=120)
+    description: str | None = Field(default=None, max_length=1000)
+    notes: str | None = Field(default=None, max_length=50_000)
+    tags: list[str] | None = None
+    status: ArticleStatus | None = None
+    favorite: bool | None = None
+
+
+class PreviewIn(BaseModel):
+    url: str = Field(min_length=4, max_length=2000)
+
+
+def _norm_url(url: str) -> str:
+    url = url.strip()
+    return url if re.match(r"^https?://", url, re.I) else "https://" + url
+
+
+def _clean_tags(tags: list[str]) -> list[str]:
+    seen: list[str] = []
+    for t in tags:
+        t = t.strip().lstrip("#").strip().lower()
+        if t and t not in seen:
+            seen.append(t[:40])
+    return seen
+
+
+def load_article(conn, aid: int) -> dict:
+    a = row(conn.execute("SELECT * FROM articles WHERE id = ?", (aid,)))
+    if not a:
+        raise HTTPException(404, "Article not found")
+    a["tags"] = json.loads(a["tags"] or "[]")
+    return a
+
+
+def _export_article(conn, aid: int) -> dict:
+    try:
+        obsidian.export_article(conn, load_article(conn, aid))
+    except obsidian.ExportError as exc:
+        raise HTTPException(400, str(exc))
+    return load_article(conn, aid)
+
+
+@app.post("/api/articles/preview")
+def article_preview(data: PreviewIn):
+    return linkpreview.preview(_norm_url(data.url))
+
+
+@app.get("/api/articles")
+def list_articles(conn=Depends(get_db)):
+    out = rows(conn.execute("SELECT * FROM articles ORDER BY created_at DESC, id DESC"))
+    for a in out:
+        a["tags"] = json.loads(a["tags"] or "[]")
+    return out
+
+
+@app.post("/api/articles", status_code=201)
+def create_article(data: ArticleIn, conn=Depends(get_db)):
+    url = _norm_url(data.url)
+    dup = row(conn.execute("SELECT id, title FROM articles WHERE url = ?", (url,)))
+    if dup:
+        raise HTTPException(409, f"Already in your reading list: {dup['title']}")
+    ts = now()
+    cur = conn.execute(
+        """INSERT INTO articles (url, title, site, author, description, image, notes, tags, status,
+                                 created_at, updated_at, read_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (url, data.title.strip() or linkpreview.site_of(url) or url, data.site.strip() or linkpreview.site_of(url),
+         data.author.strip(), data.description.strip(), data.image, data.notes.strip(),
+         json.dumps(_clean_tags(data.tags)), data.status, ts, ts, ts if data.status == "read" else None),
+    )
+    if data.export:
+        return _export_article(conn, cur.lastrowid)
+    return load_article(conn, cur.lastrowid)
+
+
+@app.patch("/api/articles/{aid}")
+def update_article(aid: int, data: ArticlePatch, conn=Depends(get_db)):
+    before = load_article(conn, aid)
+    updates = data.model_dump(exclude_unset=True)
+    if "url" in updates:
+        updates["url"] = _norm_url(updates["url"])
+    if "tags" in updates:
+        updates["tags"] = json.dumps(_clean_tags(updates["tags"]))
+    if "favorite" in updates:
+        updates["favorite"] = 1 if updates["favorite"] else 0
+    for key in ("title", "site", "author", "description", "notes"):
+        if key in updates:
+            updates[key] = updates[key].strip()
+    if "status" in updates and updates["status"] != before["status"]:
+        updates["read_at"] = now() if updates["status"] == "read" else None
+    if not updates:
+        return before
+    updates["updated_at"] = now()
+    sets = ", ".join(f"{k} = ?" for k in updates)
+    conn.execute(f"UPDATE articles SET {sets} WHERE id = ?", (*updates.values(), aid))
+    # Keep the Obsidian note in step, like video notes.
+    note_fields = {"url", "title", "site", "author", "description", "notes", "tags", "status"}
+    if before["obsidian_path"] and note_fields & updates.keys() and get_setting(conn, "auto_reexport", "1") == "1":
+        try:
+            obsidian.export_article(conn, load_article(conn, aid))
+        except obsidian.ExportError:
+            logging.warning("Could not re-export article %s", aid)
+    return load_article(conn, aid)
+
+
+@app.post("/api/articles/{aid}/export")
+def export_article(aid: int, conn=Depends(get_db)):
+    return _export_article(conn, aid)
+
+
+@app.delete("/api/articles/{aid}", status_code=204)
+def delete_article(aid: int, conn=Depends(get_db)):
+    conn.execute("DELETE FROM articles WHERE id = ?", (aid,))
 
 
 # --------------------------------------------------------------------------- weekend

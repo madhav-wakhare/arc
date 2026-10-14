@@ -378,3 +378,49 @@ def test_weekend_plan_and_ideas(client):
     assert (moved["day"], moved["slot"]) == ("2026-10-18", "afternoon")
     assert c.delete(f"/api/weekend/entries/{life['id']}").status_code == 204
     assert len(c.get("/api/weekend?day=2026-10-17").json()["entries"]) == 2
+
+
+
+def test_reading_list_and_obsidian(client, monkeypatch):
+    c = client
+    assert c.get("/api/settings").json()["obsidian"]["articles_folder"] is None
+
+    # Link preview works offline too: it falls back to the host name.
+    import app.linkpreview as lp
+
+    def offline(*_a, **_k):
+        raise OSError("offline")
+
+    monkeypatch.setattr(lp.urllib.request, "urlopen", offline)
+    p = c.post("/api/articles/preview", json={"url": "www.example.com/post"}).json()
+    assert (p["url"], p["site"], p["title"]) == ("https://www.example.com/post", "example.com", "")
+
+    body = {"url": "https://blog.example.com/raft", "title": "Raft explained", "tags": ["#Distributed", "raft", "raft"],
+            "notes": "Leader election first.", "export": True}
+    # No folder chosen yet: the save is refused with a clear message and nothing is stored.
+    r = c.post("/api/articles", json=body)
+    assert r.status_code == 400 and "folder" in r.json()["detail"]
+    assert c.get("/api/articles").json() == []
+
+    c.put("/api/settings", json={"obsidian_articles_folder": "Smriti/Articles/"})
+    assert c.get("/api/settings").json()["obsidian"]["articles_folder"] == "Smriti/Articles"
+    a = c.post("/api/articles", json=body).json()
+    assert a["tags"] == ["distributed", "raft"]
+    assert a["obsidian_path"] == "Smriti/Articles/Raft explained.md"
+    note = (c.vault / a["obsidian_path"]).read_text()
+    assert "smriti_id: ART-" in note and "## Notes" in note and "Leader election first." in note
+    assert 'tags: ["distributed", "raft"]' in note
+
+    # Same link twice is refused.
+    assert c.post("/api/articles", json={"url": "https://blog.example.com/raft"}).status_code == 409
+
+    # Rename + mark read: note is rewritten under the new name, old one removed.
+    a = c.patch(f"/api/articles/{a['id']}", json={"title": "Raft, explained simply", "status": "read"}).json()
+    assert a["read_at"] and a["obsidian_path"] == "Smriti/Articles/Raft, explained simply.md"
+    assert not (c.vault / "Smriti/Articles/Raft explained.md").exists()
+    assert "status: read" in (c.vault / a["obsidian_path"]).read_text()
+
+    # Deleting the article keeps the note in the vault.
+    c.delete(f"/api/articles/{a['id']}")
+    assert c.get("/api/articles").json() == []
+    assert (c.vault / a["obsidian_path"]).exists()

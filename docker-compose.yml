@@ -11,6 +11,7 @@ services:
     environment:
       TZ: ${TZ:-Asia/Kolkata}
       OBSIDIAN_FOLDER: ${OBSIDIAN_FOLDER:-Smriti/Videos}
+      VAULT_HOST_PATH: ${OBSIDIAN_VAULT_PATH:-}       # shown in the app so you know where notes go
     volumes:
       - ./data:/data                                  # SQLite database
       - ./backups:/backups                            # monthly backups, YYYY-MM/

@@ -138,7 +138,9 @@ export interface Settings {
   version: string;
   obsidian: {
     vault_dir: string;
+    vault_host_path: string;
     folder: string;
+    articles_folder: string | null;
     mounted: boolean;
     writable: boolean;
     is_obsidian_vault: boolean;
@@ -310,4 +312,32 @@ export function qs(params: Record<string, string | string[] | number[] | undefin
   }
   const s = sp.toString();
   return s ? `?${s}` : "";
+}
+
+export type ArticleStatus = "unread" | "reading" | "read";
+export interface Article {
+  id: number;
+  url: string;
+  title: string;
+  site: string;
+  author: string;
+  description: string;
+  image: string | null;
+  notes: string;
+  tags: string[];
+  status: ArticleStatus;
+  favorite: number;
+  created_at: string;
+  updated_at: string;
+  read_at: string | null;
+  obsidian_path: string | null;
+  exported_at: string | null;
+}
+export interface LinkPreview {
+  url: string;
+  title: string;
+  site: string;
+  author: string;
+  description: string;
+  image: string | null;
 }

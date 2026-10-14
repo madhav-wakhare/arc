@@ -1,4 +1,4 @@
-"""Export video/link items to the Obsidian vault as one Markdown note per item."""
+"""Export videos/links and reading-list articles to the Obsidian vault, one Markdown note each."""
 
 import os
 import re
@@ -15,6 +15,11 @@ class ExportError(Exception):
     pass
 
 
+def articles_folder(conn) -> str | None:
+    """Folder for articles. None until the user picks one (the app asks on the first save)."""
+    return get_setting(conn, "obsidian_articles_folder", "") or None
+
+
 def vault_status(conn) -> dict:
     folder = get_setting(conn, "obsidian_folder", DEFAULT_FOLDER)
     mounted = os.path.isdir(VAULT_DIR)
@@ -22,7 +27,9 @@ def vault_status(conn) -> dict:
     has_obsidian = mounted and os.path.isdir(os.path.join(VAULT_DIR, ".obsidian"))
     return {
         "vault_dir": VAULT_DIR,
+        "vault_host_path": os.environ.get("VAULT_HOST_PATH", ""),
         "folder": folder,
+        "articles_folder": articles_folder(conn),
         "mounted": mounted,
         "writable": writable,
         "is_obsidian_vault": has_obsidian,
@@ -62,10 +69,8 @@ def _is_ours(path: str, key: str) -> bool:
     return f"smriti_id: {key}\n" in head
 
 
-def export_item(conn, item: dict, key: str) -> str:
-    """Write (or overwrite) the note for this item. Returns the vault-relative path."""
-    if not item.get("url"):
-        raise ExportError("Only items with a link can be exported to Obsidian.")
+def _write_note(conn, folder: str, title: str, key: str, text: str, old_rel: str | None) -> str:
+    """Write a note named after `title` in `folder`; remove the old note after a rename. Returns the vault path."""
     status = vault_status(conn)
     if not status["writable"]:
         raise ExportError(
@@ -73,31 +78,77 @@ def export_item(conn, item: dict, key: str) -> str:
             "Set OBSIDIAN_VAULT_PATH in .env and restart the container."
         )
 
-    folder = status["folder"].strip("/")
+    folder = folder.strip("/")
     target_dir = os.path.realpath(os.path.join(VAULT_DIR, folder))
     if not target_dir.startswith(os.path.realpath(VAULT_DIR)):
         raise ExportError("Export folder must be inside the vault.")
     os.makedirs(target_dir, exist_ok=True)
 
-    base = _safe_filename(item["title"])
+    base = _safe_filename(title)
     rel = os.path.join(folder, base + ".md")
     abs_path = os.path.join(VAULT_DIR, rel)
     # A different note with the same name already exists: keep it, add the key.
-    if os.path.exists(abs_path) and rel != item.get("obsidian_path") and not _is_ours(abs_path, key):
+    if os.path.exists(abs_path) and rel != old_rel and not _is_ours(abs_path, key):
         rel = os.path.join(folder, f"{base} ({key}).md")
         abs_path = os.path.join(VAULT_DIR, rel)
 
     with open(abs_path, "w", encoding="utf-8") as fh:
-        fh.write(_render(item, key))
+        fh.write(text)
 
-    old = item.get("obsidian_path")
-    if old and old != rel:
-        old_abs = os.path.join(VAULT_DIR, old)
+    if old_rel and old_rel != rel:
+        old_abs = os.path.join(VAULT_DIR, old_rel)
         if _is_ours(old_abs, key):
             os.remove(old_abs)
+    return rel
 
+
+def export_item(conn, item: dict, key: str) -> str:
+    """Write (or overwrite) the note for this item. Returns the vault-relative path."""
+    if not item.get("url"):
+        raise ExportError("Only items with a link can be exported to Obsidian.")
+    rel = _write_note(conn, vault_status(conn)["folder"], item["title"], key, _render(item, key), item.get("obsidian_path"))
     conn.execute(
         "UPDATE items SET obsidian_path = ?, exported_at = ? WHERE id = ?",
         (rel, now(), item["id"]),
     )
+    return rel
+
+
+def article_key(article: dict) -> str:
+    return f"ART-{article['id']}"
+
+
+def _render_article(a: dict, key: str) -> str:
+    tags = ", ".join(_yaml_str(t) for t in a.get("tags") or [])
+    lines = [
+        "---",
+        f"title: {_yaml_str(a['title'])}",
+        f"url: {_yaml_str(a['url'])}",
+    ]
+    if a.get("site"):
+        lines.append(f"site: {_yaml_str(a['site'])}")
+    if a.get("author"):
+        lines.append(f"author: {_yaml_str(a['author'])}")
+    lines += [
+        f"tags: [{tags}]",
+        f"status: {a['status']}",
+        f"saved: {a['created_at'][:10]}",
+    ]
+    if a.get("read_at"):
+        lines.append(f"read: {a['read_at'][:10]}")
+    lines += [f"smriti_id: {key}", "---", "", f"# {a['title']}", "", f"[Read the article]({a['url']})"]
+    if a.get("description"):
+        lines += ["", "> " + a["description"].replace("\n", " ")]
+    if (a.get("notes") or "").strip():
+        lines += ["", "## Notes", "", a["notes"].strip()]
+    return "\n".join(lines) + "\n"
+
+
+def export_article(conn, article: dict) -> str:
+    folder = articles_folder(conn)
+    if not folder:
+        raise ExportError("Choose an Obsidian folder for articles first.")
+    key = article_key(article)
+    rel = _write_note(conn, folder, article["title"], key, _render_article(article, key), article.get("obsidian_path"))
+    conn.execute("UPDATE articles SET obsidian_path = ?, exported_at = ? WHERE id = ?", (rel, now(), article["id"]))
     return rel
