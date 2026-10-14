@@ -333,7 +333,7 @@ function CollectionsPanel({
         }
       >
         <p className="text-[13px] text-fg-2">
-          The blog posts stay in Engineering blogs. Notes in its Obsidian folder move to another collection of the post, or to the main
+          The blog posts stay in Blogs. Notes in its Obsidian folder move to another collection of the post, or to the main
           articles folder.
         </p>
       </Modal>
@@ -434,7 +434,7 @@ export default function Reading() {
             <Button
               icon={<ObsidianIcon size={14} className={folder ? "text-accent" : ""} />}
               onClick={() => setFolderOpen(true)}
-              title="Obsidian folder for engineering blogs"
+              title="Obsidian folder for blogs"
               className="max-w-64"
             >
               <span className="truncate">{folder ? (current ? `${folder}/${current.name}` : folder) : "Set Obsidian folder"}</span>
@@ -537,14 +537,14 @@ export default function Reading() {
                     icon={current ? <FolderOpen size={28} /> : <Newspaper size={28} />}
                     title={
                       !articles.length
-                        ? "No engineering blogs yet"
+                        ? "No blogs yet"
                         : current && !scoped.length
                           ? `Nothing in ${current.name} yet`
                           : "Nothing here"
                     }
                     hint={
                       !articles.length
-                        ? "Save good engineering blog posts and articles. Paste a link and Smriti fills in the title, site and summary, then keeps a note in Obsidian."
+                        ? "Save good blog posts and articles. Paste a link and Smriti fills in the title, site and summary, then keeps a note in Obsidian."
                         : current && !scoped.length
                           ? "Add a blog post here, or drag one from All blogs onto this collection."
                           : "Try another tab, tag or search."

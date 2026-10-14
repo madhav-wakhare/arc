@@ -10,7 +10,7 @@ export function LearningNav() {
   const { data: articles } = useQuery({ queryKey: ["articles"], queryFn: () => api.get<Article[]>("/articles") });
   const tabs = [
     { to: "/learning", end: true, label: "Topics", icon: GraduationCap, count: items?.filter((i) => i.status !== "done").length },
-    { to: "/learning/articles", end: false, label: "Engineering blogs", icon: Newspaper, count: articles?.filter((a) => a.status !== "read").length },
+    { to: "/learning/articles", end: false, label: "Blogs", icon: Newspaper, count: articles?.filter((a) => a.status !== "read").length },
   ];
   return (
     <div className="mb-5 flex items-center gap-6 border-b border-line px-4 md:px-6 lg:px-8">

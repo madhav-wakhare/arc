@@ -20,13 +20,13 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 ### Learning
 
 - **Radar**: topics you hear about, such as vLLM, Langfuse or tmux. Press `N` anywhere to add one. Topics stay off the board. Review each one, then create a Learning or Task ticket from it, move it to Revisit, or dismiss it. Its link and `#tags` become the ticket link and labels.
-- **Learning** has two tabs: **Topics** (what you want to study) and **Engineering blogs** (blog posts and articles you read and keep).
+- **Learning** has two tabs: **Topics** (what you want to study) and **Blogs** (blog posts and articles you read and keep).
 - **Topics**: things you want to learn, with status and time tracking. Type a topic, and add a video or course link if you have one (topics moved from Radar land here too). A topic with a link shows its thumbnail. Paste a link and Smriti fills in the title (the real YouTube video title, or the page title for other links). Thumbnails are downloaded once, shrunk to small WebP images and cached in `data/thumbs/`, so the page loads fast on a phone too.
-  If you paste a blog or article link into Topics, Smriti offers to save it to Engineering blogs instead.
-- **Engineering blogs** (Learning → Engineering blogs): good blog posts and articles. "Add blog post" takes a link and fills in the title, site, author and summary from the page. Add tags and notes, then move each one through To read, Reading and Read, or star it as a favourite. Search and tag filters find old ones.
-  - "Save to Obsidian" writes one note per article (link, tags, status, summary and your notes) into its own folder. The first time, Smriti asks which folder to use, for example `Smriti/Articles`. Change it later on the Engineering blogs tab or in Settings.
+  If you paste a blog or article link into Topics, Smriti offers to save it to Blogs instead.
+- **Blogs** (Learning → Blogs): good blog posts and articles. "Add blog post" takes a link and fills in the title, site, author and summary from the page. Add tags and notes, then move each one through To read, Reading and Read, or star it as a favourite. Search and tag filters find old ones.
+  - "Save to Obsidian" writes one note per article (link, tags, status, summary and your notes) into its own folder. The first time, Smriti asks which folder to use, for example `Smriti/Articles`. Change it later on the Blogs tab or in Settings.
   - Edits to an article update its note. Deleting an article keeps the note in the vault.
-  - **Collections** (AI, SRE, Databases…) are folders on the left of the Engineering blogs tab. Open one to see only its articles. Create, rename or delete them there, drag an article onto one to add it, or tick collections in the article panel. An article can be in several collections.
+  - **Collections** (AI, SRE, Databases…) are folders on the left of the Blogs tab. Open one to see only its articles. Create, rename or delete them there, drag an article onto one to add it, or tick collections in the article panel. An article can be in several collections.
   - In Obsidian each collection is a subfolder, for example `Smriti/Articles/AI/`. An article in several collections has its note in one of them (the one with the Obsidian mark in the article panel; click the mark on another to move it) and lists all of them in the note. Renaming a collection renames its folder; articles in no collection stay in the main folder.
 - **Revisit**: things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (the notes stay hidden until you show them), a link and a priority.
   - Add a topic with `R`, from any ticket, from Radar, or when you mark a Learning ticket Done.
