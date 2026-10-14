@@ -229,7 +229,7 @@ export function ObsidianFolderModal({ open, onClose, onSaved }: { open: boolean;
     <Modal
       open={open}
       onClose={onClose}
-      title="Obsidian folder for blogs"
+      title="Obsidian folder for engineering blogs"
       width="max-w-md"
       footer={
         <>
@@ -346,7 +346,7 @@ export function AddArticleModal({
     onSuccess: (a) => {
       qc.invalidateQueries({ queryKey: ["articles"] });
       qc.invalidateQueries({ queryKey: ["collections"] });
-      toast(a.obsidian_path ? `Saved and added to Obsidian: ${a.obsidian_path}` : "Added to Blogs");
+      toast(a.obsidian_path ? `Saved and added to Obsidian: ${a.obsidian_path}` : "Added to Engineering Blogs");
       close();
     },
     onError: (e: Error) => toast(e.message, "error"),
@@ -613,7 +613,7 @@ export function ArticleDrawer({ article, onClose, onNeedFolder }: { article: Art
         }
       >
         <p className="text-[13px] text-fg-2">
-          This removes it from Blogs.{a.obsidian_path && " The note in Obsidian stays."}
+          This removes it from Engineering Blogs.{a.obsidian_path && " The note in Obsidian stays."}
         </p>
       </Modal>
     </Drawer>

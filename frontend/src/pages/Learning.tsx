@@ -216,13 +216,13 @@ export default function Learning() {
           {articleLike && (
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
               <Newspaper size={14} className="shrink-0 text-fg-3" />
-              <span className="flex-1">This looks like a blog post. Blogs have collections, notes and their own Obsidian folder.</span>
+              <span className="flex-1">This looks like a blog post. Engineering Blogs have collections, notes and their own Obsidian folder.</span>
               <button
                 type="button"
                 onClick={() => navigate(`/learning/articles?add=${encodeURIComponent(url.trim())}`)}
                 className="flex items-center gap-1 font-medium text-accent hover:underline"
               >
-                Save to Blogs <ArrowRight size={13} />
+                Save to Engineering Blogs <ArrowRight size={13} />
               </button>
             </div>
           )}
