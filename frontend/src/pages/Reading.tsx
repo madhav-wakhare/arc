@@ -135,7 +135,7 @@ function ArticleRow({
               </IconButton>
             }
             items={[
-              { label: "Open article", icon: <ExternalLink size={13} />, onClick: () => window.open(a.url, "_blank", "noreferrer") },
+              { label: "Open blog post", icon: <ExternalLink size={13} />, onClick: () => window.open(a.url, "_blank", "noreferrer") },
               read
                 ? { label: "Mark as to read", icon: <RotateCcw size={13} />, onClick: () => update.mutate({ id: a.id, status: "unread" }) }
                 : { label: "Mark as read", icon: <Check size={13} />, onClick: () => update.mutate({ id: a.id, status: "read" }) },
@@ -216,7 +216,7 @@ function CollectionsPanel({
 
   return (
     <nav className="space-y-0.5">
-      <FolderRow icon={<Library size={15} />} label="All articles" count={counts.all} active={scope === "all"} onClick={() => setScope("all")} />
+      <FolderRow icon={<Library size={15} />} label="All blogs" count={counts.all} active={scope === "all"} onClick={() => setScope("all")} />
       <FolderRow icon={<Inbox size={15} />} label="Unfiled" count={counts.unfiled} active={scope === "unfiled"} onClick={() => setScope("unfiled")} />
 
       <div className="flex items-center justify-between pb-1 pl-2.5 pr-1 pt-5">
@@ -308,7 +308,7 @@ function CollectionsPanel({
           </button>
         )
       )}
-      {collections.length > 0 && <p className="px-2.5 pt-3 text-[11px] leading-relaxed text-fg-3">Drag an article onto a collection to add it.</p>}
+      {collections.length > 0 && <p className="px-2.5 pt-3 text-[11px] leading-relaxed text-fg-3">Drag a blog post onto a collection to add it.</p>}
 
       <Modal
         open={!!deleting}
@@ -333,7 +333,7 @@ function CollectionsPanel({
         }
       >
         <p className="text-[13px] text-fg-2">
-          The articles stay in your reading list. Notes in its Obsidian folder move to another collection of the article, or to the main
+          The blog posts stay in Engineering blogs. Notes in its Obsidian folder move to another collection of the post, or to the main
           articles folder.
         </p>
       </Modal>
@@ -434,13 +434,13 @@ export default function Reading() {
             <Button
               icon={<ObsidianIcon size={14} className={folder ? "text-accent" : ""} />}
               onClick={() => setFolderOpen(true)}
-              title="Obsidian folder for articles"
+              title="Obsidian folder for engineering blogs"
               className="max-w-64"
             >
               <span className="truncate">{folder ? (current ? `${folder}/${current.name}` : folder) : "Set Obsidian folder"}</span>
             </Button>
             <Button variant="primary" icon={<Plus size={14} />} onClick={() => setAdding(true)}>
-              Add article
+              Add blog post
             </Button>
           </>
         }
@@ -470,7 +470,7 @@ export default function Reading() {
               value={String(scope)}
               onChange={(e) => setScope(e.target.value === "all" || e.target.value === "unfiled" ? e.target.value : Number(e.target.value))}
             >
-              <option value="all">All articles · {articles.length}</option>
+              <option value="all">All blogs · {articles.length}</option>
               <option value="unfiled">Unfiled</option>
               {collections.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -537,23 +537,23 @@ export default function Reading() {
                     icon={current ? <FolderOpen size={28} /> : <Newspaper size={28} />}
                     title={
                       !articles.length
-                        ? "Your reading list is empty"
+                        ? "No engineering blogs yet"
                         : current && !scoped.length
                           ? `Nothing in ${current.name} yet`
                           : "Nothing here"
                     }
                     hint={
                       !articles.length
-                        ? "Save good articles and blog posts. Paste a link and Smriti fills in the title, site and summary, then keeps a note in Obsidian."
+                        ? "Save good engineering blog posts and articles. Paste a link and Smriti fills in the title, site and summary, then keeps a note in Obsidian."
                         : current && !scoped.length
-                          ? "Add an article here, or drag one from All articles onto this collection."
+                          ? "Add a blog post here, or drag one from All blogs onto this collection."
                           : "Try another tab, tag or search."
                     }
                   />
                   {(!articles.length || (current && !scoped.length)) && (
                     <div className="-mt-6 flex justify-center pb-10">
                       <Button variant="primary" icon={<Plus size={14} />} onClick={() => setAdding(true)}>
-                        {current ? `Add to ${current.name}` : "Add your first article"}
+                        {current ? `Add to ${current.name}` : "Add your first blog post"}
                       </Button>
                     </div>
                   )}

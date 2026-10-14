@@ -229,7 +229,7 @@ export function ObsidianFolderModal({ open, onClose, onSaved }: { open: boolean;
     <Modal
       open={open}
       onClose={onClose}
-      title="Obsidian folder for articles"
+      title="Obsidian folder for engineering blogs"
       width="max-w-md"
       footer={
         <>
@@ -247,7 +247,7 @@ export function ObsidianFolderModal({ open, onClose, onSaved }: { open: boolean;
           if (clean) save.mutate();
         }}
       >
-        <p className="text-[13px] text-fg-2">Each saved article becomes one note, named after its title. Choose a folder inside your vault.</p>
+        <p className="text-[13px] text-fg-2">Each saved blog post becomes one note, named after its title. Choose a folder inside your vault.</p>
         <Field label="Folder inside the vault" hint={ob ? `Videos go to ${ob.folder}` : undefined}>
           <Input autoFocus icon={<FolderOpen size={14} />} value={folder} onChange={(e) => setFolder(e.target.value)} placeholder="Smriti/Articles" />
         </Field>
@@ -346,7 +346,7 @@ export function AddArticleModal({
     onSuccess: (a) => {
       qc.invalidateQueries({ queryKey: ["articles"] });
       qc.invalidateQueries({ queryKey: ["collections"] });
-      toast(a.obsidian_path ? `Saved and added to Obsidian: ${a.obsidian_path}` : "Added to your reading list");
+      toast(a.obsidian_path ? `Saved and added to Obsidian: ${a.obsidian_path}` : "Added to Engineering blogs");
       close();
     },
     onError: (e: Error) => toast(e.message, "error"),
@@ -364,7 +364,7 @@ export function AddArticleModal({
       <Modal
         open={open && !askFolder}
         onClose={close}
-        title="Add article"
+        title="Add blog post"
         width="max-w-xl"
         footer={
           <>
@@ -380,7 +380,7 @@ export function AddArticleModal({
             />
             <Button onClick={close}>Cancel</Button>
             <Button variant="primary" disabled={!looksLikeUrl(url) || add.isPending} onClick={submit}>
-              Add article
+              Add blog post
             </Button>
           </>
         }
@@ -490,7 +490,7 @@ export function ArticleDrawer({ article, onClose, onNeedFolder }: { article: Art
         <IconButton title={a.obsidian_path ? "Save to Obsidian again" : "Save to Obsidian"} onClick={saveToObsidian}>
           <ObsidianIcon size={15} className={a.obsidian_path ? "text-accent" : ""} />
         </IconButton>
-        <a href={a.url} target="_blank" rel="noreferrer" title="Open article" className="inline-flex size-8 items-center justify-center rounded-md text-fg-2 hover:bg-surface-2 hover:text-fg">
+        <a href={a.url} target="_blank" rel="noreferrer" title="Open blog post" className="inline-flex size-8 items-center justify-center rounded-md text-fg-2 hover:bg-surface-2 hover:text-fg">
           <ExternalLink size={15} />
         </a>
         <IconButton title="Delete" className="hover:text-critical" onClick={() => setConfirm(true)}>
@@ -591,7 +591,7 @@ export function ArticleDrawer({ article, onClose, onNeedFolder }: { article: Art
       <Modal
         open={confirm}
         onClose={() => setConfirm(false)}
-        title="Delete article?"
+        title="Delete blog post?"
         width="max-w-sm"
         footer={
           <>
@@ -613,7 +613,7 @@ export function ArticleDrawer({ article, onClose, onNeedFolder }: { article: Art
         }
       >
         <p className="text-[13px] text-fg-2">
-          This removes it from your reading list.{a.obsidian_path && " The note in Obsidian stays."}
+          This removes it from Engineering blogs.{a.obsidian_path && " The note in Obsidian stays."}
         </p>
       </Modal>
     </Drawer>
