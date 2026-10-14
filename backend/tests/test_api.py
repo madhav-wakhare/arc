@@ -501,7 +501,7 @@ def test_youtube_preview_and_cached_thumbnails(client, monkeypatch):
     r = client.get(f"/api/items/{item['id']}/thumb")
     assert r.status_code == 200 and r.headers["content-type"] == "image/webp"
     assert "immutable" in r.headers["cache-control"]
-    assert Image.open(io.BytesIO(r.content)).width == 480  # shrunk from 1280
+    assert Image.open(io.BytesIO(r.content)).size == (640, 360)  # HD image shrunk from 1280
     n = len(calls)
     assert client.get(f"/api/items/{item['id']}/thumb").status_code == 200
     assert len(calls) == n  # served from the disk cache

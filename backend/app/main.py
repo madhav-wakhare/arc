@@ -1313,8 +1313,8 @@ def link_preview(data: PreviewIn):
 _THUMB_HEADERS = {"Cache-Control": "public, max-age=31536000, immutable"}
 
 
-def _thumb_response(source: str | None):
-    path = thumbs.get(source) if source else None
+def _thumb_response(source: str | list[str] | None):
+    path = thumbs.get_first(source) if isinstance(source, list) else thumbs.get(source) if source else None
     if not path:
         # A plain 404 response, not an exception, so the request's database changes still commit.
         return Response(status_code=404, headers={"Cache-Control": "public, max-age=86400"})
@@ -1327,7 +1327,7 @@ def item_thumb(item_id: int, conn=Depends(get_db)):
     if not item or not item["url"]:
         raise HTTPException(404, "No thumbnail")
     if video := linkpreview.youtube_id(item["url"]):
-        return _thumb_response(linkpreview.youtube_thumb(video))
+        return _thumb_response(linkpreview.youtube_thumbs(video))
     source = item["thumb"]
     if source is None:  # first time: look for the page's preview image, remember the answer
         source = linkpreview.preview(item["url"]).get("image") or ""
@@ -1341,7 +1341,7 @@ def article_thumb(aid: int, conn=Depends(get_db)):
     if not a:
         raise HTTPException(404, "No thumbnail")
     video = linkpreview.youtube_id(a["url"])
-    return _thumb_response(linkpreview.youtube_thumb(video) if video else a["image"])
+    return _thumb_response(linkpreview.youtube_thumbs(video) if video else a["image"])
 
 
 @app.get("/api/articles")

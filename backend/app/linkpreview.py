@@ -31,6 +31,11 @@ def youtube_thumb(video_id: str) -> str:
     return f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
 
 
+def youtube_thumbs(video_id: str) -> list[str]:
+    """Sharpest first: 1280px HD (not on every video), then 640px, then 480px."""
+    return [f"https://i.ytimg.com/vi/{video_id}/{name}.jpg" for name in ("maxresdefault", "sddefault", "hqdefault")]
+
+
 def _youtube(url: str, video_id: str, timeout: float) -> dict:
     """YouTube's oEmbed: small JSON with the real title and channel, no page scraping."""
     result = {"url": url, "title": "", "site": "YouTube", "author": "", "description": "", "image": youtube_thumb(video_id)}

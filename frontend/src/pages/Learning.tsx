@@ -188,7 +188,7 @@ export default function Learning() {
         {filtered.length === 0 ? (
           <Empty icon={<BookOpen size={28} />} title="Nothing here yet" hint="Paste a link above to save a video or an article." />
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
             {filtered.map((i) => (
               <LearningCard key={i.id} item={i} />
             ))}
