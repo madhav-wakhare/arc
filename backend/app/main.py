@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta
 from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -1316,7 +1316,8 @@ _THUMB_HEADERS = {"Cache-Control": "public, max-age=31536000, immutable"}
 def _thumb_response(source: str | None):
     path = thumbs.get(source) if source else None
     if not path:
-        raise HTTPException(404, "No thumbnail")
+        # A plain 404 response, not an exception, so the request's database changes still commit.
+        return Response(status_code=404, headers={"Cache-Control": "public, max-age=86400"})
     return FileResponse(path, media_type="image/webp", headers=_THUMB_HEADERS)
 
 

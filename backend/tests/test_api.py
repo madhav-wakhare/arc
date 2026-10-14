@@ -508,5 +508,8 @@ def test_youtube_preview_and_cached_thumbnails(client, monkeypatch):
 
     # A link without a preview image: 404, remembered so the page is not fetched again.
     item2 = _learning(client, url="https://example.com/notes", title="Notes")
-    monkeypatch.setattr(lp, "preview", lambda url, timeout=6.0: {"image": None})
+    looked = []
+    monkeypatch.setattr(lp, "preview", lambda url, timeout=6.0: looked.append(url) or {"image": None})
     assert client.get(f"/api/items/{item2['id']}/thumb").status_code == 404
+    assert client.get(f"/api/items/{item2['id']}/thumb").status_code == 404
+    assert len(looked) == 1
