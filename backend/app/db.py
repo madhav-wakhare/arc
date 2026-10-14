@@ -172,6 +172,20 @@ CREATE TABLE IF NOT EXISTS articles (
 );
 CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
 
+-- Collections group articles (AI, SRE, ...). An article can be in several; its Obsidian note
+-- lives in the folder of one of them (articles.collection_id).
+CREATE TABLE IF NOT EXISTS collections (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS article_collections (
+    article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+    collection_id INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+    added_at TEXT NOT NULL,
+    PRIMARY KEY (article_id, collection_id)
+);
+
 -- Weekend: an ideas list (movies, places, things to try) and a plan per weekend day.
 CREATE TABLE IF NOT EXISTS weekend_ideas (
     id INTEGER PRIMARY KEY,
@@ -256,6 +270,7 @@ MIGRATIONS = [
     ("revisions", "priority", "TEXT NOT NULL DEFAULT 'none'"),
     ("revisions", "timer_started_at", "TEXT"),
     ("comments", "edited_at", "TEXT"),
+    ("articles", "collection_id", "INTEGER REFERENCES collections(id) ON DELETE SET NULL"),
 ]
 
 # Project icons (Lucide names). New projects take the first one not in use.

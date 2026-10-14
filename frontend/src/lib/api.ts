@@ -332,6 +332,16 @@ export interface Article {
   read_at: string | null;
   obsidian_path: string | null;
   exported_at: string | null;
+  /** The collection whose Obsidian subfolder holds the note. */
+  collection_id: number | null;
+  collections: { id: number; name: string }[];
+  folder_name: string | null;
+}
+export interface Collection {
+  id: number;
+  name: string;
+  count: number;
+  created_at: string;
 }
 export interface LinkPreview {
   url: string;

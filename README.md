@@ -24,6 +24,8 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 - **Reading**: good articles and blog posts. "Add article" takes a link and fills in the title, site, author and summary from the page. Add tags and notes, then move each one through To read, Reading and Read, or star it as a favourite. Search and tag filters find old ones.
   - "Save to Obsidian" writes one note per article (link, tags, status, summary and your notes) into its own folder. The first time, Smriti asks which folder to use, for example `Smriti/Articles`. Change it later on the Reading page or in Settings.
   - Edits to an article update its note. Deleting an article keeps the note in the vault.
+  - **Collections** (AI, SRE, Databases…) are folders on the left of the Reading page. Open one to see only its articles. Create, rename or delete them there, drag an article onto one to add it, or tick collections in the article panel. An article can be in several collections.
+  - In Obsidian each collection is a subfolder, for example `Smriti/Articles/AI/`. An article in several collections has its note in one of them (the one with the Obsidian mark in the article panel; click the mark on another to move it) and lists all of them in the note. Renaming a collection renames its folder; articles in no collection stay in the main folder.
 - **Revisit**: things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (the notes stay hidden until you show them), a link and a priority.
   - Add a topic with `R`, from any ticket, from Radar, or when you mark a Learning ticket Done.
   - Start a session timer or log time by hand. Each topic shows when you last revisited it, the total time and the number of sessions.

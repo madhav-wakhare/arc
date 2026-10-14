@@ -131,6 +131,10 @@ def _render_article(a: dict, key: str) -> str:
         lines.append(f"author: {_yaml_str(a['author'])}")
     lines += [
         f"tags: [{tags}]",
+    ]
+    if a.get("collections"):
+        lines.append("collections: [" + ", ".join(_yaml_str(c["name"]) for c in a["collections"]) + "]")
+    lines += [
         f"status: {a['status']}",
         f"saved: {a['created_at'][:10]}",
     ]
@@ -149,6 +153,8 @@ def export_article(conn, article: dict) -> str:
     if not folder:
         raise ExportError("Choose an Obsidian folder for articles first.")
     key = article_key(article)
+    if article.get("folder_name"):  # the note lives in its collection's subfolder
+        folder = f"{folder.rstrip('/')}/{_safe_filename(article['folder_name'])}"
     rel = _write_note(conn, folder, article["title"], key, _render_article(article, key), article.get("obsidian_path"))
     conn.execute("UPDATE articles SET obsidian_path = ?, exported_at = ? WHERE id = ?", (rel, now(), article["id"]))
     return rel

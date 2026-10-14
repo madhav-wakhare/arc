@@ -1195,6 +1195,7 @@ class ArticleIn(BaseModel):
     notes: str = Field(default="", max_length=50_000)
     tags: list[str] = []
     status: ArticleStatus = "unread"
+    collection_ids: list[int] = []
     export: bool = False
 
 
@@ -1208,6 +1209,12 @@ class ArticlePatch(BaseModel):
     tags: list[str] | None = None
     status: ArticleStatus | None = None
     favorite: bool | None = None
+    collection_ids: list[int] | None = None
+    folder_collection_id: int | None = Field(default=None, description="Which collection's folder holds the note")
+
+
+class CollectionIn(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
 
 
 class PreviewIn(BaseModel):
@@ -1228,12 +1235,62 @@ def _clean_tags(tags: list[str]) -> list[str]:
     return seen
 
 
+def _with_collections(conn, articles: list[dict]) -> list[dict]:
+    """Decode tags and attach collections (the note's folder first, then by when added)."""
+    by_article: dict[int, list[dict]] = {}
+    for r in conn.execute(
+        """SELECT ac.article_id, c.id, c.name FROM article_collections ac
+           JOIN collections c ON c.id = ac.collection_id
+           JOIN articles a ON a.id = ac.article_id
+           ORDER BY ac.article_id, c.id = a.collection_id DESC, ac.added_at, c.id"""):
+        by_article.setdefault(r[0], []).append({"id": r[1], "name": r[2]})
+    for a in articles:
+        a["tags"] = json.loads(a["tags"] or "[]")
+        a["collections"] = by_article.get(a["id"], [])
+        a["folder_name"] = next((c["name"] for c in a["collections"] if c["id"] == a["collection_id"]), None)
+    return articles
+
+
 def load_article(conn, aid: int) -> dict:
     a = row(conn.execute("SELECT * FROM articles WHERE id = ?", (aid,)))
     if not a:
         raise HTTPException(404, "Article not found")
-    a["tags"] = json.loads(a["tags"] or "[]")
-    return a
+    return _with_collections(conn, [a])[0]
+
+
+def _set_collections(conn, aid: int, ids: list[int], folder_id: int | None = None) -> None:
+    """Replace an article's collections. The note folder stays if still a member, else the first one."""
+    ids = list(dict.fromkeys(ids))
+    known = {r[0] for r in conn.execute(
+        f"SELECT id FROM collections WHERE id IN ({','.join('?' * len(ids))})", ids)} if ids else set()
+    if missing := [i for i in ids if i not in known]:
+        raise HTTPException(404, f"Collection not found: {missing[0]}")
+    ts = now()
+    if ids:
+        conn.execute(f"DELETE FROM article_collections WHERE article_id = ? AND collection_id NOT IN ({','.join('?' * len(ids))})",
+                     (aid, *ids))
+    else:
+        conn.execute("DELETE FROM article_collections WHERE article_id = ?", (aid,))
+    for cid in ids:
+        conn.execute("INSERT OR IGNORE INTO article_collections (article_id, collection_id, added_at) VALUES (?, ?, ?)",
+                     (aid, cid, ts))
+    current = conn.execute("SELECT collection_id FROM articles WHERE id = ?", (aid,)).fetchone()[0]
+    if folder_id is not None and folder_id in ids:
+        current = folder_id
+    elif current not in ids:
+        current = ids[0] if ids else None
+    conn.execute("UPDATE articles SET collection_id = ? WHERE id = ?", (current, aid))
+
+
+def _reexport_articles(conn, where: str, args: tuple) -> None:
+    """Rewrite notes after a collection change (moves them between subfolders)."""
+    if get_setting(conn, "auto_reexport", "1") != "1":
+        return
+    for (aid,) in conn.execute(f"SELECT id FROM articles WHERE obsidian_path IS NOT NULL AND ({where})", args).fetchall():
+        try:
+            obsidian.export_article(conn, load_article(conn, aid))
+        except obsidian.ExportError:
+            logging.warning("Could not re-export article %s", aid)
 
 
 def _export_article(conn, aid: int) -> dict:
@@ -1251,10 +1308,7 @@ def article_preview(data: PreviewIn):
 
 @app.get("/api/articles")
 def list_articles(conn=Depends(get_db)):
-    out = rows(conn.execute("SELECT * FROM articles ORDER BY created_at DESC, id DESC"))
-    for a in out:
-        a["tags"] = json.loads(a["tags"] or "[]")
-    return out
+    return _with_collections(conn, rows(conn.execute("SELECT * FROM articles ORDER BY created_at DESC, id DESC")))
 
 
 @app.post("/api/articles", status_code=201)
@@ -1272,6 +1326,8 @@ def create_article(data: ArticleIn, conn=Depends(get_db)):
          data.author.strip(), data.description.strip(), data.image, data.notes.strip(),
          json.dumps(_clean_tags(data.tags)), data.status, ts, ts, ts if data.status == "read" else None),
     )
+    if data.collection_ids:
+        _set_collections(conn, cur.lastrowid, data.collection_ids)
     if data.export:
         return _export_article(conn, cur.lastrowid)
     return load_article(conn, cur.lastrowid)
@@ -1281,6 +1337,12 @@ def create_article(data: ArticleIn, conn=Depends(get_db)):
 def update_article(aid: int, data: ArticlePatch, conn=Depends(get_db)):
     before = load_article(conn, aid)
     updates = data.model_dump(exclude_unset=True)
+    collection_ids = updates.pop("collection_ids", None)
+    folder_id = updates.pop("folder_collection_id", None)
+    if collection_ids is not None or folder_id is not None:
+        ids = collection_ids if collection_ids is not None else [c["id"] for c in before["collections"]]
+        _set_collections(conn, aid, ids, folder_id)
+        updates.setdefault("updated_at", now())
     if "url" in updates:
         updates["url"] = _norm_url(updates["url"])
     if "tags" in updates:
@@ -1295,10 +1357,15 @@ def update_article(aid: int, data: ArticlePatch, conn=Depends(get_db)):
     if not updates:
         return before
     updates["updated_at"] = now()
+    if collection_ids is not None or folder_id is not None:
+        updates["_collections"] = True
+    changed_collections = updates.pop("_collections", False)
     sets = ", ".join(f"{k} = ?" for k in updates)
     conn.execute(f"UPDATE articles SET {sets} WHERE id = ?", (*updates.values(), aid))
+    if changed_collections:
+        updates["collections"] = True
     # Keep the Obsidian note in step, like video notes.
-    note_fields = {"url", "title", "site", "author", "description", "notes", "tags", "status"}
+    note_fields = {"url", "title", "site", "author", "description", "notes", "tags", "status", "collections"}
     if before["obsidian_path"] and note_fields & updates.keys() and get_setting(conn, "auto_reexport", "1") == "1":
         try:
             obsidian.export_article(conn, load_article(conn, aid))
@@ -1315,6 +1382,52 @@ def export_article(aid: int, conn=Depends(get_db)):
 @app.delete("/api/articles/{aid}", status_code=204)
 def delete_article(aid: int, conn=Depends(get_db)):
     conn.execute("DELETE FROM articles WHERE id = ?", (aid,))
+
+
+@app.get("/api/collections")
+def list_collections(conn=Depends(get_db)):
+    return rows(conn.execute(
+        """SELECT c.*, (SELECT count(*) FROM article_collections ac WHERE ac.collection_id = c.id) AS count
+           FROM collections c ORDER BY c.name COLLATE NOCASE"""))
+
+
+def _collection_name(conn, name: str, skip_id: int | None = None) -> str:
+    name = re.sub(r"\s+", " ", name).strip()
+    if not name or obsidian._safe_filename(name) == "Untitled":
+        raise HTTPException(422, "Give the collection a name.")
+    if row(conn.execute("SELECT id FROM collections WHERE name = ? COLLATE NOCASE AND id IS NOT ?", (name, skip_id))):
+        raise HTTPException(409, f"A collection named {name} already exists.")
+    return name
+
+
+@app.post("/api/collections", status_code=201)
+def create_collection(data: CollectionIn, conn=Depends(get_db)):
+    cur = conn.execute("INSERT INTO collections (name, created_at) VALUES (?, ?)", (_collection_name(conn, data.name), now()))
+    return {**row(conn.execute("SELECT * FROM collections WHERE id = ?", (cur.lastrowid,))), "count": 0}
+
+
+@app.patch("/api/collections/{cid}")
+def rename_collection(cid: int, data: CollectionIn, conn=Depends(get_db)):
+    if not row(conn.execute("SELECT id FROM collections WHERE id = ?", (cid,))):
+        raise HTTPException(404, "Collection not found")
+    conn.execute("UPDATE collections SET name = ? WHERE id = ?", (_collection_name(conn, data.name, cid), cid))
+    # Notes in this collection's folder move to the renamed folder; others list the new name.
+    _reexport_articles(conn, "id IN (SELECT article_id FROM article_collections WHERE collection_id = ?)", (cid,))
+    return next(c for c in list_collections(conn) if c["id"] == cid)
+
+
+@app.delete("/api/collections/{cid}", status_code=204)
+def delete_collection(cid: int, conn=Depends(get_db)):
+    """Articles stay. Those whose note lived in this folder move to another collection or to the main folder."""
+    affected = [r[0] for r in conn.execute("SELECT article_id FROM article_collections WHERE collection_id = ?", (cid,))]
+    conn.execute("DELETE FROM article_collections WHERE collection_id = ?", (cid,))
+    for aid in affected:
+        remaining = [r[0] for r in conn.execute(
+            "SELECT collection_id FROM article_collections WHERE article_id = ? ORDER BY added_at", (aid,))]
+        _set_collections(conn, aid, remaining)
+    conn.execute("DELETE FROM collections WHERE id = ?", (cid,))
+    if affected:
+        _reexport_articles(conn, f"id IN ({','.join('?' * len(affected))})", tuple(affected))
 
 
 # --------------------------------------------------------------------------- weekend

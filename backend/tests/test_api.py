@@ -424,3 +424,38 @@ def test_reading_list_and_obsidian(client, monkeypatch):
     c.delete(f"/api/articles/{a['id']}")
     assert c.get("/api/articles").json() == []
     assert (c.vault / a["obsidian_path"]).exists()
+
+
+def test_article_collections_and_subfolders(client):
+    c = client
+    c.put("/api/settings", json={"obsidian_articles_folder": "Smriti/Articles"})
+    ai = c.post("/api/collections", json={"name": "AI"}).json()
+    sre = c.post("/api/collections", json={"name": "SRE"}).json()
+    assert c.post("/api/collections", json={"name": "ai"}).status_code == 409
+
+    a = c.post("/api/articles", json={"url": "https://x.dev/llm-ops", "title": "LLM ops",
+                                      "collection_ids": [ai["id"], sre["id"]], "export": True}).json()
+    # Note lives in the first collection's folder; both are listed in the note.
+    assert a["collection_id"] == ai["id"] and [x["name"] for x in a["collections"]] == ["AI", "SRE"]
+    assert a["obsidian_path"] == "Smriti/Articles/AI/LLM ops.md"
+    assert 'collections: ["AI", "SRE"]' in (c.vault / a["obsidian_path"]).read_text()
+    assert {x["name"]: x["count"] for x in c.get("/api/collections").json()} == {"AI": 1, "SRE": 1}
+
+    # Choose SRE as the note's folder: the note moves.
+    a = c.patch(f"/api/articles/{a['id']}", json={"folder_collection_id": sre["id"]}).json()
+    assert a["obsidian_path"] == "Smriti/Articles/SRE/LLM ops.md"
+    assert not (c.vault / "Smriti/Articles/AI/LLM ops.md").exists()
+
+    # Renaming the collection renames the folder.
+    c.patch(f"/api/collections/{sre['id']}", json={"name": "Reliability"})
+    a = c.get("/api/articles").json()[0]
+    assert a["obsidian_path"] == "Smriti/Articles/Reliability/LLM ops.md"
+
+    # Deleting it keeps the article; the note moves to the remaining collection.
+    c.delete(f"/api/collections/{sre['id']}")
+    a = c.get("/api/articles").json()[0]
+    assert [x["name"] for x in a["collections"]] == ["AI"] and a["obsidian_path"] == "Smriti/Articles/AI/LLM ops.md"
+
+    # Removing every collection puts it back in the main folder.
+    a = c.patch(f"/api/articles/{a['id']}", json={"collection_ids": []}).json()
+    assert a["collections"] == [] and a["obsidian_path"] == "Smriti/Articles/LLM ops.md"

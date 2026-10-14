@@ -1,9 +1,9 @@
 /** Reading list pieces: the Obsidian folder dialog, the add dialog and the article panel. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ExternalLink, FolderOpen, Link2, LoaderCircle, Newspaper, Star, Trash2, X } from "lucide-react";
+import { Check, ExternalLink, Folder, FolderOpen, Link2, LoaderCircle, Newspaper, Plus, Star, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { api, type Article, type ArticleStatus, type LinkPreview, type Settings } from "../lib/api";
+import { api, type Article, type ArticleStatus, type Collection, type LinkPreview, type Settings } from "../lib/api";
 import { useLocalState, useSettings } from "../lib/hooks";
 import { fmtDate } from "../lib/meta";
 import { ObsidianIcon } from "./ObsidianIcon";
@@ -17,6 +17,123 @@ export const ARTICLE_STATUSES: { value: ArticleStatus; label: string }[] = [
 
 export const useArticles = () => useQuery({ queryKey: ["articles"], queryFn: () => api.get<Article[]>("/articles") });
 
+export const useCollections = () => useQuery({ queryKey: ["collections"], queryFn: () => api.get<Collection[]>("/collections") });
+
+export function useCollectionMutations() {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["collections"] });
+    qc.invalidateQueries({ queryKey: ["articles"] });
+  };
+  const onError = (e: Error) => toast(e.message, "error");
+  return {
+    create: useMutation({ mutationFn: (name: string) => api.post<Collection>("/collections", { name }), onSuccess: refresh, onError }),
+    rename: useMutation({
+      mutationFn: ({ id, name }: { id: number; name: string }) => api.patch<Collection>(`/collections/${id}`, { name }),
+      onSuccess: refresh,
+      onError,
+    }),
+    remove: useMutation({ mutationFn: (id: number) => api.del(`/collections/${id}`), onSuccess: refresh, onError }),
+  };
+}
+
+/**
+ * Toggle chips for collections, plus "New". In the article panel, the collection that holds the
+ * Obsidian note shows the Obsidian mark; clicking the mark on another chip moves the note there.
+ */
+export function CollectionPicker({
+  value,
+  onChange,
+  folderId,
+  onFolder,
+}: {
+  value: number[];
+  onChange: (ids: number[]) => void;
+  folderId?: number | null;
+  onFolder?: (id: number) => void;
+}) {
+  const { data: collections = [] } = useCollections();
+  const { create } = useCollectionMutations();
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const toggle = (id: number) => onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
+  const submit = () => {
+    if (!name.trim()) return setAdding(false);
+    create.mutate(name, {
+      onSuccess: (c) => {
+        onChange([...value, c.id]);
+        setName("");
+        setAdding(false);
+      },
+    });
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {collections.map((c) => {
+        const on = value.includes(c.id);
+        const isFolder = on && onFolder && (folderId ?? value[0]) === c.id;
+        return (
+          <span
+            key={c.id}
+            className={clsx(
+              "flex h-7 items-center rounded-md border text-xs transition-colors",
+              on ? "border-accent/50 bg-accent-soft text-fg" : "border-line text-fg-2 hover:border-line-strong hover:text-fg",
+            )}
+          >
+            <button type="button" onClick={() => toggle(c.id)} className="flex h-full items-center gap-1.5 pl-2.5 pr-2.5">
+              {on ? <Check size={12} className="text-accent" /> : <Folder size={12} />}
+              {c.name}
+            </button>
+            {on && onFolder && value.length > 1 && (
+              <button
+                type="button"
+                onClick={() => onFolder(c.id)}
+                title={isFolder ? "The Obsidian note is in this folder" : "Keep the Obsidian note in this folder"}
+                className={clsx("-ml-1 flex h-full items-center pr-2", isFolder ? "text-accent" : "text-fg-3 hover:text-fg")}
+              >
+                <ObsidianIcon size={12} />
+              </button>
+            )}
+          </span>
+        );
+      })}
+      {adding ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit();
+          }}
+        >
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={submit}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                setName("");
+                setAdding(false);
+              }
+            }}
+            placeholder="Collection name"
+            className="h-7 w-36 rounded-md border border-accent/60 bg-surface px-2 text-xs outline-none"
+          />
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="flex h-7 items-center gap-1 rounded-md border border-dashed border-line px-2.5 text-xs text-fg-3 hover:border-line-strong hover:text-fg"
+        >
+          <Plus size={12} /> New
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function useArticleMutations() {
   const qc = useQueryClient();
   const toast = useToast();
@@ -24,10 +141,17 @@ export function useArticleMutations() {
   const onError = (e: Error) => toast(e.message, "error");
   return {
     update: useMutation({
-      mutationFn: ({ id, ...patch }: { id: number } & Partial<Omit<Article, "favorite">> & { favorite?: boolean }) =>
-        api.patch<Article>(`/articles/${id}`, patch),
-      onSuccess: (a) => {
+      mutationFn: ({
+        id,
+        ...patch
+      }: { id: number } & Partial<Omit<Article, "favorite" | "collections">> & {
+        favorite?: boolean;
+        collection_ids?: number[];
+        folder_collection_id?: number;
+      }) => api.patch<Article>(`/articles/${id}`, patch),
+      onSuccess: (a, patch) => {
         qc.setQueryData<Article[]>(["articles"], (old) => old?.map((x) => (x.id === a.id ? a : x)));
+        if (patch.collection_ids) qc.invalidateQueries({ queryKey: ["collections"] });
       },
       onError,
     }),
@@ -133,7 +257,7 @@ export function ObsidianFolderModal({ open, onClose, onSaved }: { open: boolean;
 const looksLikeUrl = (s: string) => /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(s.trim());
 
 /** Paste a link; title, site and summary fill in from the page. */
-export function AddArticleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function AddArticleModal({ open, onClose, defaultCollection }: { open: boolean; onClose: () => void; defaultCollection?: number | null }) {
   const { data: settings } = useSettings();
   const qc = useQueryClient();
   const toast = useToast();
@@ -142,6 +266,7 @@ export function AddArticleModal({ open, onClose }: { open: boolean; onClose: () 
   const [tags, setTags] = useState("");
   const [notes, setNotes] = useState("");
   const [preview, setPreview] = useState<LinkPreview | null>(null);
+  const [collectionIds, setCollectionIds] = useState<number[]>([]);
   const [toObsidian, setToObsidian] = useLocalState("smriti-article-obsidian", true);
   const [askFolder, setAskFolder] = useState(false);
   const titleEdited = useRef(false);
@@ -153,6 +278,11 @@ export function AddArticleModal({ open, onClose }: { open: boolean; onClose: () 
       if (!titleEdited.current && p.title) setTitle(p.title);
     },
   });
+
+  // Adding from inside a collection puts the article there.
+  useEffect(() => {
+    if (open) setCollectionIds(defaultCollection ? [defaultCollection] : []);
+  }, [open, defaultCollection]);
 
   // Look the page up shortly after the link stops changing.
   useEffect(() => {
@@ -186,10 +316,12 @@ export function AddArticleModal({ open, onClose }: { open: boolean; onClose: () 
         image: preview?.image ?? null,
         notes,
         tags: tags.split(/[,\s]+/).filter(Boolean),
+        collection_ids: collectionIds,
         export: toObsidian,
       }),
     onSuccess: (a) => {
       qc.invalidateQueries({ queryKey: ["articles"] });
+      qc.invalidateQueries({ queryKey: ["collections"] });
       toast(a.obsidian_path ? `Saved and added to Obsidian: ${a.obsidian_path}` : "Added to your reading list");
       close();
     },
@@ -271,6 +403,10 @@ export function AddArticleModal({ open, onClose }: { open: boolean; onClose: () 
               placeholder="Filled in from the page"
             />
           </Field>
+          <div className="space-y-1.5">
+            <span className="text-[13px] font-medium">Collections</span>
+            <CollectionPicker value={collectionIds} onChange={setCollectionIds} />
+          </div>
           <Field label="Tags" hint="Separate with commas or spaces.">
             <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="distributed-systems, kubernetes" />
           </Field>
@@ -365,6 +501,15 @@ export function ArticleDrawer({ article, onClose, onNeedFolder }: { article: Art
             <dt className="text-fg-3">Status</dt>
             <dd>
               <Tabs value={a.status} onChange={(s) => save({ id: a.id, status: s })} tabs={ARTICLE_STATUSES} />
+            </dd>
+            <dt className="self-start pt-1.5 text-fg-3">Collections</dt>
+            <dd>
+              <CollectionPicker
+                value={a.collections.map((c) => c.id)}
+                onChange={(ids) => save({ id: a.id, collection_ids: ids })}
+                folderId={a.collection_id}
+                onFolder={(id) => save({ id: a.id, folder_collection_id: id })}
+              />
             </dd>
             <dt className="text-fg-3">Tags</dt>
             <dd>
