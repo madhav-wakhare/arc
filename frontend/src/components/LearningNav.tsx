@@ -1,7 +1,7 @@
-/** Sub-navigation inside Learning: videos and courses you study, and articles you read and keep. */
+/** Sub-navigation inside Learning: topics you study (with a video or course link or not), and articles you read and keep. */
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { MonitorPlay, Newspaper } from "lucide-react";
+import { GraduationCap, Newspaper } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { api, type Article, type Item } from "../lib/api";
 
@@ -9,7 +9,7 @@ export function LearningNav() {
   const { data: items } = useQuery({ queryKey: ["items", "learning"], queryFn: () => api.get<Item[]>("/items?type=learning") });
   const { data: articles } = useQuery({ queryKey: ["articles"], queryFn: () => api.get<Article[]>("/articles") });
   const tabs = [
-    { to: "/learning", end: true, label: "Videos & courses", icon: MonitorPlay, count: items?.filter((i) => i.status !== "done").length },
+    { to: "/learning", end: true, label: "Topics", icon: GraduationCap, count: items?.filter((i) => i.status !== "done").length },
     { to: "/learning/articles", end: false, label: "Articles", icon: Newspaper, count: articles?.filter((a) => a.status !== "read").length },
   ];
   return (

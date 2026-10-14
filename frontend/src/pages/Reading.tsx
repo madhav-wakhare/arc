@@ -356,7 +356,7 @@ export default function Reading() {
   const [folderOpen, setFolderOpen] = useState(false);
   const [dragging, setDragging] = useState<Article | null>(null);
 
-  // Sent here from Videos & courses with a link: open the add dialog with it.
+  // Sent here from Topics with a link: open the add dialog with it.
   const addUrl = params.get("add");
   useEffect(() => {
     if (!addUrl) return;

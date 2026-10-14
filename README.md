@@ -20,9 +20,9 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 ### Learning
 
 - **Radar**: topics you hear about, such as vLLM, Langfuse or tmux. Press `N` anywhere to add one. Topics stay off the board. Review each one, then create a Learning or Task ticket from it, move it to Revisit, or dismiss it. Its link and `#tags` become the ticket link and labels.
-- **Learning** has two tabs: **Videos & courses** (what you study) and **Articles** (what you read and keep).
-- **Videos & courses**: your queue of videos and courses, with thumbnails, status and time tracking. Paste a link to add one: Smriti fills in the title (the real YouTube video title, or the page title for other links). Thumbnails are downloaded once, shrunk to small WebP images and cached in `data/thumbs/`, so the page loads fast on a phone too.
-  If you paste a blog or article link here, Smriti offers to save it to Articles instead.
+- **Learning** has two tabs: **Topics** (what you want to study) and **Articles** (what you read and keep).
+- **Topics**: things you want to learn, with status and time tracking. Type a topic, and add a video or course link if you have one (topics moved from Radar land here too). A topic with a link shows its thumbnail. Paste a link and Smriti fills in the title (the real YouTube video title, or the page title for other links). Thumbnails are downloaded once, shrunk to small WebP images and cached in `data/thumbs/`, so the page loads fast on a phone too.
+  If you paste a blog or article link into Topics, Smriti offers to save it to Articles instead.
 - **Articles** (Learning → Articles): good articles and blog posts. "Add article" takes a link and fills in the title, site, author and summary from the page. Add tags and notes, then move each one through To read, Reading and Read, or star it as a favourite. Search and tag filters find old ones.
   - "Save to Obsidian" writes one note per article (link, tags, status, summary and your notes) into its own folder. The first time, Smriti asks which folder to use, for example `Smriti/Articles`. Change it later on the Articles tab or in Settings.
   - Edits to an article update its note. Deleting an article keeps the note in the vault.
