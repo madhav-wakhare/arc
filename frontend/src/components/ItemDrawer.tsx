@@ -579,7 +579,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                       rel="noreferrer"
                       className="group flex items-center gap-3 overflow-hidden rounded-lg border border-line bg-surface hover:border-line-strong"
                     >
-                      <Thumb url={item.url} className="aspect-video w-40 shrink-0" />
+                      <Thumb itemId={item.id} url={item.url} className="aspect-video w-40 shrink-0" />
                       <div className="min-w-0 py-2 pr-3">
                         <p className="truncate text-[13px] font-medium">{item.title}</p>
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-fg-3">

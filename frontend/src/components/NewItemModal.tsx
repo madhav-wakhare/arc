@@ -1,8 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
-import { Link2 } from "lucide-react";
+import { Link2, LoaderCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api, type Item, type ItemType, type Priority, type Recurrence, type Status } from "../lib/api";
-import { useProjects, useRefreshItems } from "../lib/hooks";
+import { useLinkPreview, useProjects, useRefreshItems } from "../lib/hooks";
 import { PRIORITIES, RECURRENCES, STATUSES, TYPES, parseDuration } from "../lib/meta";
 import type { NewItemDefaults } from "./Layout";
 import { Button, Checkbox, DateInput, Field, Input, Modal, Select, Tabs, Textarea, useToast } from "./ui";
@@ -29,6 +29,12 @@ export function NewItemModal({ defaults, onClose }: { defaults: NewItemDefaults 
   const titleRef = useRef<HTMLInputElement>(null);
   const refresh = useRefreshItems();
   const toast = useToast();
+  // A pasted link fills an empty title with the video or page title.
+  const looking = useLinkPreview(
+    form.url,
+    (p) => p.title && setForm((f) => (f.title.trim() ? f : { ...f, title: p.title })),
+    !!defaults,
+  );
 
   const projectFor = (type: ItemType) =>
     (type === "learning" ? projects.find((p) => p.key === "LRN") : projects.find((p) => p.key === "WORK"))?.id ??
@@ -116,7 +122,8 @@ export function NewItemModal({ defaults, onClose }: { defaults: NewItemDefaults 
         />
         <Input
           ref={titleRef}
-          placeholder={form.type === "learning" ? "Video or article title" : "Title"}
+          icon={looking && !form.title ? <LoaderCircle size={15} className="animate-spin" /> : undefined}
+          placeholder={looking ? "Getting the title from the link…" : form.type === "learning" ? "Video or article title (or paste the link below)" : "Title"}
           value={form.title}
           onChange={(e) => set("title", e.target.value)}
           className="h-10 text-[15px]"

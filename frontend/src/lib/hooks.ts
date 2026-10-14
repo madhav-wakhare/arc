@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { api, type Item, type Jot, type Project, type Revision, type Settings, type Timer, type Trash } from "./api";
+import { useEffect, useRef, useState } from "react";
+import { api, type LinkPreview, type Item, type Jot, type Project, type Revision, type Settings, type Timer, type Trash } from "./api";
 import { useToast } from "../components/ui";
 
 export const useProjects = () => useQuery({ queryKey: ["projects"], queryFn: () => api.get<Project[]>("/projects") });
@@ -69,4 +69,35 @@ export function useLocalState<T>(key: string, initial: T) {
     }
   }, [key, v]);
   return [v, setV] as const;
+}
+
+const LINK = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i;
+
+/**
+ * Looks up a pasted link (YouTube title via oEmbed, other pages via their meta tags) shortly after
+ * it stops changing, and hands the result to onFound. Returns true while looking.
+ */
+export function useLinkPreview(url: string, onFound: (p: LinkPreview) => void, enabled = true) {
+  const [loading, setLoading] = useState(false);
+  const found = useRef(onFound);
+  found.current = onFound;
+  useEffect(() => {
+    const u = url.trim();
+    if (!enabled || !LINK.test(u)) return;
+    let live = true;
+    const t = setTimeout(() => {
+      setLoading(true);
+      api
+        .post<LinkPreview>("/preview", { url: u })
+        .then((p) => live && found.current(p))
+        .catch(() => {})
+        .finally(() => live && setLoading(false));
+    }, 400);
+    return () => {
+      live = false;
+      clearTimeout(t);
+      setLoading(false);
+    };
+  }, [url, enabled]);
+  return loading;
 }

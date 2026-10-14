@@ -74,7 +74,7 @@ function ArticleRow({
       )}
     >
       <button onClick={onOpen} className="shrink-0" tabIndex={-1}>
-        <ArticleThumb src={a.image} className="h-[60px] w-24 rounded-md border border-line" />
+        <ArticleThumb src={a.image} articleId={a.id} className="h-[60px] w-24 rounded-md border border-line" />
       </button>
       <div className="min-w-0 flex-1">
         <button onClick={onOpen} className="block max-w-full text-left">

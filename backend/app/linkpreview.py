@@ -1,9 +1,10 @@
 """Read the title, site name, author, summary and image of a web page (Open Graph and <title>)."""
 
 import html
+import json
 import re
 import urllib.request
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, urljoin, urlparse
 
 _UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
 _META = re.compile(r"<meta\s+[^>]*>", re.I)
@@ -18,6 +19,32 @@ def _clean(text: str | None, limit: int) -> str:
     return text[:limit]
 
 
+_YOUTUBE = re.compile(r"(?:youtu\.be/|youtube\.com/(?:watch\?(?:.*&)?v=|shorts/|embed/|live/))([\w-]{11})")
+
+
+def youtube_id(url: str | None) -> str | None:
+    m = _YOUTUBE.search(url or "")
+    return m.group(1) if m else None
+
+
+def youtube_thumb(video_id: str) -> str:
+    return f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
+
+
+def _youtube(url: str, video_id: str, timeout: float) -> dict:
+    """YouTube's oEmbed: small JSON with the real title and channel, no page scraping."""
+    result = {"url": url, "title": "", "site": "YouTube", "author": "", "description": "", "image": youtube_thumb(video_id)}
+    try:
+        api = f"https://www.youtube.com/oembed?format=json&url={quote(f'https://www.youtube.com/watch?v={video_id}', safe='')}"
+        with urllib.request.urlopen(urllib.request.Request(api, headers={"User-Agent": _UA}), timeout=timeout) as resp:
+            data = json.loads(resp.read(200_000))
+        result["title"] = _clean(data.get("title"), 300)
+        result["author"] = _clean(data.get("author_name"), 120)
+    except Exception:
+        pass
+    return result
+
+
 def site_of(url: str) -> str:
     host = urlparse(url).hostname or ""
     return host.removeprefix("www.")
@@ -28,6 +55,8 @@ def preview(url: str, timeout: float = 6.0) -> dict:
     result = {"url": url, "title": "", "site": site_of(url), "author": "", "description": "", "image": None}
     if urlparse(url).scheme not in ("http", "https"):
         return result
+    if video_id := youtube_id(url):
+        return _youtube(url, video_id, timeout)
     try:
         req = urllib.request.Request(url, headers={"User-Agent": _UA, "Accept": "text/html,*/*;q=0.8"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:

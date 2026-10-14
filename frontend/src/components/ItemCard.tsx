@@ -76,18 +76,29 @@ export function ItemCard({ item, onOpen, dragging }: { item: Item; onOpen: () =>
   );
 }
 
-/** YouTube thumbnail, or a link icon when there is no thumbnail or it fails to load. */
-export function Thumb({ url, className }: { url: string | null; className?: string }) {
+/** Short stable hash, so a changed link gets a fresh (browser-cached) thumbnail URL. */
+export function urlHash(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
+/**
+ * Link thumbnail served by Smriti: fetched once, shrunk to a small WebP and cached on disk and in
+ * the browser. Falls back to an icon when the link has no preview image.
+ */
+export function Thumb({ itemId, url, className }: { itemId: number; url: string | null; className?: string }) {
   const [failed, setFailed] = useState(false);
   const yt = youtubeId(url);
-  if (yt && !failed)
+  if (url && !failed)
     return (
       <img
-        src={`https://i.ytimg.com/vi/${yt}/mqdefault.jpg`}
+        src={`/api/items/${itemId}/thumb?v=${urlHash(url)}`}
         alt=""
         loading="lazy"
+        decoding="async"
         onError={() => setFailed(true)}
-        className={clsx("object-cover", className)}
+        className={clsx("bg-surface-2 object-cover", className)}
       />
     );
   return (

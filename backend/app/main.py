@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import backup, linkpreview, obsidian
+from . import backup, linkpreview, obsidian, thumbs
 from .db import (
     PROJECT_ICONS, TRASH_DAYS, get_db, next_icon, get_setting, hard_delete_items, init_db, needs_migration, now, purge_trash, row, rows,
     set_setting, today,
@@ -428,6 +428,8 @@ def update_item(item_id: int, data: ItemPatch, conn=Depends(get_db)):
     if "status" in updates:
         updates["status_changed_at"] = ts
         updates["completed_at"] = ts if updates["status"] == "done" else None
+    if "url" in updates:
+        updates["thumb"] = None  # look up the new link's preview image next time
 
     if updates:
         updates["updated_at"] = ts
@@ -1301,9 +1303,44 @@ def _export_article(conn, aid: int) -> dict:
     return load_article(conn, aid)
 
 
+@app.post("/api/preview")
 @app.post("/api/articles/preview")
-def article_preview(data: PreviewIn):
+def link_preview(data: PreviewIn):
+    """Title, site, author, summary and image for a link. YouTube uses oEmbed for the real video title."""
     return linkpreview.preview(_norm_url(data.url))
+
+
+_THUMB_HEADERS = {"Cache-Control": "public, max-age=31536000, immutable"}
+
+
+def _thumb_response(source: str | None):
+    path = thumbs.get(source) if source else None
+    if not path:
+        raise HTTPException(404, "No thumbnail")
+    return FileResponse(path, media_type="image/webp", headers=_THUMB_HEADERS)
+
+
+@app.get("/api/items/{item_id}/thumb")
+def item_thumb(item_id: int, conn=Depends(get_db)):
+    item = row(conn.execute("SELECT url, thumb FROM items WHERE id = ?", (item_id,)))
+    if not item or not item["url"]:
+        raise HTTPException(404, "No thumbnail")
+    if video := linkpreview.youtube_id(item["url"]):
+        return _thumb_response(linkpreview.youtube_thumb(video))
+    source = item["thumb"]
+    if source is None:  # first time: look for the page's preview image, remember the answer
+        source = linkpreview.preview(item["url"]).get("image") or ""
+        conn.execute("UPDATE items SET thumb = ? WHERE id = ?", (source, item_id))
+    return _thumb_response(source)
+
+
+@app.get("/api/articles/{aid}/thumb")
+def article_thumb(aid: int, conn=Depends(get_db)):
+    a = row(conn.execute("SELECT url, image FROM articles WHERE id = ?", (aid,)))
+    if not a:
+        raise HTTPException(404, "No thumbnail")
+    video = linkpreview.youtube_id(a["url"])
+    return _thumb_response(linkpreview.youtube_thumb(video) if video else a["image"])
 
 
 @app.get("/api/articles")

@@ -459,3 +459,54 @@ def test_article_collections_and_subfolders(client):
     # Removing every collection puts it back in the main folder.
     a = c.patch(f"/api/articles/{a['id']}", json={"collection_ids": []}).json()
     assert a["collections"] == [] and a["obsidian_path"] == "Smriti/Articles/LLM ops.md"
+
+
+def test_youtube_preview_and_cached_thumbnails(client, monkeypatch):
+    import io
+    import json as _json
+
+    from PIL import Image
+
+    import app.linkpreview as lp
+    import app.thumbs as th
+
+    calls = []
+
+    class Resp(io.BytesIO):
+        headers = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def fake_urlopen(req, timeout=0):
+        url = req.full_url
+        calls.append(url)
+        if "oembed" in url:
+            return Resp(_json.dumps({"title": "Kubernetes in 100 Seconds", "author_name": "Fireship"}).encode())
+        buf = io.BytesIO()
+        Image.new("RGB", (1280, 720), "navy").save(buf, "JPEG")
+        return Resp(buf.getvalue())
+
+    monkeypatch.setattr(lp.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(th.urllib.request, "urlopen", fake_urlopen)
+
+    p = client.post("/api/preview", json={"url": "https://youtu.be/PziYflu8cB8?si=x"}).json()
+    assert (p["title"], p["author"], p["site"]) == ("Kubernetes in 100 Seconds", "Fireship", "YouTube")
+    assert p["image"] == "https://i.ytimg.com/vi/PziYflu8cB8/mqdefault.jpg"
+
+    item = _learning(client, url="https://www.youtube.com/watch?v=PziYflu8cB8")
+    r = client.get(f"/api/items/{item['id']}/thumb")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/webp"
+    assert "immutable" in r.headers["cache-control"]
+    assert Image.open(io.BytesIO(r.content)).width == 480  # shrunk from 1280
+    n = len(calls)
+    assert client.get(f"/api/items/{item['id']}/thumb").status_code == 200
+    assert len(calls) == n  # served from the disk cache
+
+    # A link without a preview image: 404, remembered so the page is not fetched again.
+    item2 = _learning(client, url="https://example.com/notes", title="Notes")
+    monkeypatch.setattr(lp, "preview", lambda url, timeout=6.0: {"image": None})
+    assert client.get(f"/api/items/{item2['id']}/thumb").status_code == 404

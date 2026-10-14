@@ -20,7 +20,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 ### Learning
 
 - **Radar**: topics you hear about, such as vLLM, Langfuse or tmux. Press `N` anywhere to add one. Topics stay off the board. Review each one, then create a Learning or Task ticket from it, move it to Revisit, or dismiss it. Its link and `#tags` become the ticket link and labels.
-- **Learning**: your queue of videos, articles and courses, with YouTube thumbnails. Paste a link to add one.
+- **Learning**: your queue of videos, articles and courses, with thumbnails. Paste a link to add one: Smriti fills in the title (the real YouTube video title, or the page title for other links). Thumbnails are downloaded once, shrunk to small WebP images and cached in `data/thumbs/`, so the page loads fast on a phone too.
 - **Reading**: good articles and blog posts. "Add article" takes a link and fills in the title, site, author and summary from the page. Add tags and notes, then move each one through To read, Reading and Read, or star it as a favourite. Search and tag filters find old ones.
   - "Save to Obsidian" writes one note per article (link, tags, status, summary and your notes) into its own folder. The first time, Smriti asks which folder to use, for example `Smriti/Articles`. Change it later on the Reading page or in Settings.
   - Edits to an article update its note. Deleting an article keeps the note in the vault.

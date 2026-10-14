@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, type Article, type ArticleStatus, type Collection, type LinkPreview, type Settings } from "../lib/api";
 import { useLocalState, useSettings } from "../lib/hooks";
 import { fmtDate } from "../lib/meta";
+import { urlHash } from "./ItemCard";
 import { ObsidianIcon } from "./ObsidianIcon";
 import { Button, Checkbox, Drawer, Field, IconButton, Input, Modal, Tabs, Textarea, useToast } from "./ui";
 
@@ -177,10 +178,22 @@ function suggestFolder(videos: string | undefined) {
 }
 
 /** Small preview image, or a neutral tile when there is none or it fails to load. */
-export function ArticleThumb({ src, className }: { src: string | null; className?: string }) {
+export function ArticleThumb({ src, articleId, className }: { src: string | null; articleId?: number; className?: string }) {
   const [failed, setFailed] = useState(false);
-  if (src && !failed)
-    return <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} className={clsx("object-cover", className)} />;
+  // Saved articles use Smriti's small cached copy; the add dialog shows the page's image directly.
+  const url = src && articleId ? `/api/articles/${articleId}/thumb?v=${urlHash(src)}` : src;
+  if (url && !failed)
+    return (
+      <img
+        src={url}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
+        className={clsx("bg-surface-2 object-cover", className)}
+      />
+    );
   return (
     <div className={clsx("flex items-center justify-center bg-surface-2", className)}>
       <Newspaper size={18} className="text-fg-3" />
@@ -494,7 +507,7 @@ export function ArticleDrawer({ article, onClose, onNeedFolder }: { article: Art
             </a>
             {a.description && <p className="mt-3 text-[13px] leading-relaxed text-fg-2">{a.description}</p>}
           </div>
-          {a.image && <ArticleThumb src={a.image} className="mt-1 hidden h-20 w-32 shrink-0 rounded-md border border-line sm:block" />}
+          {a.image && <ArticleThumb src={a.image} articleId={a.id} className="mt-1 hidden h-20 w-32 shrink-0 rounded-md border border-line sm:block" />}
           </div>
 
           <dl className="grid grid-cols-[110px_1fr] items-center gap-x-4 gap-y-3 text-[13px]">

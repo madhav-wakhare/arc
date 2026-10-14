@@ -1,13 +1,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { BookOpen, Check, Clock, Link2, Play, Plus } from "lucide-react";
-import { useState } from "react";
+import { BookOpen, Check, Clock, Link2, LoaderCircle, Play, Plus } from "lucide-react";
+import { useRef, useState } from "react";
 import { PendingBadge, Thumb } from "../components/ItemCard";
 import { useActions } from "../components/Layout";
 import { ObsidianIcon } from "../components/ObsidianIcon";
 import { Button, Card, Empty, IconButton, Input, PageHeader, Tabs, useToast } from "../components/ui";
-import { api, type Item, type Status } from "../lib/api";
-import { useProjects, useRefreshItems, useUpdateItem } from "../lib/hooks";
+import { api, type Item, type LinkPreview, type Status } from "../lib/api";
+import { useLinkPreview, useProjects, useRefreshItems, useUpdateItem } from "../lib/hooks";
 import { StatusIcon, fmtMinutes, hostOf, statusMeta } from "../lib/meta";
 
 type Tab = "queue" | "in_progress" | "done" | "all";
@@ -31,7 +31,7 @@ function LearningCard({ item }: { item: Item }) {
   return (
     <Card className="group flex flex-col overflow-hidden transition-colors hover:border-line-strong">
       <button onClick={() => openItem(item.id)} className="relative block aspect-video w-full overflow-hidden bg-surface-2">
-        <Thumb url={item.url} className="size-full" />
+        <Thumb itemId={item.id} url={item.url} className="size-full" />
         <span className="absolute left-2 top-2">
           <PendingBadge item={item} />
         </span>
@@ -97,19 +97,29 @@ export default function Learning() {
   const refresh = useRefreshItems();
   const toast = useToast();
   const { newItem } = useActions();
+  // Fill the title from the video or page, unless you typed one yourself.
+  const titleTyped = useRef(false);
+  const looking = useLinkPreview(url, (p) => {
+    if (!titleTyped.current && p.title) setTitle(p.title);
+  });
 
   const quickAdd = useMutation({
-    mutationFn: () =>
-      api.post<Item>("/items", {
+    mutationFn: async () => {
+      // Saved before the title arrived: look it up now instead of using the link as the title.
+      let name = title.trim();
+      if (!name) name = (await api.post<LinkPreview>("/preview", { url: url.trim() }).catch(() => null))?.title || url.trim();
+      return api.post<Item>("/items", {
         project_id: (projects.find((p) => p.key === "LRN") ?? projects[0])?.id,
         type: "learning",
-        title: title.trim() || url.trim(),
+        title: name,
         url: url.trim(),
-      }),
+      });
+    },
     onSuccess: (i) => {
       refresh();
       setUrl("");
       setTitle("");
+      titleTyped.current = false;
       toast(`${i.key} added to the queue`);
     },
     onError: (e: Error) => toast(e.message, "error"),
@@ -148,7 +158,16 @@ export default function Learning() {
               onChange={(e) => setUrl(e.target.value)}
               className="md:flex-[3]"
             />
-            <Input placeholder="Title (name of the video)" value={title} onChange={(e) => setTitle(e.target.value)} className="md:flex-[2]" />
+            <Input
+              icon={looking ? <LoaderCircle size={14} className="animate-spin" /> : undefined}
+              placeholder={looking ? "Getting the title…" : "Title (filled in from the link)"}
+              value={title}
+              onChange={(e) => {
+                titleTyped.current = e.target.value !== "";
+                setTitle(e.target.value);
+              }}
+              className="md:flex-[2]"
+            />
             <Button type="submit" variant="primary" disabled={!url.trim() || quickAdd.isPending} className="h-9">
               Save to queue
             </Button>
