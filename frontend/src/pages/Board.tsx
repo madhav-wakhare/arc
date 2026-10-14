@@ -96,7 +96,7 @@ function Column({
   const { newItem } = useActions();
   const minutes = items.reduce((s, i) => s + i.logged_minutes, 0);
   return (
-    <div className="flex w-[300px] shrink-0 flex-col md:w-auto md:min-w-[240px] md:flex-1">
+    <div className="flex min-h-0 w-[300px] shrink-0 flex-col md:w-auto md:min-w-[240px] md:flex-1">
       <div className="mb-2 flex h-9 items-center gap-2 px-1">
         <StatusIcon status={status} size={15} />
         <span className="text-[14px] font-medium">{meta.label}</span>
@@ -111,7 +111,7 @@ function Column({
       <div
         ref={setNodeRef}
         className={clsx(
-          "flex min-h-40 flex-1 flex-col gap-2 rounded-lg border border-dashed p-2 transition-colors",
+          "flex min-h-40 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain rounded-lg border border-dashed p-2 transition-colors",
           isOver ? "border-accent bg-accent-soft" : "border-transparent bg-surface-2/50",
         )}
       >
