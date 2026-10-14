@@ -40,15 +40,24 @@ function LearningCard({ item }: { item: Item }) {
   const firstLine = item.description.split("\n").find((l) => l.trim())?.trim();
 
   return (
-    <Card className="group flex flex-col overflow-hidden transition-colors hover:border-line-strong">
+    // The whole card opens the topic; the buttons at the bottom do their own thing.
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => openItem(item.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && e.target === e.currentTarget) openItem(item.id);
+      }}
+      className="group flex cursor-pointer flex-col overflow-hidden rounded-lg border border-line bg-surface outline-none transition-colors hover:border-line-strong focus-visible:border-accent"
+    >
       {item.url ? (
-        <button onClick={() => openItem(item.id)} className="relative block aspect-video w-full overflow-hidden bg-surface-2">
+        <div className="relative block aspect-video w-full overflow-hidden bg-surface-2">
           <Thumb itemId={item.id} url={item.url} className="size-full" />
           <span className="absolute left-2 top-2">
             <PendingBadge item={item} />
           </span>
           {saved && <span className="absolute right-2 top-2">{saved}</span>}
-        </button>
+        </div>
       ) : (
         // A topic without a link: no empty picture, just the topic.
         <div className="flex items-center gap-2 px-3 pt-3">
@@ -58,9 +67,9 @@ function LearningCard({ item }: { item: Item }) {
         </div>
       )}
       <div className="flex flex-1 flex-col p-3">
-        <button onClick={() => openItem(item.id)} className="text-left">
+        <div>
           <p className={clsx("line-clamp-2 font-medium leading-snug", item.url ? "text-[13px]" : "text-[14px]", done && "text-fg-3")}>{item.title}</p>
-        </button>
+        </div>
         {!item.url && firstLine && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-fg-3">{firstLine}</p>}
         <div className="mt-1.5 flex min-w-0 items-center gap-2 text-xs text-fg-3">
           <span className="shrink-0 whitespace-nowrap font-mono">{item.key}</span>
@@ -80,7 +89,7 @@ function LearningCard({ item }: { item: Item }) {
             ))}
           </div>
         )}
-        <div className="mt-auto flex items-center gap-1 pt-3">
+        <div className="mt-auto flex items-center gap-1 pt-3" onClick={(e) => (e.target as HTMLElement).closest("button") && e.stopPropagation()}>
           <span className="flex flex-1 items-center gap-1.5 text-xs text-fg-2">
             <StatusIcon status={item.status} /> {statusMeta(item.status).label}
           </span>
@@ -107,7 +116,7 @@ function LearningCard({ item }: { item: Item }) {
           </IconButton>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 

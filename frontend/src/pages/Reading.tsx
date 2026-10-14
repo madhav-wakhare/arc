@@ -70,8 +70,9 @@ function ArticleRow({
       ref={drag.setNodeRef}
       {...drag.listeners}
       {...drag.attributes}
+      onClick={onOpen}
       className={clsx(
-        "group flex items-start gap-4 px-4 py-3.5 outline-none transition-colors hover:bg-surface-2/50",
+        "group flex cursor-pointer items-start gap-4 px-4 py-3.5 outline-none transition-colors hover:bg-surface-2/50",
         drag.isDragging && "opacity-40",
       )}
     >
@@ -95,7 +96,10 @@ function ArticleRow({
             <button
               key={c.id}
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => onCollection(c.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCollection(c.id);
+              }}
               className="flex items-center gap-1 rounded bg-surface-2 px-1.5 py-px text-[11px] text-fg-2 hover:text-fg"
             >
               <Folder size={10} /> {c.name}
@@ -105,7 +109,10 @@ function ArticleRow({
             <button
               key={t}
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => onTag(t)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTag(t);
+              }}
               className="rounded border border-line px-1.5 py-px text-[11px] text-fg-2 hover:border-line-strong hover:text-fg"
             >
               {t}
@@ -114,7 +121,7 @@ function ArticleRow({
         </div>
         {a.description && <p className="mt-1 line-clamp-1 text-xs text-fg-3">{a.description}</p>}
       </div>
-      <div className="flex shrink-0 items-center gap-0.5" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="flex shrink-0 items-center gap-0.5" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
         {a.obsidian_path && (
           <span title={`In Obsidian: ${a.obsidian_path}`} className="mr-1 text-accent">
             <ObsidianIcon size={14} />
