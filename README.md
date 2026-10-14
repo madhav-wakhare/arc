@@ -4,6 +4,57 @@ Smriti is a personal work and learning tracker. It runs on your computer in one 
 
 Use it to plan your day, track time on tasks like in Jira, keep a list of things you heard about, and keep what you learned in front of you so you don't forget it.
 
+![Smriti dashboard: open items, today's plan, items waiting longest, topics to revisit and this week's summary](docs/screenshots/dashboard.webp)
+
+## A quick tour
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <b>Board</b><br>
+      <sub>Backlog, In Progress, Today and Done. Badges turn amber, orange and red as items wait.</sub><br><br>
+      <img src="docs/screenshots/board.webp" alt="Kanban board with four columns of work and learning items">
+    </td>
+    <td width="50%" valign="top">
+      <b>Item panel</b><br>
+      <sub>Description, checklist, comments, Jira-style work log and time tracking.</sub><br><br>
+      <img src="docs/screenshots/item.webp" alt="Item panel with description, comments, properties and time tracking">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <b>Learning: Topics</b><br>
+      <sub>Things to study, with or without a video. Paste a link and the title fills in.</sub><br><br>
+      <img src="docs/screenshots/learning.webp" alt="Learning topics as cards, with YouTube thumbnails for those with a video">
+    </td>
+    <td width="50%" valign="top">
+      <b>Learning: Engineering Blogs</b><br>
+      <sub>Blog posts in collections, with notes, saved as notes in Obsidian.</sub><br><br>
+      <img src="docs/screenshots/blogs.webp" alt="Engineering blogs list with collections on the left">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <b>Weekly report</b><br>
+      <sub>Time per day and project, what got done and what carried over.</sub><br><br>
+      <img src="docs/screenshots/report.webp" alt="Weekly report with a bar chart of time per day and time by project">
+    </td>
+    <td width="50%" valign="top">
+      <b>Weekend</b><br>
+      <sub>Plan Saturday and Sunday with study, revision and life.</sub><br><br>
+      <img src="docs/screenshots/weekend.webp" alt="Weekend plan with morning, afternoon and evening slots and an ideas list">
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary>Light theme</summary>
+<br>
+<img src="docs/screenshots/board-light.webp" alt="The board in the light theme">
+</details>
+
+<sub>Screenshots use demo data.</sub>
+
 ## Features
 
 ### Work
@@ -11,7 +62,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 - **Board**: Kanban board with Backlog, In Progress, Today and Done. Drag cards between columns. The Done column shows items completed in the last 7 days by default; switch it to 30 days or Lifetime from its header. Each open card shows how many days it has been pending: neutral at first, amber after 10 days, orange after 15 and red after 30.
 - **Today**: today's plan, overdue items, a quick pick from the backlog, a "Keep in mind" list from Revisit, and an end-of-day review.
 - **All items**: a sortable table of every item with filters.
-- **Item types**: tasks, learning items (videos, articles, courses, books) and notes.
+- **Item types**: tasks, learning topics and notes.
 - **Item panel**: title, description, checklist, comments, work log and history. Properties: status, priority, type, project, due date, repeat and labels.
 - **Time tracking (Jira style)**: original estimate, "Log work" with `2h 30m`, `45m` or `1d` (1d = 8h), a start/stop timer, and a work log per item.
 - **Recurring items**: daily, weekdays, weekly or monthly. When you mark one Done, Smriti makes the next one.
@@ -157,12 +208,15 @@ backend/
   app/db.py         SQLite schema and migrations
   app/obsidian.py   Obsidian export
   app/backup.py     Monthly backups and Trash cleanup
+  app/linkpreview.py  Titles and images for pasted links (YouTube oEmbed, page meta tags)
+  app/thumbs.py     Cached WebP thumbnails
   tests/            API tests (make test)
 frontend/src/
   pages/            One file per page
   components/       Shared UI (sidebar, item panel, dialogs, dashboard pieces)
   lib/              API client, hooks, formatting
+docs/screenshots/   Images used in this README
 ```
 
-- Backend: Python 3.12, FastAPI, SQLite with FTS5. Dependencies are in `backend/pyproject.toml`.
+- Backend: Python 3.12, FastAPI, SQLite with FTS5, Pillow for thumbnails. Dependencies are in `backend/pyproject.toml`.
 - Frontend: React, Vite, Tailwind CSS, Geist font, Lucide icons, Recharts.

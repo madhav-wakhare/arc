@@ -53,7 +53,8 @@ function LearningCard({ item }: { item: Item }) {
       {item.url ? (
         <div className="relative block aspect-video w-full overflow-hidden bg-surface-2">
           <Thumb itemId={item.id} url={item.url} className="size-full" />
-          <span className="absolute left-2 top-2">
+          {/* Solid backing so the tinted badge stays readable on any picture. */}
+          <span className="absolute left-2 top-2 rounded bg-bg/85 backdrop-blur-sm">
             <PendingBadge item={item} />
           </span>
           {saved && <span className="absolute right-2 top-2">{saved}</span>}
