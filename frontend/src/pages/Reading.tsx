@@ -1,6 +1,7 @@
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, pointerWithin, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import clsx from "clsx";
 import {
+  BookOpen,
   Check,
   ExternalLink,
   Folder,
@@ -16,8 +17,9 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
+import { LearningNav } from "../components/LearningNav";
 import { ObsidianIcon } from "../components/ObsidianIcon";
 import {
   ARTICLE_STATUSES,
@@ -354,6 +356,22 @@ export default function Reading() {
   const [folderOpen, setFolderOpen] = useState(false);
   const [dragging, setDragging] = useState<Article | null>(null);
 
+  // Sent here from Videos & courses with a link: open the add dialog with it.
+  const addUrl = params.get("add");
+  useEffect(() => {
+    if (!addUrl) return;
+    setAdding(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addUrl]);
+  const closeAdd = () => {
+    setAdding(false);
+    if (addUrl)
+      setParams((p) => {
+        p.delete("add");
+        return p;
+      });
+  };
+
   const raw = params.get("c");
   const scope: Scope = raw === "unfiled" ? "unfiled" : raw && Number(raw) ? Number(raw) : "all";
   const setScope = (s: Scope) => {
@@ -395,28 +413,20 @@ export default function Reading() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] pb-10">
+    <div className="mx-auto w-full max-w-[1440px] pb-10">
       <PageHeader
-        icon={<Newspaper size={18} />}
+        icon={<BookOpen size={18} />}
         title={
-          current ? (
-            <span className="flex items-center gap-2">
-              <button onClick={() => setScope("all")} className="text-fg-3 hover:text-fg">
-                Reading
-              </button>
-              <span className="text-fg-3">/</span>
-              {current.name}
-            </span>
-          ) : scope === "unfiled" ? (
-            <span className="flex items-center gap-2">
-              <button onClick={() => setScope("all")} className="text-fg-3 hover:text-fg">
-                Reading
-              </button>
-              <span className="text-fg-3">/</span>
-              Unfiled
-            </span>
+          scope === "all" ? (
+            "Learning"
           ) : (
-            "Reading"
+            <span className="flex items-center gap-2">
+              <button onClick={() => setScope("all")} className="text-fg-3 hover:text-fg">
+                Learning
+              </button>
+              <span className="text-fg-3">/</span>
+              {current?.name ?? "Unfiled"}
+            </span>
           )
         }
         actions={
@@ -435,6 +445,7 @@ export default function Reading() {
           </>
         }
       />
+      <LearningNav />
       <DndContext
         sensors={sensors}
         collisionDetection={pointerWithin}
@@ -561,7 +572,7 @@ export default function Reading() {
         </DragOverlay>
       </DndContext>
 
-      <AddArticleModal open={adding} onClose={() => setAdding(false)} defaultCollection={current?.id ?? null} />
+      <AddArticleModal open={adding} onClose={closeAdd} defaultCollection={current?.id ?? null} initialUrl={addUrl ?? undefined} />
       <ArticleDrawer article={open} onClose={() => setOpenId(null)} onNeedFolder={() => setFolderOpen(true)} />
       <ObsidianFolderModal open={folderOpen} onClose={() => setFolderOpen(false)} />
     </div>

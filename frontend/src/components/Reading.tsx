@@ -270,7 +270,17 @@ export function ObsidianFolderModal({ open, onClose, onSaved }: { open: boolean;
 const looksLikeUrl = (s: string) => /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(s.trim());
 
 /** Paste a link; title, site and summary fill in from the page. */
-export function AddArticleModal({ open, onClose, defaultCollection }: { open: boolean; onClose: () => void; defaultCollection?: number | null }) {
+export function AddArticleModal({
+  open,
+  onClose,
+  defaultCollection,
+  initialUrl,
+}: {
+  open: boolean;
+  onClose: () => void;
+  defaultCollection?: number | null;
+  initialUrl?: string;
+}) {
   const { data: settings } = useSettings();
   const qc = useQueryClient();
   const toast = useToast();
@@ -295,7 +305,8 @@ export function AddArticleModal({ open, onClose, defaultCollection }: { open: bo
   // Adding from inside a collection puts the article there.
   useEffect(() => {
     if (open) setCollectionIds(defaultCollection ? [defaultCollection] : []);
-  }, [open, defaultCollection]);
+    if (open && initialUrl) setUrl(initialUrl);
+  }, [open, defaultCollection, initialUrl]);
 
   // Look the page up shortly after the link stops changing.
   useEffect(() => {

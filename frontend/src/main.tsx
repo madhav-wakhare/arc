@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ToastProvider } from "./components/ui";
 import "./index.css";
@@ -19,6 +19,11 @@ import Projects from "./pages/Projects";
 import Settings from "./pages/Settings";
 import Trash from "./pages/Trash";
 import Today from "./pages/Today";
+
+/** Old /reading links (and bookmarks) now open Learning → Articles, keeping ?c= etc. */
+function ToArticles() {
+  return <Navigate to={`/learning/articles${useLocation().search}`} replace />;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: true } },
@@ -40,7 +45,8 @@ createRoot(document.getElementById("root")!).render(
               <Route path="board" element={<Board />} />
               <Route path="list" element={<ListView />} />
               <Route path="learning" element={<Learning />} />
-              <Route path="reading" element={<Reading />} />
+              <Route path="learning/articles" element={<Reading />} />
+              <Route path="reading" element={<ToArticles />} />
               <Route path="reports" element={<Reports />} />
               <Route path="projects" element={<Projects />} />
               <Route path="weekend" element={<Weekend />} />

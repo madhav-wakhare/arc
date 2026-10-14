@@ -12,7 +12,6 @@ import {
   CirclePlus,
   Menu,
   Moon,
-  Newspaper,
   PanelLeft,
   Plus,
   Search,
@@ -64,7 +63,6 @@ const NAV = [
   { to: "/weekend", label: "Weekend", icon: CalendarHeart, weekendOnly: true },
   { to: "/list", label: "All items", icon: ListTodo },
   { to: "/learning", label: "Learning", icon: BookOpen },
-  { to: "/reading", label: "Reading", icon: Newspaper },
   { to: "/revisit", label: "Revisit", icon: BookMarked },
   { to: "/reports", label: "Weekly report", icon: FileBarChart },
 ];

@@ -1,14 +1,16 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { BookOpen, Check, Clock, Link2, LoaderCircle, Play, Plus } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Clock, Link2, LoaderCircle, Newspaper, Play, Plus } from "lucide-react";
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PendingBadge, Thumb } from "../components/ItemCard";
 import { useActions } from "../components/Layout";
+import { LearningNav } from "../components/LearningNav";
 import { ObsidianIcon } from "../components/ObsidianIcon";
 import { Button, Card, Empty, IconButton, Input, PageHeader, Tabs, useToast } from "../components/ui";
 import { api, type Item, type LinkPreview, type Status } from "../lib/api";
 import { useLinkPreview, useProjects, useRefreshItems, useUpdateItem } from "../lib/hooks";
-import { StatusIcon, fmtMinutes, hostOf, statusMeta } from "../lib/meta";
+import { StatusIcon, fmtMinutes, hostOf, statusMeta, youtubeId } from "../lib/meta";
 
 type Tab = "queue" | "in_progress" | "done" | "all";
 
@@ -99,9 +101,15 @@ export default function Learning() {
   const { newItem } = useActions();
   // Fill the title from the video or page, unless you typed one yourself.
   const titleTyped = useRef(false);
+  const navigate = useNavigate();
   const looking = useLinkPreview(url, (p) => {
     if (!titleTyped.current && p.title) setTitle(p.title);
   });
+  // Blog posts belong in Articles; offer to send a link that is not a video or course site there.
+  const articleLike =
+    /^(https?:\/\/)?[\w-]+(\.[\w-]+)+\/\S+/i.test(url.trim()) &&
+    !youtubeId(url) &&
+    !/youtube|vimeo|loom\.com|course|learn|academy|udemy|coursera|kodekloud|pluralsight|egghead|frontendmasters/i.test(url);
 
   const quickAdd = useMutation({
     mutationFn: async () => {
@@ -142,6 +150,7 @@ export default function Learning() {
           </Button>
         }
       />
+      <LearningNav />
       <div className="space-y-5 px-4 md:px-6 lg:px-8">
         <Card className="p-4">
           <form
@@ -153,7 +162,7 @@ export default function Learning() {
           >
             <Input
               icon={<Link2 size={15} />}
-              placeholder="Paste a YouTube or article link"
+              placeholder="Paste a YouTube or course link"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               className="md:flex-[3]"
@@ -172,6 +181,19 @@ export default function Learning() {
               Save to queue
             </Button>
           </form>
+          {articleLike && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
+              <Newspaper size={14} className="shrink-0 text-fg-3" />
+              <span className="flex-1">This looks like an article. Articles have collections, notes and their own Obsidian folder.</span>
+              <button
+                type="button"
+                onClick={() => navigate(`/learning/articles?add=${encodeURIComponent(url.trim())}`)}
+                className="flex items-center gap-1 font-medium text-accent hover:underline"
+              >
+                Save to Articles <ArrowRight size={13} />
+              </button>
+            </div>
+          )}
         </Card>
 
         <Tabs
