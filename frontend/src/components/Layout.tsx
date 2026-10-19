@@ -60,11 +60,11 @@ const NAV = [
   { to: "/board", label: "Board", icon: SquareKanban },
   { to: "/radar", label: "Radar", icon: RadarIcon },
   { to: "/today", label: "Today", icon: CalendarCheck },
-  { to: "/weekend", label: "Weekend", icon: CalendarHeart, weekendOnly: true },
   { to: "/list", label: "All items", icon: ListTodo },
   { to: "/learning", label: "Learning", icon: BookOpen },
   { to: "/revisit", label: "Revisit", icon: BookMarked },
   { to: "/reports", label: "Weekly report", icon: FileBarChart },
+  { to: "/weekend", label: "Weekend", icon: CalendarHeart, weekendOnly: true },
 ];
 
 function useTheme() {

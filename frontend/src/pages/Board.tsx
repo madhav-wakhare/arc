@@ -47,8 +47,9 @@ function DraggableCard({ item }: { item: Item }) {
 }
 
 // How far back the Done column looks, like Jira's "completed issues" window.
-type DoneRange = "7" | "30" | "all";
+type DoneRange = "today" | "7" | "30" | "all";
 const DONE_RANGES: { value: DoneRange; label: string; short: string }[] = [
+  { value: "today", label: "Today", short: "Today" },
   { value: "7", label: "Last 7 days", short: "7 days" },
   { value: "30", label: "Last 30 days", short: "30 days" },
   { value: "all", label: "Lifetime", short: "Lifetime" },
@@ -153,8 +154,9 @@ export default function Board() {
   const labels = useMemo(() => [...new Set(items.flatMap((i) => i.labels))].sort(), [items]);
 
   const visible = applyFilters(items, { ...filters, status: [] }, text);
-  // The Done column only shows items completed within the chosen window (7 days by default).
-  const cutoff = doneRange === "all" ? 0 : Date.now() - Number(doneRange) * 86_400_000;
+  // The Done column only shows items completed within the chosen window (7 days by default; Today means since midnight).
+  const cutoff =
+    doneRange === "all" ? 0 : doneRange === "today" ? new Date().setHours(0, 0, 0, 0) : Date.now() - Number(doneRange) * 86_400_000;
   const isOldDone = (i: Item) => i.status === "done" && !!i.completed_at && new Date(i.completed_at).getTime() < cutoff;
   const hiddenDone = visible.filter(isOldDone).length;
   const byStatus = (s: Status) =>
