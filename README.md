@@ -115,7 +115,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 - **Search**: `⌘K` / `Ctrl K` searches titles, descriptions, links, comments and Radar topics. Type a key like `LRN-4` to jump to an item.
 - **Obsidian export**: for items with a link, "Export to Obsidian" writes one note named after the item title. If you later change the title or link, Arc overwrites the note. You can turn this off in Settings.
 - **Trash**: deleted items and projects stay in Trash for 30 days. You can restore them or delete them for good. After 30 days, Arc removes them automatically.
-- **Backups**: once a month, Arc copies the database to `backups/YYYY-MM/smriti-YYYY-MM-DD.db`. Settings has a "Back up now" button and a switch for the monthly backup.
+- **Backups**: once a month, Arc copies the database to `backups/YYYY-MM/arc-YYYY-MM-DD.db`. Settings has a "Back up now" button and a switch for the monthly backup.
 - **Quotes**: your own quotes in a glass dock at the top of the Dashboard and the Board, one at a time. Add them, choose where they show and how often they change on the Quotes page (sidebar). Long quotes use two lines; hover to pause and read the full quote.
 - **Themes**: dark and light. The layout works on a phone on the same Wi-Fi.
 
@@ -152,14 +152,14 @@ Run `make` to see all commands:
 | `make logs` / `make status` | Follow logs / show health |
 | `make open` | Open Arc in the browser |
 | `make backup` | Write a backup now |
-| `make restore FILE=backups/YYYY-MM/smriti-YYYY-MM-DD.db` | Restore a backup (keeps the old database as `data/smriti.db.before-restore`) |
+| `make restore FILE=backups/YYYY-MM/arc-YYYY-MM-DD.db` | Restore a backup (keeps the old database as `data/arc.db.before-restore`) |
 | `make dev` | Run backend and UI locally with live reload |
 | `make test` | Run backend tests |
 | `make lint` | Lint the backend and type-check the UI |
 | `make ci` | Install from lockfiles, test and build |
 | `make clean` | Remove build output and dev data (keeps `data/` and `backups/`) |
 
-> **Security:** Arc has no login. With the default `SMRITI_BIND=0.0.0.0`, any device on the same network can read and change your data. On a shared or office network, set `SMRITI_BIND=127.0.0.1` in `.env`.
+> **Security:** Arc has no login. With the default `ARC_BIND=0.0.0.0`, any device on the same network can read and change your data. On a shared or office network, set `ARC_BIND=127.0.0.1` in `.env`.
 
 ## Configuration
 
@@ -170,8 +170,8 @@ Run `make` to see all commands:
 | `OBSIDIAN_VAULT_PATH` | (asked on first run) | Full path of your Obsidian vault |
 | `OBSIDIAN_FOLDER` | `Arc/Videos` | Folder inside the vault for exported notes (also in Settings) |
 | `TZ` | `Asia/Kolkata` | Your time zone, used for "today", reviews and reports |
-| `SMRITI_PORT` | `8080` | Port on this Mac |
-| `SMRITI_BIND` | `0.0.0.0` | `0.0.0.0` allows other devices on your network, `127.0.0.1` allows this Mac only |
+| `ARC_PORT` | `8080` | Port on this Mac |
+| `ARC_BIND` | `0.0.0.0` | `0.0.0.0` allows other devices on your network, `127.0.0.1` allows this Mac only |
 
 ## Obsidian notes
 
@@ -181,7 +181,7 @@ An exported note looks like this:
 ---
 title: "Kubernetes networking deep dive"
 url: "https://www.youtube.com/watch?v=..."
-smriti_id: LRN-1
+arc_id: LRN-1
 ---
 
 # Kubernetes networking deep dive
@@ -189,13 +189,13 @@ smriti_id: LRN-1
 [Kubernetes networking deep dive](https://www.youtube.com/watch?v=...)
 ```
 
-The default folder is `Arc/Videos` inside the vault. You can change it in Settings. Arc deletes an old note during a rename only when that note has the same `smriti_id`.
+The default folder is `Arc/Videos` inside the vault. You can change it in Settings. Arc deletes an old note during a rename only when that note has the same `arc_id`.
 
 ## Data and backups
 
 | Path | Content |
 | --- | --- |
-| `data/smriti.db` | The database |
+| `data/arc.db` | The database |
 | `backups/YYYY-MM/` | Monthly copies of the database |
 
 These folders are on your disk, not inside the container. You can stop, remove or rebuild the container (`make down`, `make restart`) and your data stays. Git ignores both folders, so pushing the repository does not upload your data. To protect against disk loss, also copy `backups/` to another place, for example iCloud Drive or an external disk.
@@ -228,7 +228,7 @@ frontend/src/
 docs/screenshots/   Images used in this README
 ```
 
-- Arc was called Smriti before. Internal names keep the old name so existing data, notes and settings keep working: the database file (`data/smriti.db`), backup files, the `smriti_id` in Obsidian notes, the `SMRITI_*` settings in `.env`, the Docker container and browser storage keys. To go back to the Smriti name and logo, revert the rename commit (find it with `git log --grep "Rename Smriti to Arc"`) and run `make restart`. The tag `smriti-final` marks the last commit before the rename.
+- Arc was called Smriti before. On its first start Arc renames `data/smriti.db` to `data/arc.db`, copies saved browser preferences to the new key names, and still reads the old `SMRITI_PORT` / `SMRITI_BIND` settings, `smriti-*.db` backups and notes with `smriti_id`. `make note-ids TO=arc` switches the ID in exported notes (`TO=smriti` switches back). The tags `smriti-final` (before the name change) and `before-internal-rename` (before these internal renames) mark the points to go back to.
 - Backend: Python 3.12, FastAPI, SQLite with FTS5, Pillow for thumbnails. Dependencies are in `backend/pyproject.toml`.
 - Frontend: React, Vite, Tailwind CSS, Geist font, Lucide icons. Each page is its own chunk and loads on first visit; the Weekly report chart is plain HTML and CSS.
 - Docker: a three-stage build (Node builds the UI, uv builds the Python environment, the runtime image has neither) on Alpine, about 130 MB. The app runs as a non-root user (UID 1000, change with `--build-arg APP_UID=...`). Responses are gzip-compressed and hashed assets are cached by the browser for a year.

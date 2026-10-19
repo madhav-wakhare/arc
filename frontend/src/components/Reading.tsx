@@ -287,7 +287,7 @@ export function AddArticleModal({
   const [notes, setNotes] = useState("");
   const [preview, setPreview] = useState<LinkPreview | null>(null);
   const [collectionIds, setCollectionIds] = useState<number[]>([]);
-  const [toObsidian, setToObsidian] = useLocalState("smriti-article-obsidian", true);
+  const [toObsidian, setToObsidian] = useLocalState("arc-article-obsidian", true);
   const [askFolder, setAskFolder] = useState(false);
   const titleEdited = useRef(false);
 

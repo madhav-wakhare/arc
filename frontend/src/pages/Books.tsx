@@ -351,7 +351,7 @@ function BookPanel({ book, onClose }: { book: Book | null; onClose: () => void }
 /** Learning → Books: books to read, with progress, notes and an optional ticket on the board. */
 export default function Books() {
   const { data: books = [], isLoading } = useBooks();
-  const [tab, setTab] = useLocalState<Tab>("smriti-books-tab", "reading");
+  const [tab, setTab] = useLocalState<Tab>("arc-books-tab", "reading");
   const [adding, setAdding] = useState(false);
   const [params, setParams] = useSearchParams();
   const openId = Number(params.get("book")) || null;

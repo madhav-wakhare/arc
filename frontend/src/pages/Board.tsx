@@ -129,13 +129,13 @@ export default function Board() {
   const { data: items = [] } = useQuery({ queryKey: ["items", "all"], queryFn: () => api.get<Item[]>("/items") });
   const { data: projects = [] } = useProjects();
   const [params, setParams] = useSearchParams();
-  const [stored, setFilters] = useLocalState<Filters>("smriti-board-filters", emptyFilters);
-  const [showFilters, setShowFilters] = useLocalState("smriti-board-filter-panel", true);
+  const [stored, setFilters] = useLocalState<Filters>("arc-board-filters", emptyFilters);
+  const [showFilters, setShowFilters] = useLocalState("arc-board-filter-panel", true);
   const [text, setText] = useState("");
   const [active, setActive] = useState<Item | null>(null);
   const [editProject, setEditProject] = useState(false);
   const [deleteProject, setDeleteProject] = useState(false);
-  const [doneRange, setDoneRange] = useLocalState<DoneRange>("smriti-done-range", "7");
+  const [doneRange, setDoneRange] = useLocalState<DoneRange>("arc-done-range", "7");
   const update = useUpdateItem();
   const qc = useQueryClient();
   const { newItem } = useActions();

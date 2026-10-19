@@ -8,7 +8,16 @@
     <title>Arc</title>
     <script>
       try {
-        var t = localStorage.getItem("smriti-theme");
+        // Arc was called Smriti: copy saved preferences (theme, filters, tabs) to the new key names once.
+        // The old keys stay, so switching back to an older version keeps working.
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf("smriti-") === 0) {
+            var n = "arc-" + k.slice(7);
+            if (localStorage.getItem(n) === null) localStorage.setItem(n, localStorage.getItem(k));
+          }
+        }
+        var t = localStorage.getItem("arc-theme");
         if (!t) t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         document.documentElement.dataset.theme = t;
       } catch (e) { document.documentElement.dataset.theme = "dark"; }

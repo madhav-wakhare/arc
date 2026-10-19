@@ -8,6 +8,11 @@ from .db import get_setting, now
 VAULT_DIR = os.environ.get("VAULT_DIR", "/vault")
 DEFAULT_FOLDER = os.environ.get("OBSIDIAN_FOLDER", "Arc/Videos")
 
+# Notes Arc writes carry this property so it can recognise (and safely overwrite) its own notes.
+# Notes written before the rename from Smriti carry smriti_id; both are recognised.
+ID_FIELD = "arc_id"
+LEGACY_ID_FIELD = "smriti_id"
+
 _ILLEGAL = re.compile(r'[\\/:*?"<>|#^\[\]\x00-\x1f]')
 
 
@@ -53,7 +58,7 @@ def _render(item: dict, key: str) -> str:
         "---\n"
         f"title: {_yaml_str(title)}\n"
         f"url: {_yaml_str(url)}\n"
-        f"smriti_id: {key}\n"
+        f"{ID_FIELD}: {key}\n"
         "---\n\n"
         f"# {title}\n\n"
         f"[{title}]({url})\n"
@@ -66,7 +71,7 @@ def _is_ours(path: str, key: str) -> bool:
             head = fh.read(2048)
     except OSError:
         return False
-    return f"smriti_id: {key}\n" in head
+    return any(f"{field}: {key}\n" in head for field in (ID_FIELD, LEGACY_ID_FIELD))
 
 
 def _write_note(conn, folder: str, title: str, key: str, text: str, old_rel: str | None) -> str:
@@ -140,7 +145,7 @@ def _render_article(a: dict, key: str) -> str:
     ]
     if a.get("read_at"):
         lines.append(f"read: {a['read_at'][:10]}")
-    lines += [f"smriti_id: {key}", "---", "", f"# {a['title']}", "", f"[Read the article]({a['url']})"]
+    lines += [f"{ID_FIELD}: {key}", "---", "", f"# {a['title']}", "", f"[Read the article]({a['url']})"]
     if a.get("description"):
         lines += ["", "> " + a["description"].replace("\n", " ")]
     if (a.get("notes") or "").strip():

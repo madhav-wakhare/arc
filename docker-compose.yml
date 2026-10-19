@@ -1,13 +1,16 @@
+name: arc
+
 services:
-  smriti:
+  arc:
     build: .
-    image: smriti:latest
-    container_name: smriti
+    image: arc:latest
+    container_name: arc
     restart: unless-stopped
     ports:
       # 0.0.0.0 lets your phone on the same Wi-Fi open http://<mac-ip>:8080
       # Change to "127.0.0.1:8080:8000" to allow this Mac only.
-      - "${SMRITI_BIND:-0.0.0.0}:${SMRITI_PORT:-8080}:8000"
+      # ARC_* in .env; the old SMRITI_* names still work.
+      - "${ARC_BIND:-${SMRITI_BIND:-0.0.0.0}}:${ARC_PORT:-${SMRITI_PORT:-8080}}:8000"
     environment:
       TZ: ${TZ:-Asia/Kolkata}
       OBSIDIAN_FOLDER: ${OBSIDIAN_FOLDER:-Arc/Videos}

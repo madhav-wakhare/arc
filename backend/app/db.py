@@ -5,7 +5,9 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 DATA_DIR = os.environ.get("DATA_DIR", "/data")
-DB_PATH = os.path.join(DATA_DIR, "smriti.db")
+DB_PATH = os.path.join(DATA_DIR, "arc.db")
+# Arc was called Smriti; its database file was smriti.db. adopt_legacy_db() renames it once.
+LEGACY_DB_PATH = os.path.join(DATA_DIR, "smriti.db")
 TZ = ZoneInfo(os.environ.get("TZ", "UTC"))
 TRASH_DAYS = 30
 
@@ -315,6 +317,14 @@ def assign_missing_icons(conn) -> None:
 
 def _columns(conn, table: str) -> set[str]:
     return {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def adopt_legacy_db() -> None:
+    """Rename data/smriti.db (and its WAL files) to data/arc.db on the first start after the rename."""
+    if os.path.exists(LEGACY_DB_PATH) and not os.path.exists(DB_PATH):
+        for suffix in ("", "-wal", "-shm"):
+            if os.path.exists(LEGACY_DB_PATH + suffix):
+                os.rename(LEGACY_DB_PATH + suffix, DB_PATH + suffix)
 
 
 def needs_migration() -> bool:

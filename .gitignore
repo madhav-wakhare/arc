@@ -1,4 +1,5 @@
 .env
+.env.before-*
 data/
 backups/
 vault-not-set/

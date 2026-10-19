@@ -51,7 +51,7 @@ def test_obsidian_export_and_overwrite_on_rename(client):
     assert renamed["obsidian_path"] == "Arc/Videos/K8s Pods v2.md"
     folder = client.vault / "Arc" / "Videos"
     assert os.listdir(folder) == ["K8s Pods v2.md"]
-    assert "smriti_id: LRN-1" in (folder / "K8s Pods v2.md").read_text()
+    assert "arc_id: LRN-1" in (folder / "K8s Pods v2.md").read_text()
 
 
 def test_worklog_parsing(client):
@@ -177,11 +177,14 @@ def test_migration_from_v010(tmp_path, monkeypatch):
 
     for mod in (db, app.obsidian, app.backup, app.main):
         importlib.reload(mod)
+    # A database from before the rename (data/smriti.db) is taken over as data/arc.db.
+    db.adopt_legacy_db()
+    assert (tmp_path / "data" / "arc.db").exists() and not (tmp_path / "data" / "smriti.db").exists()
     assert db.needs_migration()
     with TestClient(app.main.app) as c:
         assert [p["key"] for p in c.get("/api/projects").json()] == ["OLD"]
         assert c.get("/api/trash").status_code == 200
-    assert list((tmp_path / "backups").rglob("smriti-*.db"))
+    assert list((tmp_path / "backups").rglob("arc-*.db"))
     assert not db.needs_migration()
 
 
@@ -414,7 +417,7 @@ def test_reading_list_and_obsidian(client, monkeypatch):
     assert a["tags"] == ["distributed", "raft"]
     assert a["obsidian_path"] == "Smriti/Articles/Raft explained.md"
     note = (c.vault / a["obsidian_path"]).read_text()
-    assert "smriti_id: ART-" in note and "## Notes" in note and "Leader election first." in note
+    assert "arc_id: ART-" in note and "## Notes" in note and "Leader election first." in note
     assert 'tags: ["distributed", "raft"]' in note
 
     # Same link twice is refused.
@@ -569,3 +572,21 @@ def test_books_and_book_tickets(client, monkeypatch):
     # Deleting the book keeps the ticket.
     c.delete(f"/api/books/{book['id']}")
     assert c.get(f"/api/items/{item['id']}").json()["book_id"] is None
+
+
+def test_notes_from_before_the_rename_and_note_ids_command(client):
+    import app.maintenance as maintenance
+
+    item = _learning(client)
+    path = client.post(f"/api/items/{item['id']}/export").json()["obsidian_path"]
+    note = client.vault / path
+    # A note written by Smriti: still recognised as ours, so a rename overwrites it instead of duplicating.
+    note.write_text(note.read_text().replace("arc_id:", "smriti_id:"))
+    renamed = client.patch(f"/api/items/{item['id']}", json={"title": "K8s Pods renamed"}).json()
+    assert not note.exists() and (client.vault / renamed["obsidian_path"]).exists()
+
+    new_note = client.vault / renamed["obsidian_path"]
+    assert maintenance.note_ids("smriti") == 1 and "smriti_id: LRN-1" in new_note.read_text()
+    assert maintenance.note_ids("arc") == 1 and "arc_id: LRN-1" in new_note.read_text()
+    assert maintenance.note_ids("arc") == 0  # nothing left to change
+    assert client.get("/api/backups").status_code == 200

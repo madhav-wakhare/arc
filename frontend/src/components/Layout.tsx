@@ -73,7 +73,7 @@ function useTheme() {
     document.documentElement.dataset.theme = theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "dark" ? "#111111" : "#ffffff");
     try {
-      localStorage.setItem("smriti-theme", theme);
+      localStorage.setItem("arc-theme", theme);
     } catch {
       /* storage blocked */
     }
@@ -159,7 +159,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
     "/revisit": revisions?.filter((r) => r.status === "active").length ?? 0,
   };
   const [theme, toggleTheme] = useTheme();
-  const [groupOpen, setGroupOpen] = useLocalState("smriti-nav-open", true);
+  const [groupOpen, setGroupOpen] = useLocalState("arc-nav-open", true);
   const [newProject, setNewProject] = useState(false);
   const [params] = useSearchParams();
   const loc = useLocation();
@@ -327,7 +327,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
 
 export function Layout() {
   const location = useLocation();
-  const [compact, setCompact] = useLocalState("smriti-sidebar-compact", false);
+  const [compact, setCompact] = useLocalState("arc-sidebar-compact", false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);

@@ -1,5 +1,5 @@
 [project]
-name = "smriti"
+name = "arc"
 version = "0.1.0"
 description = "Personal work and learning tracker"
 requires-python = ">=3.12,<3.13"

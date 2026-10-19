@@ -7,17 +7,18 @@ SHELL := /bin/bash
 
 # Same precedence as docker compose: shell environment, then .env, then default.
 env_get = $(shell [ -f .env ] && sed -n 's/^$(1)=//p' .env | tail -1)
-SMRITI_PORT ?= $(or $(call env_get,SMRITI_PORT),8080)
-SMRITI_BIND ?= $(or $(call env_get,SMRITI_BIND),0.0.0.0)
+# ARC_PORT / ARC_BIND; the names from before the rename (SMRITI_*) still work.
+ARC_PORT ?= $(or $(call env_get,ARC_PORT),$(call env_get,SMRITI_PORT),8080)
+ARC_BIND ?= $(or $(call env_get,ARC_BIND),$(call env_get,SMRITI_BIND),0.0.0.0)
 TZ ?= $(or $(call env_get,TZ),Asia/Kolkata)
 DEV_API_PORT ?= 8765
-URL := http://localhost:$(SMRITI_PORT)
+URL := http://localhost:$(ARC_PORT)
 COMPOSE := docker compose
 DEV_ENV := DATA_DIR=../.dev/data VAULT_DIR=../.dev/vault BACKUP_DIR=../.dev/backups TZ=$(TZ)
 
 .DEFAULT_GOAL := help
-.PHONY: help check check-dev env up down restart logs status open backup restore \
-        install dev dev-api dev-ui test build-ui ci clean
+.PHONY: help check check-dev env legacy up down restart logs status open backup restore note-ids \
+        install dev dev-api dev-ui test lint build-ui ci clean
 
 help: ## List all commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36mmake %-10s\033[0m %s\n", $$1, $$2}'
@@ -52,7 +53,7 @@ env: ## Create .env from .env.example (asks for the Obsidian vault path)
 
 # ---------------------------------------------------------------- docker
 
-up: check env ## Build and start Arc in Docker
+up: check env legacy ## Build and start Arc in Docker
 	@mkdir -p data backups
 	$(COMPOSE) up -d --build
 	@printf "Waiting for Arc"; \
@@ -62,16 +63,21 @@ up: check env ## Build and start Arc in Docker
 	@curl -fs $(URL)/api/health >/dev/null || { echo "Arc did not start. Run: make logs"; exit 1; }
 	@echo "Arc is running:  $(URL)"
 	@ip=$$(ipconfig getifaddr en0 2>/dev/null); \
-	if [ -n "$$ip" ] && [ "$(SMRITI_BIND)" != "127.0.0.1" ]; then echo "On your phone:      http://$$ip:$(SMRITI_PORT)"; fi
+	if [ -n "$$ip" ] && [ "$(ARC_BIND)" != "127.0.0.1" ]; then echo "On your phone:      http://$$ip:$(ARC_PORT)"; fi
 
 down: ## Stop Arc
 	$(COMPOSE) down
 
-restart: ## Rebuild and restart Arc
+restart: legacy ## Rebuild and restart Arc
 	$(COMPOSE) up -d --build --force-recreate
 
+# Before the rename the container was called "smriti" (compose project "smriti"). Remove it so it
+# does not hold the port. Your data is in ./data and is not touched.
+legacy:
+	@if docker inspect smriti >/dev/null 2>&1; then docker rm -f smriti >/dev/null && echo "Removed the old smriti container (data is kept)."; fi
+
 logs: ## Follow the container logs
-	$(COMPOSE) logs -f smriti
+	$(COMPOSE) logs -f arc
 
 status: ## Show container state and health
 	@$(COMPOSE) ps
@@ -83,14 +89,18 @@ open: ## Open Arc in the browser
 backup: ## Write a database backup now (into backups/YYYY-MM/)
 	@curl -fs -X POST $(URL)/api/backups && echo || echo "Arc is not running. Run: make up"
 
-restore: ## Restore a backup: make restore FILE=backups/2026-10/smriti-2026-10-10.db
-	@test -n "$(FILE)" || { echo "Usage: make restore FILE=backups/YYYY-MM/smriti-YYYY-MM-DD.db"; exit 1; }
+restore: ## Restore a backup: make restore FILE=backups/2026-10/arc-2026-10-10.db
+	@test -n "$(FILE)" || { echo "Usage: make restore FILE=backups/YYYY-MM/arc-YYYY-MM-DD.db"; exit 1; }
 	@test -f "$(FILE)" || { echo "Not found: $(FILE)"; exit 1; }
-	$(COMPOSE) stop smriti
-	@if [ -f data/smriti.db ]; then cp data/smriti.db data/smriti.db.before-restore; echo "Old database kept as data/smriti.db.before-restore"; fi
-	rm -f data/smriti.db-wal data/smriti.db-shm
-	cp "$(FILE)" data/smriti.db
-	$(COMPOSE) start smriti
+	$(COMPOSE) stop arc
+	@if [ -f data/arc.db ]; then cp data/arc.db data/arc.db.before-restore; echo "Old database kept as data/arc.db.before-restore"; fi
+	rm -f data/arc.db-wal data/arc.db-shm
+	cp "$(FILE)" data/arc.db
+	$(COMPOSE) start arc
+
+note-ids: ## Rename the ID property in exported Obsidian notes: make note-ids TO=arc (or TO=smriti)
+	@test -n "$(TO)" || { echo "Usage: make note-ids TO=arc|smriti"; exit 1; }
+	$(COMPOSE) exec arc python -m app.maintenance note-ids $(TO)
 
 # ---------------------------------------------------------------- local development
 

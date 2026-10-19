@@ -20,6 +20,7 @@ from . import backup, linkpreview, obsidian, thumbs
 from .db import (
     PROJECT_ICONS,
     TRASH_DAYS,
+    adopt_legacy_db,
     get_db,
     get_setting,
     hard_delete_items,
@@ -48,6 +49,7 @@ Recurrence = Literal["none", "daily", "weekdays", "weekly", "monthly"]
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    adopt_legacy_db()
     if needs_migration():
         backup.make_backup()  # safety copy before the schema upgrade
     init_db()

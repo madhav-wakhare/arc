@@ -28,9 +28,9 @@ export default function ListView() {
   const { data: items = [] } = useQuery({ queryKey: ["items", "all"], queryFn: () => api.get<Item[]>("/items") });
   const { data: projects = [] } = useProjects();
   const { openItem } = useActions();
-  const [filters, setFilters] = useLocalState<Filters>("smriti-list-filters", emptyFilters);
-  const [showFilters, setShowFilters] = useLocalState("smriti-list-filter-panel", true);
-  const [sort, setSort] = useLocalState<{ key: SortKey; desc: boolean }>("smriti-list-sort", { key: "updated_at", desc: true });
+  const [filters, setFilters] = useLocalState<Filters>("arc-list-filters", emptyFilters);
+  const [showFilters, setShowFilters] = useLocalState("arc-list-filter-panel", true);
+  const [sort, setSort] = useLocalState<{ key: SortKey; desc: boolean }>("arc-list-sort", { key: "updated_at", desc: true });
   const [text, setText] = useState("");
   const labels = useMemo(() => [...new Set(items.flatMap((i) => i.labels))].sort(), [items]);
 

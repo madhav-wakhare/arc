@@ -355,7 +355,7 @@ export default function Reading() {
   const { data: settings } = useSettings();
   const { update } = useArticleMutations();
   const [params, setParams] = useSearchParams();
-  const [tab, setTab] = useLocalState<Tab>("smriti-reading-tab", "unread");
+  const [tab, setTab] = useLocalState<Tab>("arc-reading-tab", "unread");
   const [q, setQ] = useState("");
   const [tag, setTag] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
