@@ -1,4 +1,4 @@
-# Smriti - one-command setup.
+# Arc - one-command setup.
 #   make up     build and start the app in Docker (first run creates .env)
 #   make dev    run backend and UI locally with live reload
 #   make help   list all commands
@@ -52,22 +52,22 @@ env: ## Create .env from .env.example (asks for the Obsidian vault path)
 
 # ---------------------------------------------------------------- docker
 
-up: check env ## Build and start Smriti in Docker
+up: check env ## Build and start Arc in Docker
 	@mkdir -p data backups
 	$(COMPOSE) up -d --build
-	@printf "Waiting for Smriti"; \
+	@printf "Waiting for Arc"; \
 	for i in $$(seq 1 30); do \
 		curl -fs $(URL)/api/health >/dev/null && break; printf "."; sleep 1; \
 	done; echo
-	@curl -fs $(URL)/api/health >/dev/null || { echo "Smriti did not start. Run: make logs"; exit 1; }
-	@echo "Smriti is running:  $(URL)"
+	@curl -fs $(URL)/api/health >/dev/null || { echo "Arc did not start. Run: make logs"; exit 1; }
+	@echo "Arc is running:  $(URL)"
 	@ip=$$(ipconfig getifaddr en0 2>/dev/null); \
 	if [ -n "$$ip" ] && [ "$(SMRITI_BIND)" != "127.0.0.1" ]; then echo "On your phone:      http://$$ip:$(SMRITI_PORT)"; fi
 
-down: ## Stop Smriti
+down: ## Stop Arc
 	$(COMPOSE) down
 
-restart: ## Rebuild and restart Smriti
+restart: ## Rebuild and restart Arc
 	$(COMPOSE) up -d --build --force-recreate
 
 logs: ## Follow the container logs
@@ -77,11 +77,11 @@ status: ## Show container state and health
 	@$(COMPOSE) ps
 	@curl -fs $(URL)/api/health && echo || echo "Not reachable at $(URL)"
 
-open: ## Open Smriti in the browser
+open: ## Open Arc in the browser
 	open $(URL)
 
 backup: ## Write a database backup now (into backups/YYYY-MM/)
-	@curl -fs -X POST $(URL)/api/backups && echo || echo "Smriti is not running. Run: make up"
+	@curl -fs -X POST $(URL)/api/backups && echo || echo "Arc is not running. Run: make up"
 
 restore: ## Restore a backup: make restore FILE=backups/2026-10/smriti-2026-10-10.db
 	@test -n "$(FILE)" || { echo "Usage: make restore FILE=backups/YYYY-MM/smriti-YYYY-MM-DD.db"; exit 1; }

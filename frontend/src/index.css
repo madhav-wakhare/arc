@@ -208,7 +208,7 @@
 }
 
 /* ---------------------------------------------------------------- logo
-   Build-in: the five blocks of the "S" slide in one after another (once, ~0.5 s).
+   Build-in: the rows of the stepped "A" slide in one after another (once, ~0.5 s).
    Hover: an accent shimmer runs down the blocks, top to bottom. */
 @keyframes logo-block-in {
   from { opacity: 0; transform: translateX(-5px); }

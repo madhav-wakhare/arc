@@ -40,7 +40,7 @@ async def lifespan(_app: FastAPI):
     stop.set()
 
 
-app = FastAPI(title="Smriti", version=VERSION, lifespan=lifespan)
+app = FastAPI(title="Arc", version=VERSION, lifespan=lifespan)
 
 
 # --------------------------------------------------------------------------- models

@@ -41,11 +41,11 @@ def test_obsidian_export_and_overwrite_on_rename(client):
     item = _learning(client)
     r = client.post(f"/api/items/{item['id']}/export")
     assert r.status_code == 200
-    assert r.json()["obsidian_path"] == "Smriti/Videos/K8s Pods.md"
+    assert r.json()["obsidian_path"] == "Arc/Videos/K8s Pods.md"
 
     renamed = client.patch(f"/api/items/{item['id']}", json={"title": "K8s Pods v2"}).json()
-    assert renamed["obsidian_path"] == "Smriti/Videos/K8s Pods v2.md"
-    folder = client.vault / "Smriti" / "Videos"
+    assert renamed["obsidian_path"] == "Arc/Videos/K8s Pods v2.md"
+    folder = client.vault / "Arc" / "Videos"
     assert os.listdir(folder) == ["K8s Pods v2.md"]
     assert "smriti_id: LRN-1" in (folder / "K8s Pods v2.md").read_text()
 

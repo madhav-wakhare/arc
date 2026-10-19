@@ -168,19 +168,19 @@ export function useArticleMutations() {
   };
 }
 
-/** "Smriti/Videos" -> "Smriti/Articles", keeping the user's casing style. */
+/** "Arc/Videos" -> "Arc/Articles", keeping the user's casing style. */
 function suggestFolder(videos: string | undefined) {
-  if (!videos) return "Smriti/Articles";
+  if (!videos) return "Arc/Articles";
   const parts = videos.split("/");
   const last = parts.pop() ?? "";
   const name = last === last.toLowerCase() ? "articles" : "Articles";
-  return [...parts, name].join("/") || "Smriti/Articles";
+  return [...parts, name].join("/") || "Arc/Articles";
 }
 
 /** Small preview image, or a neutral tile when there is none or it fails to load. */
 export function ArticleThumb({ src, articleId, className }: { src: string | null; articleId?: number; className?: string }) {
   const [failed, setFailed] = useState(false);
-  // Saved articles use Smriti's small cached copy; the add dialog shows the page's image directly.
+  // Saved articles use Arc's small cached copy; the add dialog shows the page's image directly.
   const url = src && articleId ? `/api/articles/${articleId}/thumb?v=${urlHash(src)}` : src;
   if (url && !failed)
     return (
@@ -249,7 +249,7 @@ export function ObsidianFolderModal({ open, onClose, onSaved }: { open: boolean;
       >
         <p className="text-[13px] text-fg-2">Each saved blog post becomes one note, named after its title. Choose a folder inside your vault.</p>
         <Field label="Folder inside the vault" hint={ob ? `Videos go to ${ob.folder}` : undefined}>
-          <Input autoFocus icon={<FolderOpen size={14} />} value={folder} onChange={(e) => setFolder(e.target.value)} placeholder="Smriti/Articles" />
+          <Input autoFocus icon={<FolderOpen size={14} />} value={folder} onChange={(e) => setFolder(e.target.value)} placeholder="Arc/Articles" />
         </Field>
         <div className="rounded-md border border-line bg-surface-2/60 px-3 py-2.5">
           <p className="text-xs text-fg-3">Notes are saved to</p>

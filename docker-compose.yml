@@ -10,7 +10,7 @@ services:
       - "${SMRITI_BIND:-0.0.0.0}:${SMRITI_PORT:-8080}:8000"
     environment:
       TZ: ${TZ:-Asia/Kolkata}
-      OBSIDIAN_FOLDER: ${OBSIDIAN_FOLDER:-Smriti/Videos}
+      OBSIDIAN_FOLDER: ${OBSIDIAN_FOLDER:-Arc/Videos}
       VAULT_HOST_PATH: ${OBSIDIAN_VAULT_PATH:-}       # shown in the app so you know where notes go
     volumes:
       - ./data:/data                                  # SQLite database

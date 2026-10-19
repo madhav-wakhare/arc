@@ -60,7 +60,7 @@ export default function Trash() {
             onClick={() =>
               setConfirm({
                 title: "Empty the trash?",
-                body: "Smriti deletes every item and project in Trash for good. You cannot undo this.",
+                body: "Arc deletes every item and project in Trash for good. You cannot undo this.",
                 run: () => act.mutate({ method: "del", path: "/trash", done: "Trash emptied" }),
               })
             }
@@ -72,7 +72,7 @@ export default function Trash() {
       <div className="space-y-4 px-4 md:px-6 lg:px-8">
         <p className="text-[13px] text-fg-3">
           Deleted items and projects stay here for {data?.trash_days ?? 30} days. Restore them any time before that. After{" "}
-          {data?.trash_days ?? 30} days, Smriti deletes them for good.
+          {data?.trash_days ?? 30} days, Arc deletes them for good.
         </p>
         <Tabs
           value={tab}

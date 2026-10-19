@@ -86,7 +86,7 @@ export function urlHash(s: string) {
 }
 
 /**
- * Link thumbnail served by Smriti: fetched once, shrunk to a small WebP and cached on disk and in
+ * Link thumbnail served by Arc: fetched once, shrunk to a small WebP and cached on disk and in
  * the browser. Falls back to an icon when the link has no preview image.
  */
 export function Thumb({ itemId, url, className }: { itemId: number; url: string | null; className?: string }) {

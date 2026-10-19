@@ -759,7 +759,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
           >
             <p className="text-[13px] text-fg-2">
               The item goes to Trash with its checklist, comments and work log. You can restore it for 30 days.
-              After that, Smriti deletes it for good.
+              After that, Arc deletes it for good.
               {item.obsidian_path && " The note in Obsidian stays in your vault."}
             </p>
           </Modal>

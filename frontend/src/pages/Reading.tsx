@@ -551,7 +551,7 @@ export default function Reading() {
                     }
                     hint={
                       !articles.length
-                        ? "Save good engineering blog posts and articles. Paste a link and Smriti fills in the title, site and summary, then keeps a note in Obsidian."
+                        ? "Save good engineering blog posts and articles. Paste a link and Arc fills in the title, site and summary, then keeps a note in Obsidian."
                         : current && !scoped.length
                           ? "Add a blog post here, or drag one from All blogs onto this collection."
                           : "Try another tab, tag or search."

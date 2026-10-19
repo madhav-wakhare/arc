@@ -147,7 +147,7 @@ export function DeleteProjectModal({
     >
       <p className="text-[13px] leading-relaxed text-fg-2">
         The project and its <span className="font-medium text-fg">{project?.item_count ?? 0} items</span> go to Trash. You
-        can restore them for 30 days. After that, Smriti deletes them for good. Notes in Obsidian stay in your vault.
+        can restore them for 30 days. After that, Arc deletes them for good. Notes in Obsidian stay in your vault.
       </p>
     </Modal>
   );

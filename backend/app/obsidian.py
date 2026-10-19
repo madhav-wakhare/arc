@@ -6,7 +6,7 @@ import re
 from .db import get_setting, now
 
 VAULT_DIR = os.environ.get("VAULT_DIR", "/vault")
-DEFAULT_FOLDER = os.environ.get("OBSIDIAN_FOLDER", "Smriti/Videos")
+DEFAULT_FOLDER = os.environ.get("OBSIDIAN_FOLDER", "Arc/Videos")
 
 _ILLEGAL = re.compile(r'[\\/:*?"<>|#^\[\]\x00-\x1f]')
 

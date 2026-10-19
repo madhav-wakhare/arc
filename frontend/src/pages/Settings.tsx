@@ -106,7 +106,7 @@ export default function Settings() {
           <div className="flex items-end gap-2">
             <div className="flex-1">
             <Field label="Videos and links folder">
-              <Input icon={<FolderOpen size={14} />} value={folder} onChange={(e) => setFolder(e.target.value)} placeholder="Smriti/Videos" />
+              <Input icon={<FolderOpen size={14} />} value={folder} onChange={(e) => setFolder(e.target.value)} placeholder="Arc/Videos" />
             </Field>
             </div>
             <Button variant="primary" className="h-9" disabled={!folder.trim() || folder === data?.obsidian.folder} onClick={() => save.mutate({ obsidian_folder: folder })}>
@@ -120,7 +120,7 @@ export default function Settings() {
                   icon={<FolderOpen size={14} />}
                   value={articlesFolder}
                   onChange={(e) => setArticlesFolder(e.target.value)}
-                  placeholder="Smriti/Articles"
+                  placeholder="Arc/Articles"
                 />
               </Field>
             </div>
@@ -142,7 +142,7 @@ export default function Settings() {
                 <Archive size={16} /> Backups
               </h3>
               <p className="text-[13px] text-fg-3">
-                Smriti copies the database once each month into <code className="font-mono">backups/YYYY-MM/</code> in the
+                Arc copies the database once each month into <code className="font-mono">backups/YYYY-MM/</code> in the
                 project folder.
               </p>
             </div>
@@ -202,7 +202,7 @@ export default function Settings() {
               </div>
             ))}
           </div>
-          {data && <p className="mt-4 text-xs text-fg-3">Smriti v{data.version} · time zone {data.timezone}</p>}
+          {data && <p className="mt-4 text-xs text-fg-3">Arc v{data.version} · time zone {data.timezone}</p>}
         </Card>
       </div>
     </div>
