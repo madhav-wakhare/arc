@@ -35,6 +35,18 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
   </tr>
   <tr>
     <td width="50%" valign="top">
+      <b>Learning: Books</b><br>
+      <sub>Covers from Open Library, reading progress, and a Book ticket on the board.</sub><br><br>
+      <img src="docs/screenshots/books.webp" alt="Books with covers, reading progress and one on the board">
+    </td>
+    <td width="50%" valign="top">
+      <b>Light theme</b><br>
+      <sub>Every page works in dark and light.</sub><br><br>
+      <img src="docs/screenshots/board-light.webp" alt="The board in the light theme">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
       <b>Weekly report</b><br>
       <sub>Time per day and project, what got done and what carried over.</sub><br><br>
       <img src="docs/screenshots/report.webp" alt="Weekly report with a bar chart of time per day and time by project">
@@ -46,12 +58,6 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
     </td>
   </tr>
 </table>
-
-<details>
-<summary>Light theme</summary>
-<br>
-<img src="docs/screenshots/board-light.webp" alt="The board in the light theme">
-</details>
 
 <sub>Screenshots use demo data.</sub>
 
@@ -71,7 +77,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 ### Learning
 
 - **Radar**: topics you hear about, such as vLLM, Langfuse or tmux. Press `N` anywhere to add one. Topics stay off the board. Review each one, then create a Learning or Task ticket from it, move it to Revisit, or dismiss it. Its link and `#tags` become the ticket link and labels.
-- **Learning** has two tabs: **Topics** (what you want to study) and **Engineering Blogs** (blog posts and articles you read and keep).
+- **Learning** has three tabs: **Topics** (what you want to study), **Engineering Blogs** (blog posts and articles you read and keep) and **Books**.
 - **Topics**: things you want to learn, with status and time tracking. Type a topic, and add a video or course link if you have one (topics moved from Radar land here too). A topic with a link shows its thumbnail. Paste a link and Arc fills in the title (the real YouTube video title, or the page title for other links). Thumbnails are downloaded once, shrunk to small WebP images and cached in `data/thumbs/`, so the page loads fast on a phone too.
   If you paste a blog or article link into Topics, Arc offers to save it to Engineering Blogs instead.
 - **Engineering Blogs** (Learning → Engineering Blogs): good blog posts and articles. "Add blog post" takes a link and fills in the title, site, author and summary from the page. Add tags and notes, then move each one through To read, Reading and Read, or star it as a favourite. Search and tag filters find old ones.
@@ -79,6 +85,9 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
   - Edits to an article update its note. Deleting an article keeps the note in the vault.
   - **Collections** (AI, SRE, Databases…) are folders on the left of the Engineering Blogs tab. Open one to see only its articles. Create, rename or delete them there, drag an article onto one to add it, or tick collections in the article panel. An article can be in several collections.
   - In Obsidian each collection is a subfolder, for example `Arc/Articles/AI/`. An article in several collections has its note in one of them (the one with the Obsidian mark in the article panel; click the mark on another to move it) and lists all of them in the note. Renaming a collection renames its folder; articles in no collection stay in the main folder.
+- **Books**: books to read, with covers. "Add book" searches Open Library by title or author and fills in the author, year, pages and cover (or add one by hand). Track the page you are on, move books through Want to read, Reading and Finished, and keep notes.
+  - "Add to board" puts a book on the board as a Learning ticket, marked **Book** with a book icon, so you can plan it and log time on it. Moving the ticket moves the book: In Progress means Reading, Done means Finished.
+  - Deleting a book keeps its ticket.
 - **Revisit**: things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (the notes stay hidden until you show them), a link and a priority.
   - Add a topic with `R`, from any ticket, from Radar, or when you mark a Learning ticket Done.
   - Start a session timer or log time by hand. Each topic shows when you last revisited it, the total time and the number of sessions.

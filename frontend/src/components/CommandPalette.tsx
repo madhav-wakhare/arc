@@ -22,7 +22,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { api, type Jot, type SearchHit } from "../lib/api";
-import { StatusIcon, TypeIcon } from "../lib/meta";
+import { ItemIcon, StatusIcon } from "../lib/meta";
 import { useActions } from "./Layout";
 import { Kbd } from "./ui";
 
@@ -98,6 +98,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       { id: "p-list", icon: <ListTodo size={15} />, label: "Go to All items", run: go("/list") },
       { id: "p-learn", icon: <BookOpen size={15} />, label: "Go to Learning", run: go("/learning") },
       { id: "p-reading", icon: <Newspaper size={15} />, label: "Go to Engineering Blogs", run: go("/learning/articles") },
+      { id: "p-books", icon: <BookOpen size={15} />, label: "Go to Books", run: go("/learning/books") },
       { id: "p-revise", icon: <BookMarked size={15} />, label: "Go to Revisit", run: go("/revisit") },
       { id: "p-rep", icon: <FileBarChart size={15} />, label: "Go to Weekly report", run: go("/reports") },
       { id: "p-quotes", icon: <Quote size={15} />, label: "Go to Quotes", run: go("/quotes") },
@@ -108,7 +109,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     const results: Entry[] = s
       ? hits.map((h) => ({
           id: `i${h.id}`,
-          icon: <TypeIcon type={h.type} size={15} />,
+          icon: <ItemIcon item={h} size={15} />,
           label: (
             <span className="flex min-w-0 flex-col">
               <span className="flex items-center gap-2 truncate">

@@ -1,4 +1,5 @@
 import {
+  Book,
   BookOpen,
   CheckSquare,
   Circle,
@@ -58,6 +59,17 @@ export function StatusIcon({ status, size = 14 }: { status: Status; size?: numbe
 export function TypeIcon({ type, size = 14 }: { type: ItemType; size?: number }) {
   const m = typeMeta(type);
   return <m.icon size={size} className={m.tone} strokeWidth={2} />;
+}
+
+/** Icon for an item: a book for tickets made from Learning → Books, otherwise its type. */
+export function ItemIcon({ item, size = 14 }: { item: Pick<Item, "type" | "book_id">; size?: number }) {
+  if (item.book_id)
+    return (
+      <span title="Book" className="inline-flex shrink-0 text-book">
+        <Book size={size} />
+      </span>
+    );
+  return <TypeIcon type={item.type} size={size} />;
 }
 export function PriorityIcon({ priority, size = 14 }: { priority: Priority; size?: number }) {
   const m = priorityMeta(priority);

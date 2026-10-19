@@ -3,7 +3,7 @@ import { BookOpen, CalendarDays, CheckSquare, Clock, Hourglass, Link2, MessageSq
 import { useState } from "react";
 import type { Item } from "../lib/api";
 import { ObsidianIcon } from "./ObsidianIcon";
-import { PriorityIcon, TypeIcon, dueTone, fmtDate, fmtMinutes, pendingDays, pendingTone, youtubeId } from "../lib/meta";
+import { ItemIcon, PriorityIcon, dueTone, fmtDate, fmtMinutes, pendingDays, pendingTone, youtubeId } from "../lib/meta";
 
 /** "Pending N days" chip. Neutral, then amber (10d), orange (15d) and red (30d). */
 export function PendingBadge({ item, long }: { item: Item; long?: boolean }) {
@@ -34,8 +34,9 @@ export function ItemCard({ item, onOpen, dragging }: { item: Item; onOpen: () =>
       )}
     >
       <div className="mb-1.5 flex items-center gap-1.5 text-xs text-fg-3">
-        <TypeIcon type={item.type} size={13} />
+        <ItemIcon item={item} size={13} />
         <span className="font-mono">{item.key}</span>
+        {item.book_id && <span className="font-medium text-book">Book</span>}
         <div className="flex-1" />
         <PendingBadge item={item} />
       </div>
@@ -66,7 +67,7 @@ export function ItemCard({ item, onOpen, dragging }: { item: Item; onOpen: () =>
         {item.url && <Link2 size={12} />}
         {item.obsidian_path && <ObsidianIcon size={12} className="text-accent" />}
         {item.recurrence !== "none" && <Repeat size={12} />}
-        {item.labels.slice(0, 2).map((l) => (
+        {item.labels.filter((l) => !(item.book_id && l === "book")).slice(0, 2).map((l) => (
           <span key={l} className="rounded border border-line px-1.5 py-px text-[11px] text-fg-2">
             {l}
           </span>

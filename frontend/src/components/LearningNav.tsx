@@ -1,16 +1,18 @@
 /** Sub-navigation inside Learning: topics you study (with a video or course link or not), and articles you read and keep. */
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { GraduationCap, Newspaper } from "lucide-react";
+import { Book as BookIcon, GraduationCap, Newspaper } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { api, type Article, type Item } from "../lib/api";
+import { api, type Article, type Book, type Item } from "../lib/api";
 
 export function LearningNav() {
   const { data: items } = useQuery({ queryKey: ["items", "learning"], queryFn: () => api.get<Item[]>("/items?type=learning") });
   const { data: articles } = useQuery({ queryKey: ["articles"], queryFn: () => api.get<Article[]>("/articles") });
+  const { data: books } = useQuery({ queryKey: ["books"], queryFn: () => api.get<Book[]>("/books") });
   const tabs = [
-    { to: "/learning", end: true, label: "Topics", icon: GraduationCap, count: items?.filter((i) => i.status !== "done").length },
+    { to: "/learning", end: true, label: "Topics", icon: GraduationCap, count: items?.filter((i) => i.status !== "done" && !i.book_id).length },
     { to: "/learning/articles", end: false, label: "Engineering Blogs", icon: Newspaper, count: articles?.filter((a) => a.status !== "read").length },
+    { to: "/learning/books", end: false, label: "Books", icon: BookIcon, count: books?.filter((b) => b.status !== "finished").length },
   ];
   return (
     <div className="mb-5 flex items-center gap-6 border-b border-line px-4 md:px-6 lg:px-8">

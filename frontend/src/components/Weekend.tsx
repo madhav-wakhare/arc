@@ -26,7 +26,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { api, type Idea, type Item, type LifeCategory, type PlanEntry, type Weekend, type WeekendSlot } from "../lib/api";
 import { useRevisions } from "../lib/hooks";
-import { PriorityIcon, TypeIcon, fmtDate, todayIso } from "../lib/meta";
+import { ItemIcon, PriorityIcon, fmtDate, todayIso } from "../lib/meta";
 import { useActions } from "./Layout";
 import { Button, Card, Checkbox, Input, Menu, Modal, Tabs, useToast } from "./ui";
 
@@ -300,7 +300,7 @@ export function AddActivityModal({
               (study.length ? (
                 study.map((i) => (
                   <button key={i.id} className={pick} onClick={() => put({ item_id: i.id })}>
-                    <TypeIcon type={i.type} size={14} />
+                    <ItemIcon item={i} size={14} />
                     <span className="shrink-0 font-mono text-[11px] text-fg-3">{i.key}</span>
                     <span className="min-w-0 flex-1 truncate">{i.title}</span>
                     {i.priority !== "none" && <PriorityIcon priority={i.priority} size={13} />}

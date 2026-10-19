@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, type TooltipProps } from "recharts";
 import type { Item } from "../lib/api";
-import { TypeIcon, fmtDate, fmtMinutes } from "../lib/meta";
+import { ItemIcon, fmtDate, fmtMinutes } from "../lib/meta";
 import { ProjectIcon } from "../lib/projectIcons";
 import { PendingBadge } from "./ItemCard";
 import { Card } from "./ui";
@@ -174,7 +174,7 @@ export function ItemRows({
           onClick={() => onOpen(i.id)}
           className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-[13px] hover:bg-surface-2"
         >
-          <TypeIcon type={i.type} size={14} />
+          <ItemIcon item={i} size={14} />
           <span className="min-w-0 flex-1 truncate">{i.title}</span>
           {right ? right(i) : <PendingBadge item={i} />}
         </button>

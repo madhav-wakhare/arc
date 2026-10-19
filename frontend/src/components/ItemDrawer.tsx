@@ -19,10 +19,10 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api, type Comment, type HistoryEntry, type Item, type Worklog } from "../lib/api";
 import { useProjects, useRefreshItems, useTimer, useUpdateItem } from "../lib/hooks";
-import {
+import { ItemIcon,
   PRIORITIES,
   RECURRENCES,
   STATUSES,
@@ -507,8 +507,17 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
       ) : (
         <>
           <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-4">
-            <TypeIcon type={item.type} size={15} />
+            <ItemIcon item={item} size={15} />
             <span className="font-mono text-[13px] text-fg-2">{item.key}</span>
+            {item.book_id && (
+              <Link
+                to={`/learning/books?book=${item.book_id}`}
+                className="rounded border border-book/40 px-1.5 py-px text-[11px] font-medium text-book hover:bg-book/10"
+                title="Open in Learning → Books"
+              >
+                Book
+              </Link>
+            )}
             {item.recurrence !== "none" && (
               <span className="flex items-center gap-1 text-xs text-fg-3">
                 <Repeat size={12} /> {RECURRENCES.find((r) => r.value === item.recurrence)?.label}

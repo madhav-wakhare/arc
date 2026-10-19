@@ -10,7 +10,7 @@ import { RevisePreview } from "../components/RevisePreview";
 import { Button, Card, Empty, Field, IconButton, PageHeader, Textarea, useToast } from "../components/ui";
 import { api, type Item, type Overview, type Review } from "../lib/api";
 import { useRefreshItems, useTimer, useUpdateItem } from "../lib/hooks";
-import { PriorityIcon, StatusIcon, TypeIcon, dueTone, fmtDate, fmtMinutes, todayIso } from "../lib/meta";
+import { ItemIcon, PriorityIcon, StatusIcon, dueTone, fmtDate, fmtMinutes, todayIso } from "../lib/meta";
 
 function Row({ item, onLog }: { item: Item; onLog: (i: Item) => void }) {
   const { openItem } = useActions();
@@ -34,7 +34,7 @@ function Row({ item, onLog }: { item: Item; onLog: (i: Item) => void }) {
         {done && <Check size={12} strokeWidth={3} />}
       </button>
       <button onClick={() => openItem(item.id)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
-        <TypeIcon type={item.type} />
+        <ItemIcon item={item} />
         <span className="hidden font-mono text-xs text-fg-3 sm:inline">{item.key}</span>
         <span className="truncate text-[14px]">{item.title}</span>
       </button>
@@ -195,7 +195,7 @@ export default function Today() {
                   className="flex max-w-full items-center gap-2 rounded-md border border-line bg-surface px-2.5 py-1.5 text-[13px] hover:border-accent"
                 >
                   <Plus size={13} className="text-fg-3" />
-                  <TypeIcon type={i.type} size={13} />
+                  <ItemIcon item={i} size={13} />
                   <span className="truncate">{i.title}</span>
                   <PendingBadge item={i} />
                 </button>

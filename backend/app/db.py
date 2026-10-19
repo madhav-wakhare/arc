@@ -172,6 +172,26 @@ CREATE TABLE IF NOT EXISTS articles (
 );
 CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
 
+-- Books to read. A book can be put on the board as a ticket (item_id); finishing the ticket
+-- finishes the book.
+CREATE TABLE IF NOT EXISTS books (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    author TEXT NOT NULL DEFAULT '',
+    cover TEXT,
+    pages INTEGER,
+    current_page INTEGER NOT NULL DEFAULT 0,
+    year INTEGER,
+    olid TEXT,
+    notes TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'want' CHECK (status IN ('want', 'reading', 'finished')),
+    item_id INTEGER REFERENCES items(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    started_at TEXT,
+    finished_at TEXT
+);
+
 -- Collections group articles (AI, SRE, ...). An article can be in several; its Obsidian note
 -- lives in the folder of one of them (articles.collection_id).
 CREATE TABLE IF NOT EXISTS collections (

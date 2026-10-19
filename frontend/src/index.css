@@ -35,6 +35,8 @@
   /* weekend: life activities (violet, apart from the sky-blue study accent) */
   --life: #7c5cd6;
   --life-soft: #f1edfc;
+  /* books: a warm paper tone, so book tickets stand out on the board */
+  --book: #9a6a2f;
 }
 
 :root[data-theme="dark"] {
@@ -64,6 +66,7 @@
   --critical: #e66767;
   --life: #a48cf0;
   --life-soft: #1f1a33;
+  --book: #d6a35c;
 }
 
 @theme {
@@ -89,6 +92,7 @@
   --color-critical: var(--critical);
   --color-life: var(--life);
   --color-life-soft: var(--life-soft);
+  --color-book: var(--book);
   --color-task: var(--series-task);
   --color-learning: var(--series-learning);
   --color-note: var(--series-note);

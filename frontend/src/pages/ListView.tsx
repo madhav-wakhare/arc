@@ -8,7 +8,7 @@ import { useActions } from "../components/Layout";
 import { Button, Card, Empty, Input, PageHeader } from "../components/ui";
 import { api, type Item } from "../lib/api";
 import { useLocalState, useProjects } from "../lib/hooks";
-import { PRIORITIES, PriorityIcon, StatusIcon, TypeIcon, dueTone, fmtDate, fmtMinutes, pendingDays, statusMeta } from "../lib/meta";
+import { ItemIcon, PRIORITIES, PriorityIcon, StatusIcon, dueTone, fmtDate, fmtMinutes, pendingDays, statusMeta } from "../lib/meta";
 
 type SortKey = "key" | "title" | "status" | "priority" | "due_date" | "logged" | "pending" | "updated_at";
 
@@ -93,7 +93,7 @@ export default function ListView() {
                     <tr key={i.id} onClick={() => openItem(i.id)} className="cursor-pointer hover:bg-surface-2">
                       <td className="px-3 py-2.5">
                         <span className="flex items-center gap-2">
-                          <TypeIcon type={i.type} />
+                          <ItemIcon item={i} />
                           <span className="font-mono text-xs text-fg-2">{i.key}</span>
                         </span>
                       </td>

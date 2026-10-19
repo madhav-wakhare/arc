@@ -513,3 +513,53 @@ def test_youtube_preview_and_cached_thumbnails(client, monkeypatch):
     assert client.get(f"/api/items/{item2['id']}/thumb").status_code == 404
     assert client.get(f"/api/items/{item2['id']}/thumb").status_code == 404
     assert len(looked) == 1
+
+
+def test_books_and_book_tickets(client, monkeypatch):
+    c = client
+    import app.main as m
+
+    def fake_urlopen(req, timeout=0):
+        import io
+        body = {"docs": [{"key": "/works/OL1W", "title": "Designing Data-Intensive Applications",
+                          "author_name": ["Martin Kleppmann"], "first_publish_year": 2017,
+                          "number_of_pages_median": 616, "cover_i": 123}]}
+
+        class R(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+        return R(json.dumps(body).encode())
+
+    import json
+    monkeypatch.setattr(m.urllib.request, "urlopen", fake_urlopen)
+    hit = c.get("/api/books/search?q=designing data").json()[0]
+    assert (hit["author"], hit["pages"], hit["olid"]) == ("Martin Kleppmann", 616, "OL1W")
+    assert hit["cover"].endswith("/b/id/123-L.jpg")
+
+    book = c.post("/api/books", json=hit).json()
+    assert book["status"] == "want" and book["item_key"] is None
+
+    # Logging progress starts the book.
+    book = c.patch(f"/api/books/{book['id']}", json={"current_page": 40}).json()
+    assert book["status"] == "reading" and book["started_at"]
+
+    # On the board: a Learning ticket labelled book, linked both ways, In Progress like the book.
+    book = c.post(f"/api/books/{book['id']}/ticket").json()
+    assert book["item_key"].startswith("LRN-") and book["item_status"] == "in_progress"
+    item = c.get(f"/api/items/{book['item_id']}").json()
+    assert item["book_id"] == book["id"] and item["labels"] == ["book"] and item["type"] == "learning"
+    assert c.post(f"/api/books/{book['id']}/ticket").status_code == 409
+
+    # Finishing the ticket finishes the book (and fills the pages); reopening makes it reading again.
+    c.patch(f"/api/items/{item['id']}", json={"status": "done"})
+    book = c.get("/api/books").json()[0]
+    assert book["status"] == "finished" and book["current_page"] == 616 and book["finished_at"]
+    c.patch(f"/api/items/{item['id']}", json={"status": "backlog"})
+    assert c.get("/api/books").json()[0]["status"] == "reading"
+
+    # Deleting the book keeps the ticket.
+    c.delete(f"/api/books/{book['id']}")
+    assert c.get(f"/api/items/{item['id']}").json()["book_id"] is None

@@ -3,6 +3,8 @@ import json
 import logging
 import os
 import re
+import urllib.parse
+import urllib.request
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta
 from typing import Literal
@@ -204,7 +206,8 @@ SELECT i.*, p.key AS project_key, p.name AS project_name, p.color AS project_col
        (SELECT count(*) FROM subtasks s WHERE s.item_id = i.id) AS subtask_count,
        (SELECT count(*) FROM subtasks s WHERE s.item_id = i.id AND s.done = 1) AS subtask_done,
        (SELECT count(*) FROM comments c WHERE c.item_id = i.id) AS comment_count,
-       (SELECT r.id FROM revisions r WHERE r.item_id = i.id AND r.status = 'active' LIMIT 1) AS revision_id
+       (SELECT r.id FROM revisions r WHERE r.item_id = i.id AND r.status = 'active' LIMIT 1) AS revision_id,
+       (SELECT b.id FROM books b WHERE b.item_id = i.id LIMIT 1) AS book_id
 FROM live_items i JOIN projects p ON p.id = i.project_id
 """
 
@@ -439,6 +442,8 @@ def update_item(item_id: int, data: ItemPatch, conn=Depends(get_db)):
     item = load_item(conn, item_id)
     if updates.get("status") == "done":
         spawn_recurrence(conn, item)
+    if "status" in updates and item["book_id"]:
+        _sync_book_from_item(conn, item["book_id"], updates["status"])
     # Keep an exported note in sync: overwrite on change of title or link.
     if (
         item["obsidian_path"] and item["url"] and {"title", "url", "project_id"} & updates.keys()
@@ -1466,6 +1471,161 @@ def delete_collection(cid: int, conn=Depends(get_db)):
     conn.execute("DELETE FROM collections WHERE id = ?", (cid,))
     if affected:
         _reexport_articles(conn, f"id IN ({','.join('?' * len(affected))})", tuple(affected))
+
+
+# --------------------------------------------------------------------------- books
+
+BookStatus = Literal["want", "reading", "finished"]
+
+
+class BookIn(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    author: str = Field(default="", max_length=200)
+    cover: str | None = Field(default=None, max_length=2000)
+    pages: int | None = Field(default=None, ge=1, le=20000)
+    year: int | None = None
+    olid: str | None = Field(default=None, max_length=40)
+    status: BookStatus = "want"
+
+
+class BookPatch(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    author: str | None = Field(default=None, max_length=200)
+    pages: int | None = Field(default=None, ge=1, le=20000)
+    current_page: int | None = Field(default=None, ge=0, le=20000)
+    notes: str | None = Field(default=None, max_length=50_000)
+    status: BookStatus | None = None
+
+
+BOOK_SELECT = """
+SELECT b.*, p.key || '-' || i.number AS item_key, i.status AS item_status
+FROM books b
+LEFT JOIN live_items i ON i.id = b.item_id
+LEFT JOIN projects p ON p.id = i.project_id
+"""
+
+
+def load_book(conn, bid: int) -> dict:
+    b = row(conn.execute(BOOK_SELECT + " WHERE b.id = ?", (bid,)))
+    if not b:
+        raise HTTPException(404, "Book not found")
+    return b
+
+
+def _book_status_dates(status: str, current: dict | None = None) -> dict:
+    ts = now()
+    if status == "reading":
+        return {"started_at": (current or {}).get("started_at") or ts, "finished_at": None}
+    if status == "finished":
+        return {"started_at": (current or {}).get("started_at") or ts, "finished_at": ts}
+    return {"finished_at": None}
+
+
+def _sync_book_from_item(conn, bid: int, item_status: str) -> None:
+    """The ticket moved: In Progress means reading, Done means finished, reopening means reading."""
+    book = load_book(conn, bid)
+    status = {"in_progress": "reading", "today": "reading", "done": "finished"}.get(item_status)
+    if item_status == "backlog":
+        status = "reading" if book["status"] == "finished" else book["status"]
+    if not status or status == book["status"]:
+        return
+    fields = {"status": status, **_book_status_dates(status, book), "updated_at": now()}
+    if status == "finished" and book["pages"]:
+        fields["current_page"] = book["pages"]
+    conn.execute(f"UPDATE books SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ?", (*fields.values(), bid))
+
+
+@app.get("/api/books/search")
+def search_books(q: str = Query(min_length=2, max_length=200)):
+    """Open Library search: title, author, year, pages and cover for the add dialog."""
+    url = "https://openlibrary.org/search.json?" + urllib.parse.urlencode(
+        {"q": q, "limit": 8, "fields": "key,title,author_name,first_publish_year,number_of_pages_median,cover_i"})
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Arc/0.1 (personal tracker)"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            docs = json.loads(resp.read(2_000_000)).get("docs", [])
+    except Exception:
+        raise HTTPException(502, "Could not reach Open Library. Add the book by hand.")
+    return [
+        {
+            "title": d.get("title", ""),
+            "author": ", ".join((d.get("author_name") or [])[:2]),
+            "year": d.get("first_publish_year"),
+            "pages": d.get("number_of_pages_median"),
+            "cover": f"https://covers.openlibrary.org/b/id/{d['cover_i']}-L.jpg" if d.get("cover_i") else None,
+            "olid": (d.get("key") or "").removeprefix("/works/") or None,
+        }
+        for d in docs if d.get("title")
+    ]
+
+
+@app.get("/api/books")
+def list_books(conn=Depends(get_db)):
+    return rows(conn.execute(BOOK_SELECT + " ORDER BY b.created_at DESC, b.id DESC"))
+
+
+@app.post("/api/books", status_code=201)
+def create_book(data: BookIn, conn=Depends(get_db)):
+    ts = now()
+    dates = _book_status_dates(data.status)
+    cur = conn.execute(
+        """INSERT INTO books (title, author, cover, pages, year, olid, status, created_at, updated_at, started_at, finished_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (data.title.strip(), data.author.strip(), data.cover, data.pages, data.year, data.olid, data.status, ts, ts,
+         dates.get("started_at"), dates.get("finished_at")),
+    )
+    return load_book(conn, cur.lastrowid)
+
+
+@app.patch("/api/books/{bid}")
+def update_book(bid: int, data: BookPatch, conn=Depends(get_db)):
+    book = load_book(conn, bid)
+    fields = data.model_dump(exclude_unset=True)
+    for k in ("title", "author", "notes"):
+        if k in fields:
+            fields[k] = fields[k].strip()
+    if "current_page" in fields and book["status"] == "want" and fields["current_page"] > 0 and "status" not in fields:
+        fields["status"] = "reading"  # logging progress means you started
+    if "status" in fields and fields["status"] != book["status"]:
+        fields.update(_book_status_dates(fields["status"], book))
+        if fields["status"] == "finished" and (fields.get("pages") or book["pages"]):
+            fields["current_page"] = fields.get("pages") or book["pages"]
+    if not fields:
+        return book
+    fields["updated_at"] = now()
+    conn.execute(f"UPDATE books SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ?", (*fields.values(), bid))
+    return load_book(conn, bid)
+
+
+@app.delete("/api/books/{bid}", status_code=204)
+def delete_book(bid: int, conn=Depends(get_db)):
+    """Removes the book from the list. A ticket made from it stays on the board."""
+    conn.execute("DELETE FROM books WHERE id = ?", (bid,))
+
+
+@app.post("/api/books/{bid}/ticket", status_code=201)
+def book_to_ticket(bid: int, conn=Depends(get_db)):
+    """Put the book on the board as a Learning ticket in the LRN project, marked as a book."""
+    book = load_book(conn, bid)
+    if book["item_key"]:
+        raise HTTPException(409, f"Already on the board as {book['item_key']}.")
+    project = row(conn.execute(
+        "SELECT id FROM projects WHERE key = 'LRN' AND deleted_at IS NULL")) or row(conn.execute(
+        "SELECT id FROM projects WHERE deleted_at IS NULL ORDER BY id LIMIT 1"))
+    status = {"reading": "in_progress", "finished": "done"}.get(book["status"], "backlog")
+    desc = f"By {book['author']}." if book["author"] else ""
+    if book["pages"]:
+        desc += f"{' ' if desc else ''}{book['pages']} pages."
+    item_id = insert_item(conn, ItemIn(project_id=project["id"], type="learning", title=book["title"],
+                                       description=desc, status=status, labels=["book"]))
+    conn.execute("UPDATE books SET item_id = ?, updated_at = ? WHERE id = ?", (item_id, now(), bid))
+    return load_book(conn, bid)
+
+
+@app.get("/api/books/{bid}/cover")
+def book_cover(bid: int, conn=Depends(get_db)):
+    b = row(conn.execute("SELECT cover FROM books WHERE id = ?", (bid,)))
+    return _thumb_response(b["cover"] if b else None)
 
 
 # --------------------------------------------------------------------------- weekend

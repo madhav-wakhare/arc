@@ -122,10 +122,12 @@ function LearningCard({ item }: { item: Item }) {
 }
 
 export default function Learning() {
-  const { data: items = [] } = useQuery({
+  const { data: all = [] } = useQuery({
     queryKey: ["items", "learning"],
     queryFn: () => api.get<Item[]>("/items?type=learning"),
   });
+  // Tickets made from books live under Books, not Topics.
+  const items = all.filter((i) => !i.book_id);
   const { data: projects = [] } = useProjects();
   const [tab, setTab] = useState<Tab>("queue");
   const [url, setUrl] = useState("");

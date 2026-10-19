@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Quotes from "./pages/Quotes";
 import Weekend from "./pages/Weekend";
 import Reading from "./pages/Reading";
+import Books from "./pages/Books";
 import Radar from "./pages/Radar";
 import Revise from "./pages/Revise";
 import Learning from "./pages/Learning";
@@ -46,6 +47,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="list" element={<ListView />} />
               <Route path="learning" element={<Learning />} />
               <Route path="learning/articles" element={<Reading />} />
+              <Route path="learning/books" element={<Books />} />
               <Route path="reading" element={<ToArticles />} />
               <Route path="reports" element={<Reports />} />
               <Route path="projects" element={<Projects />} />

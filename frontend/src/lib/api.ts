@@ -46,6 +46,8 @@ export interface Item {
   subtask_done: number;
   comment_count: number;
   revision_id: number | null;
+  /** Set when this ticket was made from a book on Learning → Books. */
+  book_id: number | null;
   subtasks?: Subtask[];
 }
 
@@ -350,4 +352,33 @@ export interface LinkPreview {
   author: string;
   description: string;
   image: string | null;
+}
+
+export type BookStatus = "want" | "reading" | "finished";
+export interface Book {
+  id: number;
+  title: string;
+  author: string;
+  cover: string | null;
+  pages: number | null;
+  current_page: number;
+  year: number | null;
+  olid: string | null;
+  notes: string;
+  status: BookStatus;
+  item_id: number | null;
+  item_key: string | null;
+  item_status: Status | null;
+  created_at: string;
+  updated_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+}
+export interface BookHit {
+  title: string;
+  author: string;
+  year: number | null;
+  pages: number | null;
+  cover: string | null;
+  olid: string | null;
 }
