@@ -81,32 +81,26 @@ function useTheme() {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))] as const;
 }
 
-// Stepped "A" for Arc. Blocks in the same row share a row number, so the build-in and the
-// hover shimmer move row by row, top to bottom. (The Smriti "S" is in git: tag smriti-final.)
+// Arc mark: three rounded bars that rise and fall like an arc ("rainbow steps").
+// They grow up from the baseline one after another on load; on hover an accent shimmer runs
+// across them. (Earlier marks are in git: the Smriti "S" at tag smriti-final, the stepped "A" at arc-v1.)
 const LOGO_BLOCKS = [
-  { x: 11, y: 2, w: 6, row: 0 },
-  { x: 8, y: 8, w: 5, row: 1 },
-  { x: 15, y: 8, w: 5, row: 1 },
-  { x: 5, y: 14, w: 5, row: 2 },
-  { x: 18, y: 14, w: 5, row: 2 },
-  { x: 5, y: 20, w: 18, row: 3 },
-  { x: 2, y: 26, w: 6, row: 4 },
-  { x: 20, y: 26, w: 6, row: 4 },
+  { x: 4, y: 18, w: 6, h: 10 },
+  { x: 11, y: 11, w: 10, h: 17 },
+  { x: 22, y: 18, w: 6, h: 10 },
 ];
 
 /**
- * Stepped "A" built from blocks, in the style of the Bifrost mark.
- * The blocks build in row by row on load; on hover an accent shimmer runs down them
- * (see .logo-mark in index.css). Each block is a <g> (build-in) around a <rect> (shimmer),
- * so the two animations never restart each other.
+ * Each bar is a <g> (build-in) around a <rect> (shimmer), so the two animations never restart
+ * each other. See .logo-mark in index.css.
  */
 function Logo({ compact }: { compact?: boolean }) {
   return (
     <div className="logo-mark flex items-center gap-2.5">
-      <svg viewBox="0 0 28 33" className="size-7 shrink-0 overflow-visible" fill="var(--fg)" aria-hidden>
+      <svg viewBox="2 5.5 28 28" className="size-7 shrink-0 overflow-visible" fill="var(--fg)" aria-hidden>
         {LOGO_BLOCKS.map((b, i) => (
-          <g key={i} className="logo-block" style={{ "--i": b.row } as CSSProperties}>
-            <rect x={b.x} y={b.y} width={b.w} height="5" />
+          <g key={i} className="logo-block" style={{ "--i": i } as CSSProperties}>
+            <rect x={b.x} y={b.y} width={b.w} height={b.h} rx="1.5" />
           </g>
         ))}
       </svg>

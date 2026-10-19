@@ -208,10 +208,10 @@
 }
 
 /* ---------------------------------------------------------------- logo
-   Build-in: the rows of the stepped "A" slide in one after another (once, ~0.5 s).
-   Hover: an accent shimmer runs down the blocks, top to bottom. */
+   Build-in: the three bars of the Arc mark grow up from the baseline, left to right (once, ~0.5 s).
+   Hover: an accent shimmer runs across the bars. */
 @keyframes logo-block-in {
-  from { opacity: 0; transform: translateX(-5px); }
+  from { opacity: 0; transform: scaleY(0.35); }
 }
 @keyframes logo-word-in {
   from { opacity: 0; transform: translateX(-3px); }
@@ -222,6 +222,7 @@
 }
 .logo-mark .logo-block {
   transform-box: fill-box;
+  transform-origin: bottom;
   animation: logo-block-in 360ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
   animation-delay: calc(var(--i) * 55ms);
 }
