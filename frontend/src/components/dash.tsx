@@ -2,18 +2,12 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, type TooltipProps } from "recharts";
 import type { Item } from "../lib/api";
-import { ItemIcon, fmtDate, fmtMinutes } from "../lib/meta";
+import { ItemIcon, fmtMinutes } from "../lib/meta";
 import { ProjectIcon } from "../lib/projectIcons";
 import { PendingBadge } from "./ItemCard";
 import { Card } from "./ui";
 
-/** Short axis label: minutes under an hour, otherwise hours. */
-export function axisMinutes(v: number) {
-  if (v === 0) return "0";
-  return v < 60 ? `${v}m` : `${+(v / 60).toFixed(1)}h`;
-}
 
 /** "+12% vs <period>", only when there is something to compare with. */
 export function delta(current: number, previous: number, period: string) {
@@ -74,60 +68,6 @@ export function Panel({
 
 export function EmptyLine({ children }: { children: ReactNode }) {
   return <p className="py-8 text-center text-[13px] text-fg-3">{children}</p>;
-}
-
-type Kind = "minutes" | "count";
-
-function Tip({ active, payload, label, kind, noun }: TooltipProps<number, string> & { kind: Kind; noun: string }) {
-  if (!active || !payload?.length) return null;
-  const v = Number(payload[0].value) || 0;
-  return (
-    <div className="rounded-md border border-line bg-surface px-3 py-2 text-xs shadow-[var(--shadow)]">
-      <p className="text-fg-3">{fmtDate(String(label), { weekday: "short", month: "short", day: "numeric" })}</p>
-      <p className="mt-0.5 font-medium tabular-nums text-fg">{kind === "minutes" ? fmtMinutes(v) : `${v} ${noun}`}</p>
-    </div>
-  );
-}
-
-/** Single-series bar chart over days. */
-export function DayBars({
-  data,
-  kind,
-  noun = "",
-  dateFormat,
-  height = 240,
-}: {
-  data: { date: string; value: number }[];
-  kind: Kind;
-  noun?: string;
-  dateFormat: Intl.DateTimeFormatOptions;
-  height?: number;
-}) {
-  if (!data.some((d) => d.value > 0))
-    return (
-      <div className="flex items-center justify-center text-[13px] text-fg-3" style={{ height }}>
-        No activity in this period
-      </div>
-    );
-  return (
-    <div style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 4, right: 0, left: -12, bottom: 0 }}>
-          <CartesianGrid vertical={false} />
-          <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={28} dy={6} tickFormatter={(d) => fmtDate(d, dateFormat)} />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            width={44}
-            allowDecimals={false}
-            tickFormatter={kind === "minutes" ? axisMinutes : (v) => String(v)}
-          />
-          <Tooltip content={<Tip kind={kind} noun={noun} />} cursor={{ fill: "var(--surface-2)" }} />
-          <Bar dataKey="value" fill="var(--accent)" radius={[3, 3, 0, 0]} maxBarSize={kind === "minutes" ? 40 : 22} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
 }
 
 export function ProjectBars({ rows }: { rows: { id: number; name: string; icon: string | null; minutes: number }[] }) {

@@ -155,6 +155,7 @@ Run `make` to see all commands:
 | `make restore FILE=backups/YYYY-MM/smriti-YYYY-MM-DD.db` | Restore a backup (keeps the old database as `data/smriti.db.before-restore`) |
 | `make dev` | Run backend and UI locally with live reload |
 | `make test` | Run backend tests |
+| `make lint` | Lint the backend and type-check the UI |
 | `make ci` | Install from lockfiles, test and build |
 | `make clean` | Remove build output and dev data (keeps `data/` and `backups/`) |
 
@@ -229,4 +230,6 @@ docs/screenshots/   Images used in this README
 
 - Arc was called Smriti before. Internal names keep the old name so existing data, notes and settings keep working: the database file (`data/smriti.db`), backup files, the `smriti_id` in Obsidian notes, the `SMRITI_*` settings in `.env`, the Docker container and browser storage keys. To go back to the Smriti name and logo, revert the rename commit (find it with `git log --grep "Rename Smriti to Arc"`) and run `make restart`. The tag `smriti-final` marks the last commit before the rename.
 - Backend: Python 3.12, FastAPI, SQLite with FTS5, Pillow for thumbnails. Dependencies are in `backend/pyproject.toml`.
-- Frontend: React, Vite, Tailwind CSS, Geist font, Lucide icons, Recharts.
+- Frontend: React, Vite, Tailwind CSS, Geist font, Lucide icons. Each page is its own chunk and loads on first visit; the Weekly report chart is plain HTML and CSS.
+- Docker: a three-stage build (Node builds the UI, uv builds the Python environment, the runtime image has neither) on Alpine, about 130 MB. The app runs as a non-root user (UID 1000, change with `--build-arg APP_UID=...`). Responses are gzip-compressed and hashed assets are cached by the browser for a year.
+- `make lint` runs ruff on the backend and the TypeScript check on the UI.

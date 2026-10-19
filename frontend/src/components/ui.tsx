@@ -407,19 +407,6 @@ export function Tabs<T extends string>({
   );
 }
 
-export function Badge({ className, children }: { className?: string; children: ReactNode }) {
-  return (
-    <span
-      className={clsx(
-        "inline-flex h-5 items-center gap-1 rounded border border-line bg-surface-2 px-1.5 text-[11px] font-medium text-fg-2",
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
 export function Kbd({ children }: { children: ReactNode }) {
   return (
     <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-line bg-surface-2 px-1 font-mono text-[10px] text-fg-3">

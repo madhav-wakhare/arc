@@ -116,10 +116,14 @@ dev-ui: ## Run only the UI dev server
 test: ## Run backend tests
 	cd backend && uv run --frozen pytest -q
 
+lint: ## Lint the backend (ruff) and type-check the UI
+	cd backend && uv run --frozen ruff check app tests
+	cd frontend && npx tsc --noEmit -p .
+
 build-ui: ## Type-check and build the UI
 	cd frontend && npm run build
 
-ci: install test build-ui ## Install, test and build (what CI would run)
+ci: install lint test build-ui ## Install, lint, test and build (what CI would run)
 
 clean: ## Remove local build output and dev data (keeps data/ and backups/)
 	rm -rf backend/.venv frontend/node_modules frontend/dist .dev

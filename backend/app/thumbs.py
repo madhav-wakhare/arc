@@ -9,6 +9,7 @@ import urllib.request
 from PIL import Image
 
 from . import db
+
 WIDTH = 640  # sharp on a 2x screen for cards up to 320px wide; about 20-40 KB each
 MAX_BYTES = 8_000_000
 _UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"

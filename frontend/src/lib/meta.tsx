@@ -90,15 +90,38 @@ export function fmtMinutes(min: number | null | undefined): string {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
-export function fmtHours(min: number): string {
-  return `${(min / 60).toFixed(min % 60 === 0 ? 0 : 1)}h`;
-}
-
 const parse = (s: string) => new Date(s.length === 10 ? `${s}T00:00:00` : s);
 
-export function todayIso(): string {
-  const d = new Date();
+/** "YYYY-MM-DD" in local time. */
+export function isoDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export const todayIso = () => isoDate(new Date());
+
+export function addDays(day: string, n: number): string {
+  const d = parse(day);
+  d.setDate(d.getDate() + n);
+  return isoDate(d);
+}
+
+/**
+ * Looks like a web link. Loose (default): "example.com" counts, for link fields.
+ * Strict: needs "http(s)://" or a path, so a topic such as "vllm.ai" typed as text stays text.
+ */
+export function isUrl(s: string, strict = false): boolean {
+  const t = s.trim();
+  if (/^https?:\/\//i.test(t)) return /^https?:\/\/\S+$/i.test(t);
+  return strict ? /^[\w-]+(\.[\w-]+)+\/\S*$/i.test(t) : /^[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(t);
+}
+
+/** Short stable hash, so a changed link gets a fresh (browser-cached) thumbnail URL. */
+export function urlHash(s: string): string {
+  // Bump the prefix when thumbnails are rendered differently, so browsers drop old copies.
+  s = `v2:${s}`;
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
 }
 
 export function daysBetween(from: string, to: Date = new Date()): number {

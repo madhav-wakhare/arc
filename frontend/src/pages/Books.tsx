@@ -3,13 +3,12 @@ import clsx from "clsx";
 import { Book as BookIcon, BookOpen, LoaderCircle, Plus, Search, SquareKanban, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { urlHash } from "../components/ItemCard";
 import { useActions } from "../components/Layout";
 import { LearningNav } from "../components/LearningNav";
 import { Button, Card, Drawer, Empty, Field, IconButton, Input, Modal, PageHeader, Tabs, Textarea, useToast } from "../components/ui";
 import { api, type Book, type BookHit, type BookStatus } from "../lib/api";
 import { useLocalState, useRefreshItems } from "../lib/hooks";
-import { fmtDate } from "../lib/meta";
+import { fmtDate, urlHash } from "../lib/meta";
 
 type Tab = BookStatus | "all";
 

@@ -10,11 +10,10 @@ import { ObsidianIcon } from "../components/ObsidianIcon";
 import { Button, Card, Empty, IconButton, Input, PageHeader, Tabs, useToast } from "../components/ui";
 import { api, type Item, type LinkPreview, type Status } from "../lib/api";
 import { useLinkPreview, useProjects, useRefreshItems, useUpdateItem } from "../lib/hooks";
-import { StatusIcon, fmtMinutes, hostOf, statusMeta, youtubeId } from "../lib/meta";
+import { StatusIcon, fmtMinutes, hostOf, statusMeta, youtubeId, isUrl } from "../lib/meta";
 
 type Tab = "queue" | "in_progress" | "done" | "all";
 
-const isLink = (s: string) => /^(https?:\/\/)?[\w-]+(\.[\w-]+)+\/\S*$/i.test(s.trim()) || /^https?:\/\//i.test(s.trim());
 
 function LearningCard({ item }: { item: Item }) {
   const { openItem } = useActions();
@@ -203,7 +202,7 @@ export default function Learning() {
               onChange={(e) => {
                 const v = e.target.value;
                 // A link pasted here goes to the link field; its title fills this one.
-                if (isLink(v) && !url.trim()) {
+                if (isUrl(v, true) && !url.trim()) {
                   setUrl(v.trim());
                   setTitle("");
                   titleTyped.current = false;

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { api, type LinkPreview, type Item, type Jot, type Project, type Revision, type Settings, type Timer, type Trash } from "./api";
 import { useToast } from "../components/ui";
+import { isUrl } from "./meta";
 
 export const useProjects = () => useQuery({ queryKey: ["projects"], queryFn: () => api.get<Project[]>("/projects") });
 export const useJots = () => useQuery({ queryKey: ["jots"], queryFn: () => api.get<Jot[]>("/jots") });
@@ -71,7 +72,6 @@ export function useLocalState<T>(key: string, initial: T) {
   return [v, setV] as const;
 }
 
-const LINK = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i;
 
 /**
  * Looks up a pasted link (YouTube title via oEmbed, other pages via their meta tags) shortly after
@@ -83,7 +83,7 @@ export function useLinkPreview(url: string, onFound: (p: LinkPreview) => void, e
   found.current = onFound;
   useEffect(() => {
     const u = url.trim();
-    if (!enabled || !LINK.test(u)) return;
+    if (!enabled || !isUrl(u)) return;
     let live = true;
     const t = setTimeout(() => {
       setLoading(true);

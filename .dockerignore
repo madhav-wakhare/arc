@@ -1,11 +1,15 @@
-.git
-.env
-data
-backups
-vault-not-set
-frontend/node_modules
-frontend/dist
-backend/.venv
+# Only what the Dockerfile copies matters; keep the build context small and secrets out.
+**
+!backend/pyproject.toml
+!backend/uv.lock
+!backend/.python-version
+!backend/app/
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/index.html
+!frontend/vite.config.ts
+!frontend/tsconfig*.json
+!frontend/public/
+!frontend/src/
 **/__pycache__
-backend/tests
-.dev
+**/.DS_Store

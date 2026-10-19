@@ -1,4 +1,5 @@
 import calendar
+import contextlib
 import json
 import logging
 import os
@@ -10,14 +11,28 @@ from datetime import date, datetime, timedelta
 from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import backup, linkpreview, obsidian, thumbs
 from .db import (
-    PROJECT_ICONS, TRASH_DAYS, get_db, next_icon, get_setting, hard_delete_items, init_db, needs_migration, now, purge_trash, row, rows,
-    set_setting, today,
+    PROJECT_ICONS,
+    TRASH_DAYS,
+    get_db,
+    get_setting,
+    hard_delete_items,
+    init_db,
+    needs_migration,
+    next_icon,
+    now,
+    purge_trash,
+    row,
+    rows,
+    set_setting,
+    today,
+    update_row,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -43,6 +58,8 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Arc", version=VERSION, lifespan=lifespan)
+# JSON, JS and CSS shrink 70-80 % with gzip; it matters most on a phone over Wi-Fi.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 # --------------------------------------------------------------------------- models
@@ -334,8 +351,7 @@ def update_project(project_id: int, data: ProjectPatch, conn=Depends(get_db)):
     if "icon" in fields and fields["icon"] not in PROJECT_ICONS:
         raise HTTPException(422, "Unknown icon")
     if fields:
-        sets = ", ".join(f"{k} = ?" for k in fields)
-        conn.execute(f"UPDATE projects SET {sets} WHERE id = ? AND deleted_at IS NULL", (*fields.values(), project_id))
+        update_row(conn, "projects", project_id, fields, " AND deleted_at IS NULL")
     p = row(conn.execute("SELECT * FROM projects WHERE id = ? AND deleted_at IS NULL", (project_id,)))
     if not p:
         raise HTTPException(404, "Project not found")
@@ -436,8 +452,7 @@ def update_item(item_id: int, data: ItemPatch, conn=Depends(get_db)):
 
     if updates:
         updates["updated_at"] = ts
-        sets = ", ".join(f"{k} = ?" for k in updates)
-        conn.execute(f"UPDATE items SET {sets} WHERE id = ?", (*updates.values(), item_id))
+        update_row(conn, "items", item_id, updates)
 
     item = load_item(conn, item_id)
     if updates.get("status") == "done":
@@ -449,10 +464,8 @@ def update_item(item_id: int, data: ItemPatch, conn=Depends(get_db)):
         item["obsidian_path"] and item["url"] and {"title", "url", "project_id"} & updates.keys()
         and get_setting(conn, "auto_reexport", "1") == "1"
     ):
-        try:
+        with contextlib.suppress(obsidian.ExportError):
             obsidian.export_item(conn, item, item["key"])
-        except obsidian.ExportError:
-            pass
     return get_item(item_id, conn)
 
 
@@ -470,7 +483,7 @@ def export_item(item_id: int, conn=Depends(get_db)):
     try:
         path = obsidian.export_item(conn, item, item["key"])
     except obsidian.ExportError as exc:
-        raise HTTPException(400, str(exc))
+        raise HTTPException(400, str(exc)) from exc
     log_history(conn, item_id, "obsidian", None, path)
     return get_item(item_id, conn)
 
@@ -490,8 +503,7 @@ def add_subtask(item_id: int, data: SubtaskIn, conn=Depends(get_db)):
 def update_subtask(subtask_id: int, data: SubtaskPatch, conn=Depends(get_db)):
     fields = data.model_dump(exclude_unset=True)
     if fields:
-        sets = ", ".join(f"{k} = ?" for k in fields)
-        conn.execute(f"UPDATE subtasks SET {sets} WHERE id = ?", (*fields.values(), subtask_id))
+        update_row(conn, "subtasks", subtask_id, fields)
     return row(conn.execute("SELECT * FROM subtasks WHERE id = ?", (subtask_id,)))
 
 
@@ -739,8 +751,7 @@ def update_jot(jot_id: int, data: JotPatch, conn=Depends(get_db)):
         raise HTTPException(409, "This note is already a ticket.")
     if fields:
         fields["updated_at"] = now()
-        sets = ", ".join(f"{k} = ?" for k in fields)
-        conn.execute(f"UPDATE jots SET {sets} WHERE id = ?", (*fields.values(), jot_id))
+        update_row(conn, "jots", jot_id, fields)
     return load_jot(conn, jot_id)
 
 
@@ -868,8 +879,7 @@ def update_revision(rid: int, data: RevisionPatch, conn=Depends(get_db)):
         fields["revised_at"] = now() if fields["status"] == "revised" else None
     if fields:
         fields["updated_at"] = now()
-        sets = ", ".join(f"{k} = ?" for k in fields)
-        conn.execute(f"UPDATE revisions SET {sets} WHERE id = ?", (*fields.values(), rid))
+        update_row(conn, "revisions", rid, fields)
     return load_revision(conn, rid)
 
 
@@ -1304,7 +1314,7 @@ def _export_article(conn, aid: int) -> dict:
     try:
         obsidian.export_article(conn, load_article(conn, aid))
     except obsidian.ExportError as exc:
-        raise HTTPException(400, str(exc))
+        raise HTTPException(400, str(exc)) from exc
     return load_article(conn, aid)
 
 
@@ -1403,8 +1413,7 @@ def update_article(aid: int, data: ArticlePatch, conn=Depends(get_db)):
     if collection_ids is not None or folder_id is not None:
         updates["_collections"] = True
     changed_collections = updates.pop("_collections", False)
-    sets = ", ".join(f"{k} = ?" for k in updates)
-    conn.execute(f"UPDATE articles SET {sets} WHERE id = ?", (*updates.values(), aid))
+    update_row(conn, "articles", aid, updates)
     if changed_collections:
         updates["collections"] = True
     # Keep the Obsidian note in step, like video notes.
@@ -1532,7 +1541,7 @@ def _sync_book_from_item(conn, bid: int, item_status: str) -> None:
     fields = {"status": status, **_book_status_dates(status, book), "updated_at": now()}
     if status == "finished" and book["pages"]:
         fields["current_page"] = book["pages"]
-    conn.execute(f"UPDATE books SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ?", (*fields.values(), bid))
+    update_row(conn, "books", bid, fields)
 
 
 @app.get("/api/books/search")
@@ -1544,8 +1553,8 @@ def search_books(q: str = Query(min_length=2, max_length=200)):
         req = urllib.request.Request(url, headers={"User-Agent": "Arc/0.1 (personal tracker)"})
         with urllib.request.urlopen(req, timeout=8) as resp:
             docs = json.loads(resp.read(2_000_000)).get("docs", [])
-    except Exception:
-        raise HTTPException(502, "Could not reach Open Library. Add the book by hand.")
+    except Exception as exc:
+        raise HTTPException(502, "Could not reach Open Library. Add the book by hand.") from exc
     return [
         {
             "title": d.get("title", ""),
@@ -1593,7 +1602,7 @@ def update_book(bid: int, data: BookPatch, conn=Depends(get_db)):
     if not fields:
         return book
     fields["updated_at"] = now()
-    conn.execute(f"UPDATE books SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ?", (*fields.values(), bid))
+    update_row(conn, "books", bid, fields)
     return load_book(conn, bid)
 
 
@@ -1766,8 +1775,7 @@ def update_plan_entry(eid: int, data: PlanPatch, conn=Depends(get_db)):
             conn.execute("UPDATE weekend_ideas SET done_at = ? WHERE id = ?",
                          (now() if updates["done"] else None, entry["idea_id"]))
     if updates:
-        sets = ", ".join(f"{k} = ?" for k in updates)
-        conn.execute(f"UPDATE weekend_plan SET {sets} WHERE id = ?", (*updates.values(), eid))
+        update_row(conn, "weekend_plan", eid, updates)
     return load_plan_entry(conn, eid)
 
 
@@ -1807,8 +1815,7 @@ def update_idea(iid: int, data: IdeaPatch, conn=Depends(get_db)):
         if key in updates:
             updates[key] = updates[key].strip()
     if updates:
-        sets = ", ".join(f"{k} = ?" for k in updates)
-        conn.execute(f"UPDATE weekend_ideas SET {sets} WHERE id = ?", (*updates.values(), iid))
+        update_row(conn, "weekend_ideas", iid, updates)
         if "title" in updates or "category" in updates:  # keep planned copies in step
             idea = load_idea(conn, iid)
             conn.execute("UPDATE weekend_plan SET title = ?, category = ? WHERE idea_id = ?",
@@ -1839,8 +1846,17 @@ def health():
 
 # --------------------------------------------------------------------------- frontend
 
+class ImmutableStaticFiles(StaticFiles):
+    """Vite puts a content hash in every asset name, so browsers may keep them for a year."""
+
+    def file_response(self, *args, **kwargs):
+        resp = super().file_response(*args, **kwargs)
+        resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return resp
+
+
 if os.path.isdir(STATIC_DIR):
-    app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")
+    app.mount("/assets", ImmutableStaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")
 
     @app.get("/{path:path}", include_in_schema=False)
     def spa(path: str):
@@ -1848,5 +1864,6 @@ if os.path.isdir(STATIC_DIR):
             raise HTTPException(404)
         candidate = os.path.realpath(os.path.join(STATIC_DIR, path))
         if path and candidate.startswith(os.path.realpath(STATIC_DIR)) and os.path.isfile(candidate):
-            return FileResponse(candidate)
-        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+            return FileResponse(candidate, headers={"Cache-Control": "public, max-age=86400"})
+        # index.html is never cached, so a new build shows up on the next load.
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"), headers={"Cache-Control": "no-cache"})

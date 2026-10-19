@@ -137,16 +137,6 @@
   }
 }
 
-.recharts-cartesian-grid line {
-  stroke: var(--border);
-}
-.recharts-text {
-  fill: var(--fg-3);
-  font-size: 11px;
-}
-.recharts-tooltip-cursor {
-  fill: var(--surface-2);
-}
 
 /* ---------------------------------------------------------------- motion
    Short entrance animations only (120-200 ms). Closing is instant so the app

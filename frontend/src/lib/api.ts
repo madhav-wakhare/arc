@@ -305,17 +305,6 @@ export const api = {
   del: (path: string) => request<void>("DELETE", path),
 };
 
-export function qs(params: Record<string, string | string[] | number[] | undefined>): string {
-  const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v === undefined) continue;
-    if (Array.isArray(v)) v.forEach((x) => sp.append(k, String(x)));
-    else sp.set(k, v);
-  }
-  const s = sp.toString();
-  return s ? `?${s}` : "";
-}
-
 export type ArticleStatus = "unread" | "reading" | "read";
 export interface Article {
   id: number;

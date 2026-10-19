@@ -1,25 +1,28 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StrictMode } from "react";
+import { StrictMode, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ToastProvider } from "./components/ui";
 import "./index.css";
-import Board from "./pages/Board";
 import Dashboard from "./pages/Dashboard";
-import Quotes from "./pages/Quotes";
-import Weekend from "./pages/Weekend";
-import Reading from "./pages/Reading";
-import Books from "./pages/Books";
-import Radar from "./pages/Radar";
-import Revise from "./pages/Revise";
-import Learning from "./pages/Learning";
-import ListView from "./pages/ListView";
-import Reports from "./pages/Reports";
-import Projects from "./pages/Projects";
-import Settings from "./pages/Settings";
-import Trash from "./pages/Trash";
-import Today from "./pages/Today";
+
+// The Dashboard is the landing page and ships in the main bundle; every other page loads on
+// first visit, so the app starts with a much smaller download.
+const Board = lazy(() => import("./pages/Board"));
+const Quotes = lazy(() => import("./pages/Quotes"));
+const Weekend = lazy(() => import("./pages/Weekend"));
+const Reading = lazy(() => import("./pages/Reading"));
+const Books = lazy(() => import("./pages/Books"));
+const Radar = lazy(() => import("./pages/Radar"));
+const Revise = lazy(() => import("./pages/Revise"));
+const Learning = lazy(() => import("./pages/Learning"));
+const ListView = lazy(() => import("./pages/ListView"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Projects = lazy(() => import("./pages/Projects"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Trash = lazy(() => import("./pages/Trash"));
+const Today = lazy(() => import("./pages/Today"));
 
 /** Old /reading links (and bookmarks) now open Learning → Articles, keeping ?c= etc. */
 function ToArticles() {

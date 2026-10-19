@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { DayBars, EmptyLine, ItemRows, Panel, ProjectBars, Stat, StatRow, delta } from "../components/dash";
+import { DayBars } from "../components/charts";
+import { EmptyLine, ItemRows, Panel, ProjectBars, Stat, StatRow, delta } from "../components/dash";
 import { useActions } from "../components/Layout";
 import { Button, IconButton, PageHeader } from "../components/ui";
 import { api, type Weekly } from "../lib/api";

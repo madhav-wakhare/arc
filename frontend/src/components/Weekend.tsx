@@ -26,7 +26,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { api, type Idea, type Item, type LifeCategory, type PlanEntry, type Weekend, type WeekendSlot } from "../lib/api";
 import { useRevisions } from "../lib/hooks";
-import { ItemIcon, PriorityIcon, fmtDate, todayIso } from "../lib/meta";
+import { ItemIcon, PriorityIcon, fmtDate, todayIso, addDays } from "../lib/meta";
 import { useActions } from "./Layout";
 import { Button, Card, Checkbox, Input, Menu, Modal, Tabs, useToast } from "./ui";
 
@@ -165,12 +165,6 @@ export function EntryRow({
       )}
     </div>
   );
-}
-
-export function addDays(day: string, n: number) {
-  const d = new Date(`${day}T00:00:00`);
-  d.setDate(d.getDate() + n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /** Category picker as small pills. */

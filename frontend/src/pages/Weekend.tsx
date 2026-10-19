@@ -20,7 +20,6 @@ import {
   EntryRow,
   KindIcon,
   SLOTS,
-  addDays,
   categoryMeta,
   dayName,
   useIdeas,
@@ -31,7 +30,7 @@ import {
 import { Button, Card, IconButton, Input, Menu, PageHeader, Select, Switch, Tabs, useToast } from "../components/ui";
 import { api, type Idea, type LifeCategory, type PlanEntry, type Settings, type Weekend, type WeekendSlot } from "../lib/api";
 import { useSettings } from "../lib/hooks";
-import { fmtDate, todayIso } from "../lib/meta";
+import { fmtDate, todayIso, addDays } from "../lib/meta";
 
 type Target = { day: string; slot: WeekendSlot };
 

@@ -2,6 +2,7 @@
 
 import importlib
 import os
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,7 +16,10 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("BACKUP_DIR", str(tmp_path / "backups"))
     monkeypatch.setenv("STATIC_DIR", str(tmp_path / "no-static"))
     monkeypatch.setenv("TZ", "Asia/Kolkata")
-    import app.db, app.obsidian, app.backup, app.main  # noqa: E401
+    import app.backup
+    import app.db  # noqa: E401
+    import app.main
+    import app.obsidian
 
     for mod in (app.db, app.obsidian, app.backup, app.main):
         importlib.reload(mod)
@@ -114,7 +118,7 @@ def test_project_trash_restores_only_its_batch(client):
     early = _learning(client, title="deleted earlier")
     keep = _learning(client, title="deleted with project")
     client.delete(f"/api/items/{early['id']}")
-    import time; time.sleep(1.1)  # distinct deleted_at
+    time.sleep(1.1)  # distinct deleted_at
     assert client.delete(f"/api/projects/{lrn['id']}").status_code == 204
     assert "LRN" not in [p["key"] for p in client.get("/api/projects").json()]
 
@@ -167,7 +171,9 @@ def test_migration_from_v010(tmp_path, monkeypatch):
     monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("BACKUP_DIR", str(tmp_path / "backups"))
     monkeypatch.setenv("STATIC_DIR", str(tmp_path / "no-static"))
-    import app.backup, app.main, app.obsidian  # noqa: E401
+    import app.backup  # noqa: E401
+    import app.main
+    import app.obsidian
 
     for mod in (db, app.obsidian, app.backup, app.main):
         importlib.reload(mod)

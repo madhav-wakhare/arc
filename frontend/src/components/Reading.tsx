@@ -5,8 +5,7 @@ import { Check, ExternalLink, Folder, FolderOpen, Link2, LoaderCircle, Newspaper
 import { useEffect, useRef, useState } from "react";
 import { api, type Article, type ArticleStatus, type Collection, type LinkPreview, type Settings } from "../lib/api";
 import { useLocalState, useSettings } from "../lib/hooks";
-import { fmtDate } from "../lib/meta";
-import { urlHash } from "./ItemCard";
+import { fmtDate, isUrl, urlHash } from "../lib/meta";
 import { ObsidianIcon } from "./ObsidianIcon";
 import { Button, Checkbox, Drawer, Field, IconButton, Input, Modal, Tabs, Textarea, useToast } from "./ui";
 
@@ -267,8 +266,6 @@ export function ObsidianFolderModal({ open, onClose, onSaved }: { open: boolean;
   );
 }
 
-const looksLikeUrl = (s: string) => /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(s.trim());
-
 /** Paste a link; title, site and summary fill in from the page. */
 export function AddArticleModal({
   open,
@@ -310,7 +307,7 @@ export function AddArticleModal({
 
   // Look the page up shortly after the link stops changing.
   useEffect(() => {
-    if (!open || !looksLikeUrl(url)) return;
+    if (!open || !isUrl(url)) return;
     const t = setTimeout(() => fetchPreview.mutate(url.trim()), 450);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -353,7 +350,7 @@ export function AddArticleModal({
   });
 
   const submit = () => {
-    if (!looksLikeUrl(url) || add.isPending) return;
+    if (!isUrl(url) || add.isPending) return;
     if (toObsidian && !settings?.obsidian.articles_folder) setAskFolder(true);
     else add.mutate();
   };
@@ -379,7 +376,7 @@ export function AddArticleModal({
               }
             />
             <Button onClick={close}>Cancel</Button>
-            <Button variant="primary" disabled={!looksLikeUrl(url) || add.isPending} onClick={submit}>
+            <Button variant="primary" disabled={!isUrl(url) || add.isPending} onClick={submit}>
               Add blog post
             </Button>
           </>

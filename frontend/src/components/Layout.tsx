@@ -22,7 +22,7 @@ import {
   SquareKanban,
   Sun,
 } from "lucide-react";
-import { createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { Suspense, createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, type ItemType, type Quote, type Status } from "../lib/api";
@@ -403,7 +403,9 @@ export function Layout() {
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div key={location.pathname} className="anim-page h-full">
-              <Outlet />
+              <Suspense fallback={null}>
+                <Outlet />
+              </Suspense>
             </div>
           </div>
         </main>

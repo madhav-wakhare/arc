@@ -390,6 +390,13 @@ def init_db() -> None:
         assign_missing_icons(conn)
 
 
+def update_row(conn, table: str, row_id: int, fields: dict, extra_where: str = "") -> None:
+    """UPDATE one row by id. Column names come from our Pydantic models, never from user input."""
+    if fields:
+        sets = ", ".join(f"{k} = ?" for k in fields)
+        conn.execute(f"UPDATE {table} SET {sets} WHERE id = ?{extra_where}", (*fields.values(), row_id))
+
+
 def rows(cursor) -> list[dict]:
     return [dict(r) for r in cursor.fetchall()]
 

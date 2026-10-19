@@ -3,7 +3,7 @@ import { BookOpen, CalendarDays, CheckSquare, Clock, Hourglass, Link2, MessageSq
 import { useState } from "react";
 import type { Item } from "../lib/api";
 import { ObsidianIcon } from "./ObsidianIcon";
-import { ItemIcon, PriorityIcon, dueTone, fmtDate, fmtMinutes, pendingDays, pendingTone, youtubeId } from "../lib/meta";
+import { ItemIcon, PriorityIcon, dueTone, fmtDate, fmtMinutes, pendingDays, pendingTone, youtubeId, urlHash } from "../lib/meta";
 
 /** "Pending N days" chip. Neutral, then amber (10d), orange (15d) and red (30d). */
 export function PendingBadge({ item, long }: { item: Item; long?: boolean }) {
@@ -75,15 +75,6 @@ export function ItemCard({ item, onOpen, dragging }: { item: Item; onOpen: () =>
       </div>
     </div>
   );
-}
-
-/** Short stable hash, so a changed link gets a fresh (browser-cached) thumbnail URL. */
-export function urlHash(s: string) {
-  // Bump the prefix when thumbnails are rendered differently, so browsers drop old copies.
-  s = `v2:${s}`;
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
-  return (h >>> 0).toString(36);
 }
 
 /**
