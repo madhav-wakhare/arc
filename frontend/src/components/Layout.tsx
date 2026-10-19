@@ -81,28 +81,19 @@ function useTheme() {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))] as const;
 }
 
-// Arc mark: three rounded bars that rise and fall like an arc ("rainbow steps").
-// They grow up from the baseline one after another on load; on hover an accent shimmer runs
-// across them. (Earlier marks are in git: the Smriti "S" at tag smriti-final, the stepped "A" at arc-v1.)
-const LOGO_BLOCKS = [
-  { x: 4, y: 18, w: 6, h: 10 },
-  { x: 11, y: 11, w: 10, h: 17 },
-  { x: 22, y: 18, w: 6, h: 10 },
-];
-
-/**
- * Each bar is a <g> (build-in) around a <rect> (shimmer), so the two animations never restart
- * each other. See .logo-mark in index.css.
- */
+// Arc mark: a geometric lowercase "a", a ring and a straight stem. On load the ring grows in,
+// then the stem rises; on hover an accent shimmer runs from ring to stem. (Earlier marks are in
+// git: the Smriti "S" at tag smriti-final, the stepped "A" at arc-v1, the rising bars at 968b20d.)
 function Logo({ compact }: { compact?: boolean }) {
   return (
     <div className="logo-mark flex items-center gap-2.5">
-      <svg viewBox="2 5.5 28 28" className="size-7 shrink-0 overflow-visible" fill="var(--fg)" aria-hidden>
-        {LOGO_BLOCKS.map((b, i) => (
-          <g key={i} className="logo-block" style={{ "--i": i } as CSSProperties}>
-            <rect x={b.x} y={b.y} width={b.w} height={b.h} rx="1.5" />
-          </g>
-        ))}
+      <svg viewBox="1 4 28 28" className="size-7 shrink-0 overflow-visible" aria-hidden>
+        <g className="logo-block logo-ring" style={{ "--i": 0 } as CSSProperties}>
+          <circle cx="14" cy="18" r="8" fill="none" stroke="var(--fg)" strokeWidth="4" />
+        </g>
+        <g className="logo-block" style={{ "--i": 1 } as CSSProperties}>
+          <rect x="22" y="9" width="4" height="17" rx="2" fill="var(--fg)" />
+        </g>
       </svg>
       {!compact && <span className="logo-word text-[22px] font-medium tracking-tight">Arc</span>}
     </div>
