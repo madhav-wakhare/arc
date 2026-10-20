@@ -95,6 +95,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       { id: "p-weekend", icon: <CalendarHeart size={15} />, label: "Go to Weekend", run: go("/weekend") },
       { id: "p-list", icon: <ListTodo size={15} />, label: "Go to List view", run: go("/list") },
       { id: "p-learn", icon: <BookOpen size={15} />, label: "Go to Learning", run: go("/learning") },
+      { id: "p-topics", icon: <BookOpen size={15} />, label: "Go to Topics", run: go("/learning/topics") },
       { id: "p-reading", icon: <Newspaper size={15} />, label: "Go to Engineering Blogs", run: go("/learning/articles") },
       { id: "p-books", icon: <BookOpen size={15} />, label: "Go to Books", run: go("/learning/books") },
       { id: "p-revise", icon: <BookMarked size={15} />, label: "Go to Revisit", run: go("/learning/revisit") },

@@ -7,9 +7,10 @@ import { PendingBadge, Thumb } from "../components/ItemCard";
 import { useActions } from "../components/Layout";
 import { LearningNav } from "../components/LearningNav";
 import { ObsidianIcon } from "../components/ObsidianIcon";
-import { Button, Card, Empty, IconButton, Input, PageHeader, Tabs, useToast } from "../components/ui";
+import { LearningToolbar } from "../components/LearningToolbar";
+import { Button, Card, Empty, IconButton, Input, Modal, PageHeader, useToast } from "../components/ui";
 import { api, type Item, type LinkPreview, type Status } from "../lib/api";
-import { useLinkPreview, useProjects, useRefreshItems, useUpdateItem } from "../lib/hooks";
+import { useLinkPreview, useLocalState, useProjects, useRefreshItems, useUpdateItem } from "../lib/hooks";
 import { StatusIcon, fmtMinutes, hostOf, statusMeta, youtubeId, isUrl } from "../lib/meta";
 
 type Tab = "queue" | "in_progress" | "done" | "all";
@@ -127,26 +128,95 @@ export default function Learning() {
   });
   // Tickets made from books live under Books, not Topics.
   const items = all.filter((i) => !i.book_id);
+  const [tab, setTab] = useLocalState<Tab>("arc-topics-tab", "queue");
+  const [q, setQ] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const inTab = (i: Item, t: Tab) => (t === "all" ? true : t === "queue" ? i.status === "backlog" || i.status === "today" : i.status === t);
+  const needle = q.trim().toLowerCase();
+  const filtered = items.filter(
+    (i) => inTab(i, tab) && (!needle || `${i.key} ${i.title} ${i.description} ${i.labels.join(" ")}`.toLowerCase().includes(needle)),
+  );
+  const count = (t: Tab) => items.filter((i) => inTab(i, t)).length;
+
+  return (
+    <div className="mx-auto w-full max-w-[1440px] pb-10">
+      <PageHeader
+        icon={<BookOpen size={18} />}
+        title="Learning"
+        actions={
+          <Button variant="primary" icon={<Plus size={14} />} onClick={() => setAdding(true)}>
+            Add topic
+          </Button>
+        }
+      />
+      <LearningNav />
+      <div className="space-y-5 px-4 md:px-6 lg:px-8">
+        <LearningToolbar
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: "queue", label: `To learn · ${count("queue")}` },
+            { value: "in_progress", label: `In progress · ${count("in_progress")}` },
+            { value: "done", label: `Done · ${count("done")}` },
+            { value: "all", label: `All · ${count("all")}` },
+          ]}
+          search={q}
+          onSearch={setQ}
+          placeholder="Search topics, notes, labels"
+        />
+
+        {filtered.length === 0 ? (
+          <Card>
+            <Empty
+              icon={<GraduationCap size={28} />}
+              title={items.length ? "Nothing here" : "No topics yet"}
+              hint={
+                items.length
+                  ? "Try another filter or search."
+                  : "Add a topic you want to learn. Paste a video or course link if you have one; topics from Radar land here too."
+              }
+            />
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
+            {filtered.map((i) => (
+              <LearningCard key={i.id} item={i} />
+            ))}
+          </div>
+        )}
+      </div>
+      <AddTopicDialog open={adding} onClose={() => setAdding(false)} />
+    </div>
+  );
+}
+
+/** Add a topic: a name, or a video or course link whose title fills in. Blog links are offered to Engineering Blogs. */
+function AddTopicDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data: projects = [] } = useProjects();
-  const [tab, setTab] = useState<Tab>("queue");
-  const [url, setUrl] = useState("");
-  const [title, setTitle] = useState("");
+  const { newItem } = useActions();
   const refresh = useRefreshItems();
   const toast = useToast();
-  const { newItem } = useActions();
-  // Fill the title from the video or page, unless you typed one yourself.
-  const titleTyped = useRef(false);
   const navigate = useNavigate();
+  const [url, setUrl] = useState("");
+  const [title, setTitle] = useState("");
+  const titleTyped = useRef(false);
   const looking = useLinkPreview(url, (p) => {
     if (!titleTyped.current && p.title) setTitle(p.title);
-  });
-  // Blog posts belong in Articles; offer to send a link that is not a video or course site there.
+  }, open);
+  // Blog posts belong in Engineering Blogs; offer to send a link that is not a video or course site there.
   const articleLike =
     /^(https?:\/\/)?[\w-]+(\.[\w-]+)+\/\S+/i.test(url.trim()) &&
     !youtubeId(url) &&
     !/youtube|vimeo|loom\.com|course|learn|academy|udemy|coursera|kodekloud|pluralsight|egghead|frontendmasters/i.test(url);
 
-  const quickAdd = useMutation({
+  const close = () => {
+    setUrl("");
+    setTitle("");
+    titleTyped.current = false;
+    onClose();
+  };
+  const add = useMutation({
     mutationFn: async () => {
       // Saved before the title arrived: look it up now instead of using the link as the title.
       let name = title.trim();
@@ -160,110 +230,83 @@ export default function Learning() {
     },
     onSuccess: (i) => {
       refresh();
-      setUrl("");
-      setTitle("");
-      titleTyped.current = false;
       toast(`${i.key} added to Topics`);
+      close();
     },
     onError: (e: Error) => toast(e.message, "error"),
   });
-
-  const filtered = items.filter((i) =>
-    tab === "all" ? true : tab === "queue" ? i.status === "backlog" || i.status === "today" : i.status === tab,
-  );
-  const count = (t: Tab) =>
-    items.filter((i) => (t === "all" ? true : t === "queue" ? i.status === "backlog" || i.status === "today" : i.status === t)).length;
+  const ready = !!(title.trim() || url.trim()) && !add.isPending;
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] pb-10">
-      <PageHeader
-        icon={<BookOpen size={18} />}
-        title="Learning"
-        actions={
-          <Button icon={<Plus size={14} />} onClick={() => newItem({ type: "learning" })}>
-            Detailed add
-          </Button>
-        }
-      />
-      <LearningNav />
-      <div className="space-y-5 px-4 md:px-6 lg:px-8">
-        <Card className="p-4">
-          <form
-            className="flex flex-col gap-2 md:flex-row"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (title.trim() || url.trim()) quickAdd.mutate();
+    <Modal
+      open={open}
+      onClose={close}
+      title="Add topic"
+      width="max-w-lg"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              close();
+              newItem({ type: "learning" });
             }}
+            className="mr-auto text-xs text-fg-3 hover:text-fg"
           >
-            <Input
-              icon={looking ? <LoaderCircle size={14} className="animate-spin" /> : <GraduationCap size={15} />}
-              placeholder={looking ? "Getting the title…" : "What do you want to learn? e.g. KV cache"}
-              value={title}
-              onChange={(e) => {
-                const v = e.target.value;
-                // A link pasted here goes to the link field; its title fills this one.
-                if (isUrl(v, true) && !url.trim()) {
-                  setUrl(v.trim());
-                  setTitle("");
-                  titleTyped.current = false;
-                  return;
-                }
-                titleTyped.current = v !== "";
-                setTitle(v);
-              }}
-              className="md:flex-[3]"
-            />
-            <Input
-              icon={<Link2 size={15} />}
-              placeholder="Video or course link (optional)"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="md:flex-[2]"
-            />
-            <Button type="submit" variant="primary" icon={<Plus size={14} />} disabled={!(title.trim() || url.trim()) || quickAdd.isPending} className="h-9">
-              Add topic
-            </Button>
-          </form>
-          {articleLike && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
-              <Newspaper size={14} className="shrink-0 text-fg-3" />
-              <span className="flex-1">This looks like a blog post. Engineering Blogs have collections, notes and their own Obsidian folder.</span>
-              <button
-                type="button"
-                onClick={() => navigate(`/learning/articles?add=${encodeURIComponent(url.trim())}`)}
-                className="flex items-center gap-1 font-medium text-accent hover:underline"
-              >
-                Save to Engineering Blogs <ArrowRight size={13} />
-              </button>
-            </div>
-          )}
-        </Card>
-
-        <Tabs
-          value={tab}
-          onChange={setTab}
-          tabs={[
-            { value: "queue", label: `Queue · ${count("queue")}` },
-            { value: "in_progress", label: `In progress · ${count("in_progress")}` },
-            { value: "done", label: `Done · ${count("done")}` },
-            { value: "all", label: `All · ${count("all")}` },
-          ]}
+            More options
+          </button>
+          <Button onClick={close}>Cancel</Button>
+          <Button variant="primary" disabled={!ready} onClick={() => add.mutate()}>
+            Add topic
+          </Button>
+        </>
+      }
+    >
+      <form
+        className="space-y-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (ready) add.mutate();
+        }}
+      >
+        <Input
+          autoFocus
+          icon={looking ? <LoaderCircle size={14} className="animate-spin" /> : <GraduationCap size={15} />}
+          placeholder={looking ? "Getting the title…" : "What do you want to learn? e.g. KV cache"}
+          value={title}
+          onChange={(e) => {
+            const v = e.target.value;
+            // A link pasted here goes to the link field; its title fills this one.
+            if (isUrl(v, true) && !url.trim()) {
+              setUrl(v.trim());
+              setTitle("");
+              titleTyped.current = false;
+              return;
+            }
+            titleTyped.current = v !== "";
+            setTitle(v);
+          }}
         />
-
-        {filtered.length === 0 ? (
-          <Empty
-            icon={<GraduationCap size={28} />}
-            title="Nothing here yet"
-            hint="Add a topic you want to learn above. Paste a video or course link if you have one; topics from Radar land here too."
-          />
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
-            {filtered.map((i) => (
-              <LearningCard key={i.id} item={i} />
-            ))}
+        <Input icon={<Link2 size={15} />} placeholder="Video or course link (optional)" value={url} onChange={(e) => setUrl(e.target.value)} />
+        {articleLike && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
+            <Newspaper size={14} className="shrink-0 text-fg-3" />
+            <span className="flex-1">This looks like a blog post. Engineering Blogs have collections, notes and their own Obsidian folder.</span>
+            <button
+              type="button"
+              onClick={() => {
+                const u = url.trim();
+                close();
+                navigate(`/learning/articles?add=${encodeURIComponent(u)}`);
+              }}
+              className="flex items-center gap-1 font-medium text-accent hover:underline"
+            >
+              Save to Engineering Blogs <ArrowRight size={13} />
+            </button>
           </div>
         )}
-      </div>
-    </div>
+        <button type="submit" hidden />
+      </form>
+    </Modal>
   );
 }

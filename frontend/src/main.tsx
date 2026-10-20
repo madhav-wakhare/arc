@@ -17,6 +17,7 @@ const Books = lazy(() => import("./pages/Books"));
 const Radar = lazy(() => import("./pages/Radar"));
 const Revise = lazy(() => import("./pages/Revise"));
 const Learning = lazy(() => import("./pages/Learning"));
+const LearningOverview = lazy(() => import("./pages/LearningOverview"));
 const ListView = lazy(() => import("./pages/ListView"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Projects = lazy(() => import("./pages/Projects"));
@@ -48,7 +49,8 @@ createRoot(document.getElementById("root")!).render(
               <Route path="today" element={<Navigate to="/" replace />} />
               <Route path="board" element={<Board />} />
               <Route path="list" element={<ListView />} />
-              <Route path="learning" element={<Learning />} />
+              <Route path="learning" element={<LearningOverview />} />
+              <Route path="learning/topics" element={<Learning />} />
               <Route path="learning/articles" element={<Reading />} />
               <Route path="learning/books" element={<Books />} />
               <Route path="reading" element={<KeepQuery to="/learning/articles" />} />

@@ -1,12 +1,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { BookOpen, ArrowUpRight, Check, ChevronDown, Pencil, Play, Plus, RotateCcw, Search, Square, Ticket, Trash2, X } from "lucide-react";
+import { BookOpen, ArrowUpRight, Check, ChevronDown, Pencil, Play, Plus, RotateCcw, Square, Ticket, Trash2, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
 import { AddRevisionModal, ConvertRevisionModal, RevisionForm, type RevisionFields } from "../components/Revise";
 import { LearningNav } from "../components/LearningNav";
-import { Button, Card, Drawer, IconButton, Input, Kbd, Modal, PageHeader, Tabs, useToast } from "../components/ui";
+import { LearningToolbar } from "../components/LearningToolbar";
+import { Button, Card, Drawer, IconButton, Input, Kbd, Modal, PageHeader, useToast } from "../components/ui";
 import { api, type Priority, type Revision, type RevisionSession } from "../lib/api";
 import { useNow, useRefreshItems, useRevisions } from "../lib/hooks";
 import { PRIORITIES, PriorityIcon, fmtDateTime, fmtMinutes, hostOf, parseDuration, priorityMeta, timeAgo } from "../lib/meta";
@@ -406,21 +407,7 @@ export default function Revise() {
 
   const list = (
     <Card className="overflow-hidden">
-      <div className="border-b border-line p-2">
-        <Tabs
-          value={tab}
-          onChange={(t) => {
-            setTab(t);
-            select(null);
-          }}
-          className={clsx("flex", split ? "w-full [&>button]:flex-1" : "w-fit")}
-          tabs={[
-            { value: "active", label: `To revisit · ${count("active")}` },
-            { value: "revised", label: `Revisited · ${count("revised")}` },
-          ]}
-        />
-      </div>
-      <div className="max-h-[calc(100vh-220px)] overflow-y-auto">
+      <div className="max-h-[calc(100vh-260px)] overflow-y-auto">
         {!isLoading && visible.length === 0 && (
           <div className="px-6 py-14 text-center">
             <p className="text-[13px] text-fg-2">{q ? "No topics match" : tab === "active" ? "Nothing to revisit" : "Nothing revisited yet"}</p>
@@ -470,15 +457,29 @@ export default function Revise() {
         icon={<BookOpen size={18} />}
         title="Learning"
         actions={
-          <>
-            <Input icon={<Search size={14} />} placeholder="Search" value={filter} onChange={(e) => setFilter(e.target.value)} className="w-52" />
-            <Button variant="primary" icon={<Plus size={15} />} onClick={() => setAdding(true)}>
-              Add to Revisit
-            </Button>
-          </>
+          <Button variant="primary" icon={<Plus size={14} />} onClick={() => setAdding(true)}>
+            Add to Revisit
+          </Button>
         }
       />
       <LearningNav />
+
+      <div className="mb-5 px-4 md:px-6 lg:px-8">
+        <LearningToolbar
+          value={tab}
+          onChange={(t) => {
+            setTab(t);
+            select(null);
+          }}
+          tabs={[
+            { value: "active", label: `To revisit · ${count("active")}` },
+            { value: "revised", label: `Revisited · ${count("revised")}` },
+          ]}
+          search={filter}
+          onSearch={setFilter}
+          placeholder="Search topics, notes, questions"
+        />
+      </div>
 
       <div className={clsx("grid items-start gap-5 px-4 md:px-6 lg:px-8", split && "grid-cols-[340px_minmax(0,1fr)]")}>
         {list}

@@ -12,7 +12,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
   <tr>
     <td width="50%" valign="top">
       <b>Board</b><br>
-      <sub>Backlog, In Progress, Today and Done. Badges turn amber, orange and red as items wait.</sub><br><br>
+      <sub>Backlog, In Progress, Today and Done, with a List view. Badges turn amber, orange and red as items wait.</sub><br><br>
       <img src="docs/screenshots/board.webp" alt="Kanban board with four columns of work and learning items">
     </td>
     <td width="50%" valign="top">
@@ -23,26 +23,26 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
   </tr>
   <tr>
     <td width="50%" valign="top">
+      <b>Learning: Overview</b><br>
+      <sub>What you are learning now, what is next, and what to revisit.</sub><br><br>
+      <img src="docs/screenshots/learning-overview.webp" alt="Learning overview with counts, continue learning, up next and revisit next">
+    </td>
+    <td width="50%" valign="top">
       <b>Learning: Topics</b><br>
       <sub>Things to study, with or without a video. Paste a link and the title fills in.</sub><br><br>
       <img src="docs/screenshots/learning.webp" alt="Learning topics as cards, with YouTube thumbnails for those with a video">
     </td>
+  </tr>
+  <tr>
     <td width="50%" valign="top">
       <b>Learning: Engineering Blogs</b><br>
       <sub>Blog posts in collections, with notes, saved as notes in Obsidian.</sub><br><br>
       <img src="docs/screenshots/blogs.webp" alt="Engineering blogs list with collections on the left">
     </td>
-  </tr>
-  <tr>
     <td width="50%" valign="top">
       <b>Learning: Books</b><br>
       <sub>Covers from Open Library, reading progress, and a Book ticket on the board.</sub><br><br>
       <img src="docs/screenshots/books.webp" alt="Books with covers, reading progress and one on the board">
-    </td>
-    <td width="50%" valign="top">
-      <b>Light theme</b><br>
-      <sub>Every page works in dark and light.</sub><br><br>
-      <img src="docs/screenshots/board-light.webp" alt="The board in the light theme">
     </td>
   </tr>
   <tr>
@@ -58,6 +58,12 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
     </td>
   </tr>
 </table>
+
+<details>
+<summary>Light theme</summary>
+<br>
+<img src="docs/screenshots/board-light.webp" alt="The board in the light theme">
+</details>
 
 <sub>Screenshots use demo data.</sub>
 
@@ -75,8 +81,9 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 ### Learning
 
 - **Radar**: topics you hear about, such as vLLM, Langfuse or tmux. Press `N` anywhere to add one. Topics stay off the board. Review each one, then create a Learning or Task ticket from it, move it to Revisit, or dismiss it. Its link and `#tags` become the ticket link and labels.
-- **Learning** has four tabs: **Topics** (what you want to study), **Revisit** (what you learned and want to keep fresh), **Engineering Blogs** (blog posts and articles you read and keep) and **Books**. New installs name the learning project **Skill Development** (key `LRN`).
-- **Topics**: things you want to learn, with status and time tracking. Type a topic, and add a video or course link if you have one (topics moved from Radar land here too). A topic with a link shows its thumbnail. Paste a link and Arc fills in the title (the real YouTube video title, or the page title for other links). Thumbnails are downloaded once, shrunk to small WebP images and cached in `data/thumbs/`, so the page loads fast on a phone too.
+- **Learning** is organised the way you use it: **Overview**, then what you learn from (**Topics**, **Engineering Blogs**, **Books**), then **Revisit**, where what you learned stays fresh. Every tab has the same layout: status filters on the left (next, in progress, done, all), search on the right, and one **Add** button at the top. New installs name the learning project **Explore** (key `LRN`).
+- **Overview** (Learning → Overview): counts for each tab, **Continue learning** (topics in progress, books you are reading with progress, blogs you are reading), **Up next** for each kind, and **Revisit next**.
+- **Topics**: things you want to learn, with status and time tracking. **Add topic** takes a name, and a video or course link if you have one (topics moved from Radar land here too). A topic with a link shows its thumbnail. Paste a link and Arc fills in the title (the real YouTube video title, or the page title for other links). Thumbnails are downloaded once, shrunk to small WebP images and cached in `data/thumbs/`, so the page loads fast on a phone too.
   If you paste a blog or article link into Topics, Arc offers to save it to Engineering Blogs instead.
 - **Engineering Blogs** (Learning → Engineering Blogs): good blog posts and articles. "Add blog post" takes a link and fills in the title, site, author and summary from the page. Add tags and notes, then move each one through To read, Reading and Read, or star it as a favourite. Search and tag filters find old ones.
   - "Save to Obsidian" writes one note per article (link, tags, status, summary and your notes) into its own folder. The first time, Arc asks which folder to use, for example `Arc/Articles`. Change it later on the Engineering Blogs tab or in Settings.

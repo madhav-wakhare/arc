@@ -13,13 +13,13 @@ import {
   Pencil,
   Plus,
   RotateCcw,
-  Search,
   Star,
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { LearningNav } from "../components/LearningNav";
+import { LearningToolbar } from "../components/LearningToolbar";
 import { ObsidianIcon } from "../components/ObsidianIcon";
 import {
   ARTICLE_STATUSES,
@@ -32,7 +32,7 @@ import {
   useCollectionMutations,
   useCollections,
 } from "../components/Reading";
-import { Button, Card, Empty, IconButton, Input, Menu, Modal, PageHeader, Select, Tabs } from "../components/ui";
+import { Button, Card, Empty, IconButton, Menu, Modal, PageHeader, Select } from "../components/ui";
 import type { Article, Collection } from "../lib/api";
 import { useLocalState, useSettings } from "../lib/hooks";
 import { fmtDate } from "../lib/meta";
@@ -486,21 +486,20 @@ export default function Reading() {
               ))}
             </Select>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Tabs
-                value={tab}
-                onChange={setTab}
-                tabs={[
-                  { value: "unread", label: `To read · ${count("unread")}` },
-                  { value: "reading", label: `Reading · ${count("reading")}` },
-                  { value: "read", label: `Read · ${count("read")}` },
-                  { value: "favorites", label: `Favourites · ${count("favorites")}` },
-                  { value: "all", label: `All · ${count("all")}` },
-                ]}
-              />
-              <div className="flex-1" />
-              <Input icon={<Search size={14} />} placeholder="Search title, site, tags, notes" value={q} onChange={(e) => setQ(e.target.value)} className="w-full sm:w-60" />
-            </div>
+            <LearningToolbar
+              value={tab}
+              onChange={setTab}
+              tabs={[
+                { value: "unread", label: `To read · ${count("unread")}` },
+                { value: "reading", label: `Reading · ${count("reading")}` },
+                { value: "read", label: `Read · ${count("read")}` },
+                { value: "favorites", label: `Favourites · ${count("favorites")}` },
+                { value: "all", label: `All · ${count("all")}` },
+              ]}
+              search={q}
+              onSearch={setQ}
+              placeholder="Search title, site, tags, notes"
+            />
 
             {tags.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">

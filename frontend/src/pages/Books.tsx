@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
 import { LearningNav } from "../components/LearningNav";
+import { LearningToolbar } from "../components/LearningToolbar";
 import { Button, Card, Drawer, Empty, Field, IconButton, Input, Modal, PageHeader, Tabs, Textarea, useToast } from "../components/ui";
 import { api, type Book, type BookHit, type BookStatus } from "../lib/api";
 import { useLocalState, useRefreshItems } from "../lib/hooks";
@@ -13,7 +14,7 @@ import { fmtDate, urlHash } from "../lib/meta";
 type Tab = BookStatus | "all";
 
 export const BOOK_STATUSES: { value: BookStatus; label: string }[] = [
-  { value: "want", label: "Want to read" },
+  { value: "want", label: "To read" },
   { value: "reading", label: "Reading" },
   { value: "finished", label: "Finished" },
 ];
@@ -353,6 +354,7 @@ export default function Books() {
   const { data: books = [], isLoading } = useBooks();
   const [tab, setTab] = useLocalState<Tab>("arc-books-tab", "reading");
   const [adding, setAdding] = useState(false);
+  const [q, setQ] = useState("");
   const [params, setParams] = useSearchParams();
   const openId = Number(params.get("book")) || null;
   const setOpen = (id: number | null) =>
@@ -364,7 +366,10 @@ export default function Books() {
 
   const count = (t: Tab) => books.filter((b) => t === "all" || b.status === t).length;
   // Opening a book from elsewhere (its ticket) shows it even if it is not in the current tab.
-  const list = books.filter((b) => tab === "all" || b.status === tab);
+  const needle = q.trim().toLowerCase();
+  const list = books.filter(
+    (b) => (tab === "all" || b.status === tab) && (!needle || `${b.title} ${b.author} ${b.notes}`.toLowerCase().includes(needle)),
+  );
   const open = books.find((b) => b.id === openId) ?? null;
 
   return (
@@ -380,15 +385,18 @@ export default function Books() {
       />
       <LearningNav />
       <div className="space-y-5 px-4 md:px-6 lg:px-8">
-        <Tabs
+        <LearningToolbar
           value={tab}
           onChange={setTab}
           tabs={[
+            { value: "want", label: `To read · ${count("want")}` },
             { value: "reading", label: `Reading · ${count("reading")}` },
-            { value: "want", label: `Want to read · ${count("want")}` },
             { value: "finished", label: `Finished · ${count("finished")}` },
             { value: "all", label: `All · ${count("all")}` },
           ]}
+          search={q}
+          onSearch={setQ}
+          placeholder="Search title, author, notes"
         />
         {list.length ? (
           <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-[repeat(auto-fill,minmax(150px,180px))]">
