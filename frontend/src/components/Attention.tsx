@@ -50,7 +50,7 @@ export function AttentionStrip({ now }: { now: Overview | undefined }) {
 
 /**
  * Review Radar topics one at a time, oldest first: send it to Topics (a Learning ticket in the
- * Skill Development project), keep it on Revisit, dismiss it, or skip it for now.
+ * Explore project), keep it on Revisit, dismiss it, or skip it for now.
  */
 export function RadarReview() {
   const { data: jots = [] } = useJots();
