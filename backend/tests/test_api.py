@@ -600,3 +600,23 @@ def test_overview_counts_items_waiting_30_days(client):
     with sqlite3.connect(client.vault.parent / "data" / "arc.db") as conn:
         conn.execute("UPDATE items SET created_at = '2020-01-01T09:00:00' WHERE id = ?", (old["id"],))
     assert client.get("/api/stats/overview?days=1").json()["stale_open"] == 1
+
+
+def test_blog_post_to_ticket_and_status_sync(client):
+    c = client
+    a = c.post("/api/articles", json={"url": "https://blog.example.com/raft", "title": "Raft explained", "site": "Example"}).json()
+    assert a["item_key"] is None
+    a = c.post(f"/api/articles/{a['id']}/ticket").json()
+    assert a["item_key"].startswith("LRN-") and a["item_status"] == "backlog"
+    item = c.get(f"/api/items/{a['item_id']}").json()
+    assert item["article_id"] == a["id"] and item["labels"] == ["blog"] and item["url"] == a["url"]
+    assert c.post(f"/api/articles/{a['id']}/ticket").status_code == 409
+
+    # Moving the ticket moves the blog post: In Progress = reading, Done = read, Backlog = to read.
+    c.patch(f"/api/items/{item['id']}", json={"status": "in_progress"})
+    assert c.get("/api/articles").json()[0]["status"] == "reading"
+    c.patch(f"/api/items/{item['id']}", json={"status": "done"})
+    got = c.get("/api/articles").json()[0]
+    assert got["status"] == "read" and got["read_at"]
+    c.patch(f"/api/items/{item['id']}", json={"status": "backlog"})
+    assert c.get("/api/articles").json()[0]["status"] == "unread"

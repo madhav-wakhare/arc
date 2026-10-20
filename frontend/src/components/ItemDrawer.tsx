@@ -518,6 +518,15 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                 Book
               </Link>
             )}
+            {item.article_id && (
+              <Link
+                to={`/learning/articles?article=${item.article_id}`}
+                className="rounded border border-accent/40 px-1.5 py-px text-[11px] font-medium text-accent hover:bg-accent/10"
+                title="Open in Learning → Engineering Blogs"
+              >
+                Blog
+              </Link>
+            )}
             {item.recurrence !== "none" && (
               <span className="flex items-center gap-1 text-xs text-fg-3">
                 <Repeat size={12} /> {RECURRENCES.find((r) => r.value === item.recurrence)?.label}

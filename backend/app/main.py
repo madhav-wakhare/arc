@@ -226,7 +226,8 @@ SELECT i.*, p.key AS project_key, p.name AS project_name, p.color AS project_col
        (SELECT count(*) FROM subtasks s WHERE s.item_id = i.id AND s.done = 1) AS subtask_done,
        (SELECT count(*) FROM comments c WHERE c.item_id = i.id) AS comment_count,
        (SELECT r.id FROM revisions r WHERE r.item_id = i.id AND r.status = 'active' LIMIT 1) AS revision_id,
-       (SELECT b.id FROM books b WHERE b.item_id = i.id LIMIT 1) AS book_id
+       (SELECT b.id FROM books b WHERE b.item_id = i.id LIMIT 1) AS book_id,
+       (SELECT a.id FROM articles a WHERE a.item_id = i.id LIMIT 1) AS article_id
 FROM live_items i JOIN projects p ON p.id = i.project_id
 """
 
@@ -461,6 +462,8 @@ def update_item(item_id: int, data: ItemPatch, conn=Depends(get_db)):
         spawn_recurrence(conn, item)
     if "status" in updates and item["book_id"]:
         _sync_book_from_item(conn, item["book_id"], updates["status"])
+    if "status" in updates and item["article_id"]:
+        _sync_article_from_item(conn, item["article_id"], updates["status"])
     # Keep an exported note in sync: overwrite on change of title or link.
     if (
         item["obsidian_path"] and item["url"] and {"title", "url", "project_id"} & updates.keys()
@@ -1274,8 +1277,16 @@ def _with_collections(conn, articles: list[dict]) -> list[dict]:
     return articles
 
 
+ARTICLE_SELECT = """
+SELECT a.*, p.key || '-' || i.number AS item_key, i.status AS item_status
+FROM articles a
+LEFT JOIN live_items i ON i.id = a.item_id
+LEFT JOIN projects p ON p.id = i.project_id
+"""
+
+
 def load_article(conn, aid: int) -> dict:
-    a = row(conn.execute("SELECT * FROM articles WHERE id = ?", (aid,)))
+    a = row(conn.execute(ARTICLE_SELECT + " WHERE a.id = ?", (aid,)))
     if not a:
         raise HTTPException(404, "Article not found")
     return _with_collections(conn, [a])[0]
@@ -1367,7 +1378,7 @@ def article_thumb(aid: int, conn=Depends(get_db)):
 
 @app.get("/api/articles")
 def list_articles(conn=Depends(get_db)):
-    return _with_collections(conn, rows(conn.execute("SELECT * FROM articles ORDER BY created_at DESC, id DESC")))
+    return _with_collections(conn, rows(conn.execute(ARTICLE_SELECT + " ORDER BY a.created_at DESC, a.id DESC")))
 
 
 @app.post("/api/articles", status_code=201)
@@ -1429,6 +1440,33 @@ def update_article(aid: int, data: ArticlePatch, conn=Depends(get_db)):
             obsidian.export_article(conn, load_article(conn, aid))
         except obsidian.ExportError:
             logging.warning("Could not re-export article %s", aid)
+    return load_article(conn, aid)
+
+
+def _learning_project(conn) -> dict:
+    return row(conn.execute("SELECT id FROM projects WHERE key = 'LRN' AND deleted_at IS NULL")) or row(conn.execute(
+        "SELECT id FROM projects WHERE deleted_at IS NULL ORDER BY id LIMIT 1"))
+
+
+def _sync_article_from_item(conn, aid: int, item_status: str) -> None:
+    """The blog's ticket moved: In Progress or Today means reading, Done means read, Backlog means to read."""
+    status = {"backlog": "unread", "today": "reading", "in_progress": "reading", "done": "read"}[item_status]
+    a = row(conn.execute("SELECT status FROM articles WHERE id = ?", (aid,)))
+    if a and a["status"] != status:
+        update_row(conn, "articles", aid, {"status": status, "read_at": now() if status == "read" else None, "updated_at": now()})
+
+
+@app.post("/api/articles/{aid}/ticket", status_code=201)
+def article_to_ticket(aid: int, conn=Depends(get_db)):
+    """Put a blog post on the board as a Learning ticket in the LRN project, marked as a blog."""
+    a = load_article(conn, aid)
+    if a["item_key"]:
+        raise HTTPException(409, f"Already on the board as {a['item_key']}.")
+    status = {"reading": "in_progress", "read": "done"}.get(a["status"], "backlog")
+    desc = " · ".join(x for x in (a["site"], a["author"]) if x)
+    item_id = insert_item(conn, ItemIn(project_id=_learning_project(conn)["id"], type="learning", title=a["title"],
+                                       description=desc, url=a["url"], status=status, labels=["blog"]))
+    update_row(conn, "articles", aid, {"item_id": item_id, "updated_at": now()})
     return load_article(conn, aid)
 
 
@@ -1624,9 +1662,7 @@ def book_to_ticket(bid: int, conn=Depends(get_db)):
     book = load_book(conn, bid)
     if book["item_key"]:
         raise HTTPException(409, f"Already on the board as {book['item_key']}.")
-    project = row(conn.execute(
-        "SELECT id FROM projects WHERE key = 'LRN' AND deleted_at IS NULL")) or row(conn.execute(
-        "SELECT id FROM projects WHERE deleted_at IS NULL ORDER BY id LIMIT 1"))
+    project = _learning_project(conn)
     status = {"reading": "in_progress", "finished": "done"}.get(book["status"], "backlog")
     desc = f"By {book['author']}." if book["author"] else ""
     if book["pages"]:

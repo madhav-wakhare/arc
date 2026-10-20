@@ -6,9 +6,11 @@ import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
 import { LearningNav } from "../components/LearningNav";
 import { LearningToolbar } from "../components/LearningToolbar";
+import { SimilarWarning } from "../components/SimilarWarning";
 import { Button, Card, Drawer, Empty, Field, IconButton, Input, Modal, PageHeader, Tabs, Textarea, useToast } from "../components/ui";
 import { api, type Book, type BookHit, type BookStatus } from "../lib/api";
 import { useLocalState, useRefreshItems } from "../lib/hooks";
+import { normTitle } from "../lib/learningIndex";
 import { fmtDate, urlHash } from "../lib/meta";
 
 type Tab = BookStatus | "all";
@@ -111,6 +113,12 @@ function AddBookModal({ open, onClose }: { open: boolean; onClose: () => void })
     const t = setTimeout(() => setDebounced(q.trim()), 350);
     return () => clearTimeout(t);
   }, [q]);
+  const { data: myBooks = [] } = useBooks();
+  // A search result you already have: same Open Library work, or the same title and author.
+  const inBooks = (h: BookHit) =>
+    myBooks.some(
+      (b) => (h.olid && b.olid === h.olid) || (normTitle(b.title) === normTitle(h.title) && (!h.author || !b.author || b.author === h.author)),
+    );
   const results = useQuery({
     queryKey: ["book-search", debounced],
     queryFn: () => api.get<BookHit[]>(`/books/search?q=${encodeURIComponent(debounced)}`),
@@ -156,6 +164,7 @@ function AddBookModal({ open, onClose }: { open: boolean; onClose: () => void })
               <Input inputMode="numeric" value={pages} onChange={(e) => setPages(e.target.value.replace(/\D/g, ""))} />
             </Field>
           </div>
+          <SimilarWarning title={title} onOpen={close} />
           <div className="flex items-center justify-between pt-1">
             <button type="button" onClick={() => setManual(false)} className="text-xs text-fg-3 hover:text-fg">
               Search instead
@@ -189,7 +198,11 @@ function AddBookModal({ open, onClose }: { open: boolean; onClose: () => void })
                     {[b.author, b.year, b.pages && `${b.pages} pages`].filter(Boolean).join(" · ")}
                   </p>
                 </div>
-                <Plus size={15} className="shrink-0 text-fg-3" />
+                {inBooks(b) ? (
+                  <span className="shrink-0 rounded bg-surface-3 px-1.5 py-px text-[11px] text-fg-2">In Books</span>
+                ) : (
+                  <Plus size={15} className="shrink-0 text-fg-3" />
+                )}
               </button>
             ))}
             {results.isError && <p className="py-6 text-center text-[13px] text-fg-3">{(results.error as Error).message}</p>}

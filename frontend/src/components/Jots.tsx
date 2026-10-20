@@ -5,6 +5,7 @@ import { api, type ItemType, type Jot, type Project } from "../lib/api";
 import { useRefreshItems } from "../lib/hooks";
 import { splitTopic } from "../lib/meta";
 import { Button, Checkbox, Field, Input, Kbd, Modal, Textarea, useToast } from "./ui";
+import { SimilarWarning } from "./SimilarWarning";
 
 /** Default project for a new ticket: LRN for learning, WORK for tasks, else the first active one. */
 export function defaultProject(projects: Project[], type: ItemType) {
@@ -101,6 +102,9 @@ export function AddTopicModal({ open, onClose, onAdded }: { open: boolean; onClo
         <Field label="Link (optional)">
           <Input icon={<Link2 size={15} />} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" />
         </Field>
+        {bodies.map((b, i) => (
+          <SimilarWarning key={i} title={b} url={bodies.length === 1 ? url : null} onOpen={onClose} />
+        ))}
         <button type="submit" className="hidden" />
       </form>
     </Modal>

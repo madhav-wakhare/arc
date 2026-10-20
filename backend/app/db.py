@@ -293,7 +293,8 @@ MIGRATIONS = [
     ("revisions", "timer_started_at", "TEXT"),
     ("comments", "edited_at", "TEXT"),
     ("articles", "collection_id", "INTEGER REFERENCES collections(id) ON DELETE SET NULL"),
-    ("items", "thumb", "TEXT"),  # preview image URL for links; NULL = not looked up yet, '' = none
+    ("items", "thumb", "TEXT"),
+    ("articles", "item_id", "INTEGER REFERENCES items(id) ON DELETE SET NULL"),  # its ticket on the board  # preview image URL for links; NULL = not looked up yet, '' = none
 ]
 
 # Project icons (Lucide names). New projects take the first one not in use.

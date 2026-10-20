@@ -8,6 +8,7 @@ import { useActions } from "../components/Layout";
 import { LearningNav } from "../components/LearningNav";
 import { ObsidianIcon } from "../components/ObsidianIcon";
 import { LearningToolbar } from "../components/LearningToolbar";
+import { SimilarWarning } from "../components/SimilarWarning";
 import { Button, Card, Empty, IconButton, Input, Modal, PageHeader, useToast } from "../components/ui";
 import { api, type Item, type LinkPreview, type Status } from "../lib/api";
 import { useLinkPreview, useLocalState, useProjects, useRefreshItems, useUpdateItem } from "../lib/hooks";
@@ -126,8 +127,8 @@ export default function Learning() {
     queryKey: ["items", "learning"],
     queryFn: () => api.get<Item[]>("/items?type=learning"),
   });
-  // Tickets made from books live under Books, not Topics.
-  const items = all.filter((i) => !i.book_id);
+  // Tickets made from books and blog posts live under Books and Engineering Blogs, not Topics.
+  const items = all.filter((i) => !i.book_id && !i.article_id);
   const [tab, setTab] = useLocalState<Tab>("arc-topics-tab", "queue");
   const [q, setQ] = useState("");
   const [adding, setAdding] = useState(false);
@@ -288,6 +289,7 @@ function AddTopicDialog({ open, onClose }: { open: boolean; onClose: () => void 
           }}
         />
         <Input icon={<Link2 size={15} />} placeholder="Video or course link (optional)" value={url} onChange={(e) => setUrl(e.target.value)} />
+        <SimilarWarning title={title} url={url} onOpen={close} />
         {articleLike && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-surface-2 px-3 py-2 text-[13px] text-fg-2">
             <Newspaper size={14} className="shrink-0 text-fg-3" />

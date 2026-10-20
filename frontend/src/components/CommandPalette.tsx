@@ -16,11 +16,13 @@ import {
   Search,
   Settings,
   SquareKanban,
+  Book,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { api, type Jot, type SearchHit } from "../lib/api";
+import { KIND_LABEL, useLearningIndex } from "../lib/learningIndex";
 import { ItemIcon, StatusIcon } from "../lib/meta";
 import { useActions } from "./Layout";
 import { Kbd } from "./ui";
@@ -50,6 +52,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const [sel, setSel] = useState(0);
   const navigate = useNavigate();
   const { openItem, newItem, quickNote, addRevision } = useActions();
+  const learningIndex = useLearningIndex();
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(q.trim()), 150);
@@ -142,8 +145,28 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           run: () => (j.status === "converted" && j.item_id && !j.item_deleted ? openItem(j.item_id) : go("/radar")()),
         }))
       : [];
-    return [...results, ...notes, ...filteredPages];
-  }, [q, hits, jotHits, navigate, onClose, openItem, newItem, quickNote, addRevision]);
+    // Blogs, books and Revisit topics (Topics and Radar come from the searches above).
+    const words = s.split(/\s+/).filter(Boolean);
+    const learning: Entry[] = s
+      ? learningIndex
+          .filter((e) => (e.kind === "blog" || e.kind === "book" || e.kind === "revisit") && words.every((w) => e.text.includes(w)))
+          .slice(0, 6)
+          .map((e) => ({
+            id: `${e.kind}${e.id}`,
+            icon: e.kind === "blog" ? <Newspaper size={15} /> : e.kind === "book" ? <Book size={15} /> : <BookMarked size={15} />,
+            label: (
+              <span className="flex min-w-0 flex-col">
+                <span className="truncate">{e.title}</span>
+                <span className="text-xs text-fg-3">
+                  {KIND_LABEL[e.kind]} · {e.detail}
+                </span>
+              </span>
+            ),
+            run: go(e.to!),
+          }))
+      : [];
+    return [...results, ...learning, ...notes, ...filteredPages];
+  }, [q, hits, jotHits, learningIndex, navigate, onClose, openItem, newItem, quickNote, addRevision]);
 
   useEffect(() => setSel(0), [entries.length]);
 
@@ -168,7 +191,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 setSel((s) => Math.max(s - 1, 0));
               } else if (e.key === "Enter") entries[sel]?.run();
             }}
-            placeholder="Search titles, notes, comments, or a key like LRN-12"
+            placeholder="Search items, blogs, books, Revisit and Radar, or a key like LRN-12"
             className="h-12 flex-1 bg-transparent text-[14px] outline-none placeholder:text-fg-3"
           />
           <Kbd>Esc</Kbd>

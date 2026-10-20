@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Book as BookIcon, BookOpen, GraduationCap, Newspaper } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowRight, Book as BookIcon, BookMarked, BookOpen, GraduationCap, Newspaper, Radar as RadarIcon, Search } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Panel, Stat, StatRow } from "../components/dash";
 import { useActions } from "../components/Layout";
 import { LearningNav } from "../components/LearningNav";
 import { RevisePreview } from "../components/RevisePreview";
-import { PageHeader } from "../components/ui";
+import { Card, Input, PageHeader } from "../components/ui";
 import { api, type Article, type Book, type Item } from "../lib/api";
 import { useRevisions } from "../lib/hooks";
+import { KIND_LABEL, useLearningIndex, type LearningEntry, type LearningKind } from "../lib/learningIndex";
 import { fmtMinutes, hostOf } from "../lib/meta";
 
 function More({ to, children }: { to: string; children: ReactNode }) {
@@ -37,6 +38,44 @@ function Line({ icon, title, detail, progress, onClick }: { icon: ReactNode; tit
   );
 }
 
+const KIND_ICON: Record<LearningKind, ReactNode> = {
+  topic: <GraduationCap size={14} className="text-learning" />,
+  blog: <Newspaper size={14} className="text-fg-3" />,
+  book: <BookIcon size={14} className="text-book" />,
+  revisit: <BookMarked size={14} className="text-fg-3" />,
+  radar: <RadarIcon size={14} className="text-accent" />,
+};
+const ORDER: LearningKind[] = ["topic", "blog", "book", "revisit", "radar"];
+
+/** Results of the Learning search, grouped by where they live. Every word must match. */
+function SearchResults({ q, index, onOpen }: { q: string; index: LearningEntry[]; onOpen: (e: LearningEntry) => void }) {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const hits = index.filter((e) => words.every((w) => e.text.includes(w)));
+  if (!hits.length)
+    return (
+      <Card>
+        <p className="py-12 text-center text-[13px] text-fg-3">Nothing in Learning or Radar matches “{q}”.</p>
+      </Card>
+    );
+  return (
+    <div className="space-y-5">
+      {ORDER.map((kind) => {
+        const list = hits.filter((e) => e.kind === kind);
+        if (!list.length) return null;
+        return (
+          <Panel key={kind} title={`${KIND_LABEL[kind]} · ${list.length}`}>
+            <div className="space-y-0.5">
+              {list.map((e) => (
+                <Line key={`${kind}-${e.id}`} icon={KIND_ICON[kind]} title={e.title} detail={e.detail} onClick={() => onOpen(e)} />
+              ))}
+            </div>
+          </Panel>
+        );
+      })}
+    </div>
+  );
+}
+
 const topicIcon = <GraduationCap size={14} className="text-learning" />;
 const blogIcon = <Newspaper size={14} className="text-fg-3" />;
 const bookIcon = <BookIcon size={14} className="text-book" />;
@@ -49,8 +88,10 @@ export default function LearningOverview() {
   const { data: articles = [] } = useQuery({ queryKey: ["articles"], queryFn: () => api.get<Article[]>("/articles") });
   const { data: books = [] } = useQuery({ queryKey: ["books"], queryFn: () => api.get<Book[]>("/books") });
   const { data: revisions = [] } = useRevisions();
+  const index = useLearningIndex();
+  const [q, setQ] = useState("");
 
-  const topics = all.filter((i) => !i.book_id);
+  const topics = all.filter((i) => !i.book_id && !i.article_id);
   // Same buckets as the Topics tab: "To learn" is backlog and today, "In progress" is in progress.
   const topicsNow = topics.filter((i) => i.status === "in_progress");
   const topicsNext = topics
@@ -65,8 +106,26 @@ export default function LearningOverview() {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] pb-10">
-      <PageHeader icon={<BookOpen size={18} />} title="Learning" />
+      <PageHeader
+        icon={<BookOpen size={18} />}
+        title="Learning"
+        actions={
+          <Input
+            icon={<Search size={14} />}
+            placeholder="Search all of Learning and Radar"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && setQ("")}
+            className="w-full sm:w-80"
+          />
+        }
+      />
       <LearningNav />
+      {q.trim() ? (
+        <div className="px-4 md:px-6 lg:px-8">
+          <SearchResults q={q.trim()} index={index} onOpen={(e) => (e.itemId ? openItem(e.itemId) : e.to && navigate(e.to))} />
+        </div>
+      ) : (
       <div className="space-y-5 px-4 md:px-6 lg:px-8">
         <StatRow>
           <Stat label="Topics to learn" value={topicsNext.length} sub={`${topicsNow.length} in progress`} to="/learning/topics" />
@@ -141,6 +200,7 @@ export default function LearningOverview() {
           </Panel>
         </div>
       </div>
+      )}
     </div>
   );
 }

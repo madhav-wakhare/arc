@@ -18,7 +18,7 @@ export function LearningNav() {
   // Counts show what is still open: topics not done, blogs not read, books not finished, topics to revisit.
   const tabs = [
     { to: "/learning", end: true, label: "Overview", icon: LayoutGrid },
-    { to: "/learning/topics", label: "Topics", icon: GraduationCap, count: items?.filter((i) => i.status !== "done" && !i.book_id).length },
+    { to: "/learning/topics", label: "Topics", icon: GraduationCap, count: items?.filter((i) => i.status !== "done" && !i.book_id && !i.article_id).length },
     { to: "/learning/articles", label: "Engineering Blogs", icon: Newspaper, count: articles?.filter((a) => a.status !== "read").length },
     { to: "/learning/books", label: "Books", icon: BookIcon, count: books?.filter((b) => b.status !== "finished").length },
     { to: "/learning/revisit", label: "Revisit", icon: BookMarked, count: revisions?.filter((r) => r.status === "active").length, divider: true },

@@ -48,6 +48,8 @@ export interface Item {
   revision_id: number | null;
   /** Set when this ticket was made from a book on Learning → Books. */
   book_id: number | null;
+  /** Set when this ticket was made from a blog post on Learning → Engineering Blogs. */
+  article_id: number | null;
   subtasks?: Subtask[];
 }
 
@@ -329,6 +331,10 @@ export interface Article {
   collection_id: number | null;
   collections: { id: number; name: string }[];
   folder_name: string | null;
+  /** Its ticket on the board, when added there. */
+  item_id: number | null;
+  item_key: string | null;
+  item_status: Status | null;
 }
 export interface Collection {
   id: number;

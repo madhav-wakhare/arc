@@ -1,5 +1,6 @@
 import {
   Book,
+  Newspaper,
   BookOpen,
   CheckSquare,
   Circle,
@@ -64,8 +65,14 @@ export function TypeIcon({ type, size = 14 }: { type: ItemType; size?: number })
   return <m.icon size={size} className={m.tone} strokeWidth={2} />;
 }
 
-/** Icon for an item: a book for tickets made from Learning → Books, otherwise its type. */
-export function ItemIcon({ item, size = 14 }: { item: Pick<Item, "type" | "book_id">; size?: number }) {
+/** Icon for an item: a book or a newspaper for tickets made from Books or Engineering Blogs, otherwise its type. */
+export function ItemIcon({ item, size = 14 }: { item: Pick<Item, "type" | "book_id" | "article_id">; size?: number }) {
+  if (item.article_id)
+    return (
+      <span title="Blog post" className="inline-flex shrink-0 text-accent">
+        <Newspaper size={size} />
+      </span>
+    );
   if (item.book_id)
     return (
       <span title="Book" className="inline-flex shrink-0 text-book">

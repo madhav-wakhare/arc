@@ -5,6 +5,7 @@ import { PRIORITIES, PriorityIcon, STATUSES, TYPES } from "../lib/meta";
 import { useProjects, useRefreshItems } from "../lib/hooks";
 import { defaultProject } from "./Jots";
 import { Button, Input, Kbd, Modal, Select, Tabs, Textarea, useToast } from "./ui";
+import { SimilarWarning } from "./SimilarWarning";
 
 export type RevisionFields = { title: string; question: string; notes: string; url: string; priority: Priority };
 
@@ -77,7 +78,7 @@ export function AddRevisionModal({ open, onClose, onAdded }: { open: boolean; on
     <Modal
       open={open}
       onClose={onClose}
-      title="Add topic"
+      title="Add to Revisit"
       width="max-w-xl"
       footer={
         <div className="flex w-full items-center justify-between">
@@ -100,6 +101,10 @@ export function AddRevisionModal({ open, onClose, onAdded }: { open: boolean; on
         }}
       >
         <RevisionForm value={form} onChange={setForm} />
+        {/* Revisit naturally overlaps with Topics you learned; only flag a second Revisit entry. */}
+        <div className="mt-3">
+          <SimilarWarning title={form.title} url={form.url} onOpen={onClose} ignore={(e) => e.kind !== "revisit"} />
+        </div>
       </div>
     </Modal>
   );

@@ -1,11 +1,13 @@
 /** Reading list pieces: the Obsidian folder dialog, the add dialog and the article panel. */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Check, ExternalLink, Folder, FolderOpen, Link2, LoaderCircle, Newspaper, Plus, Star, Trash2, X } from "lucide-react";
+import { Check, ExternalLink, Folder, FolderOpen, Link2, LoaderCircle, Newspaper, Plus, SquareKanban, Star, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api, type Article, type ArticleStatus, type Collection, type LinkPreview, type Settings } from "../lib/api";
 import { useLocalState, useSettings } from "../lib/hooks";
 import { fmtDate, isUrl, urlHash } from "../lib/meta";
+import { useActions } from "./Layout";
+import { SimilarWarning } from "./SimilarWarning";
 import { ObsidianIcon } from "./ObsidianIcon";
 import { Button, Checkbox, Drawer, Field, IconButton, Input, Modal, Tabs, Textarea, useToast } from "./ui";
 
@@ -160,6 +162,15 @@ export function useArticleMutations() {
       onSuccess: (a) => {
         refresh();
         toast(`Saved to Obsidian: ${a.obsidian_path}`);
+      },
+      onError,
+    }),
+    toBoard: useMutation({
+      mutationFn: (id: number) => api.post<Article>(`/articles/${id}/ticket`),
+      onSuccess: (a) => {
+        refresh();
+        qc.invalidateQueries({ queryKey: ["items"] });
+        toast(`On the board as ${a.item_key}`);
       },
       onError,
     }),
@@ -414,6 +425,7 @@ export function AddArticleModal({
             </div>
           )}
 
+          <SimilarWarning title={title} url={url} onOpen={close} />
           <Field label="Title">
             <Input
               value={title}
@@ -443,7 +455,8 @@ export function AddArticleModal({
 
 /** Side panel for one article: status, tags, notes and Obsidian. Text fields save when you leave them. */
 export function ArticleDrawer({ article, onClose, onNeedFolder }: { article: Article | null; onClose: () => void; onNeedFolder: () => void }) {
-  const { update, exportNote, remove } = useArticleMutations();
+  const { update, exportNote, remove, toBoard } = useArticleMutations();
+  const { openItem } = useActions();
   const { data: settings } = useSettings();
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
@@ -481,6 +494,22 @@ export function ArticleDrawer({ article, onClose, onNeedFolder }: { article: Art
           <span className="truncate">{a.site || "Article"}</span>
         </span>
         <div className="flex-1" />
+        {a.item_key ? (
+          <Button
+            size="sm"
+            icon={<SquareKanban size={13} />}
+            onClick={() => {
+              close();
+              setTimeout(() => openItem(a.item_id!), 0);
+            }}
+          >
+            On the board · {a.item_key}
+          </Button>
+        ) : (
+          <Button size="sm" icon={<SquareKanban size={13} />} disabled={toBoard.isPending} onClick={() => toBoard.mutate(a.id)}>
+            Add to board
+          </Button>
+        )}
         <IconButton title={a.favorite ? "Remove from favourites" : "Add to favourites"} onClick={() => save({ id: a.id, favorite: !a.favorite })}>
           <Star size={15} className={a.favorite ? "fill-warning text-warning" : ""} />
         </IconButton>
@@ -611,6 +640,7 @@ export function ArticleDrawer({ article, onClose, onNeedFolder }: { article: Art
       >
         <p className="text-[13px] text-fg-2">
           This removes it from Engineering Blogs.{a.obsidian_path && " The note in Obsidian stays."}
+          {a.item_key && ` Its ticket ${a.item_key} stays on the board.`}
         </p>
       </Modal>
     </Drawer>

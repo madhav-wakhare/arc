@@ -37,6 +37,7 @@ export function ItemCard({ item, onOpen, dragging }: { item: Item; onOpen: () =>
         <ItemIcon item={item} size={13} />
         <span className="font-mono">{item.key}</span>
         {item.book_id && <span className="font-medium text-book">Book</span>}
+        {item.article_id && <span className="font-medium text-accent">Blog</span>}
         <div className="flex-1" />
         <PendingBadge item={item} />
       </div>
@@ -67,7 +68,7 @@ export function ItemCard({ item, onOpen, dragging }: { item: Item; onOpen: () =>
         {item.url && <Link2 size={12} />}
         {item.obsidian_path && <ObsidianIcon size={12} className="text-accent" />}
         {item.recurrence !== "none" && <Repeat size={12} />}
-        {item.labels.filter((l) => !(item.book_id && l === "book")).slice(0, 2).map((l) => (
+        {item.labels.filter((l) => !(item.book_id && l === "book") && !(item.article_id && l === "blog")).slice(0, 2).map((l) => (
           <span key={l} className="rounded border border-line px-1.5 py-px text-[11px] text-fg-2">
             {l}
           </span>

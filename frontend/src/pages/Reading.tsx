@@ -13,11 +13,13 @@ import {
   Pencil,
   Plus,
   RotateCcw,
+  SquareKanban,
   Star,
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useActions } from "../components/Layout";
 import { LearningNav } from "../components/LearningNav";
 import { LearningToolbar } from "../components/LearningToolbar";
 import { ObsidianIcon } from "../components/ObsidianIcon";
@@ -60,7 +62,8 @@ function ArticleRow({
   onTag: (t: string) => void;
   onCollection: (id: number) => void;
 }) {
-  const { update, exportNote, remove } = useArticleMutations();
+  const { update, exportNote, remove, toBoard } = useArticleMutations();
+  const { openItem } = useActions();
   const { data: settings } = useSettings();
   const drag = useDraggable({ id: `article-${a.id}`, data: { article: a } });
   const saveToObsidian = () => (settings?.obsidian.articles_folder ? exportNote.mutate(a.id) : onNeedFolder());
@@ -92,6 +95,11 @@ function ArticleRow({
           <span className="max-w-48 truncate">{a.site}</span>
           {a.author && a.author !== a.site && <span className="hidden max-w-40 truncate sm:inline">· {a.author}</span>}
           <span>· {fmtDate(read && a.read_at ? a.read_at : a.created_at)}</span>
+          {a.item_key && (
+            <span className="flex items-center gap-1 font-mono text-[11px] text-fg-2" title="On the board">
+              <SquareKanban size={10} /> {a.item_key}
+            </span>
+          )}
           {a.collections.map((c) => (
             <button
               key={c.id}
@@ -147,6 +155,9 @@ function ArticleRow({
                 ? { label: "Mark as to read", icon: <RotateCcw size={13} />, onClick: () => update.mutate({ id: a.id, status: "unread" }) }
                 : { label: "Mark as read", icon: <Check size={13} />, onClick: () => update.mutate({ id: a.id, status: "read" }) },
               { label: "Collections…", icon: <Folder size={13} />, onClick: onOpen },
+              a.item_key
+                ? { label: `Open ticket ${a.item_key}`, icon: <SquareKanban size={13} />, onClick: () => openItem(a.item_id!) }
+                : { label: "Add to board", icon: <SquareKanban size={13} />, onClick: () => toBoard.mutate(a.id) },
               { label: a.obsidian_path ? "Save to Obsidian again" : "Save to Obsidian", icon: <ObsidianIcon size={13} />, onClick: saveToObsidian },
               { label: "Delete", icon: <Trash2 size={13} />, danger: true, onClick: () => remove.mutate(a.id) },
             ]}
@@ -359,7 +370,14 @@ export default function Reading() {
   const [q, setQ] = useState("");
   const [tag, setTag] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
-  const [openId, setOpenId] = useState<number | null>(null);
+  // ?article=ID opens that post (used by the Blog link on its board ticket).
+  const openId = Number(params.get("article")) || null;
+  const setOpenId = (id: number | null) =>
+    setParams((p) => {
+      if (id) p.set("article", String(id));
+      else p.delete("article");
+      return p;
+    });
   const [folderOpen, setFolderOpen] = useState(false);
   const [dragging, setDragging] = useState<Article | null>(null);
 

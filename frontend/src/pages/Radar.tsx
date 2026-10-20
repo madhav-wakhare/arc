@@ -1,7 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import clsx from "clsx";
 import { ArrowUpRight, Ban, BookmarkPlus, Split, ExternalLink, Link2, Plus, Radar as RadarIcon, RotateCcw, Search, Trash2, X } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AddTopicModal, defaultProject } from "../components/Jots";
 import { useActions } from "../components/Layout";
 import {
@@ -327,7 +328,9 @@ export default function Radar() {
   const { data: jots = [], isLoading } = useJots();
   const [tab, setTab] = useState<JotStatus>("open");
   const [filter, setFilter] = useState("");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  // ?topic=ID (from the Learning search) opens that topic.
+  const [params] = useSearchParams();
+  const [selectedId, setSelectedId] = useState<number | null>(() => Number(params.get("topic")) || null);
   const [adding, setAdding] = useState(false);
   const isDesktop = useIsDesktop();
 
@@ -340,7 +343,14 @@ export default function Radar() {
   const selected = jots.find((j) => j.id === selectedId) ?? null;
 
   // Nothing opens by default. Changing tab closes the open topic.
-  useEffect(() => setSelectedId(null), [tab]);
+  const firstTab = useRef(true);
+  useEffect(() => {
+    if (firstTab.current) {
+      firstTab.current = false;
+      return;
+    }
+    setSelectedId(null);
+  }, [tab]);
 
   // Esc closes the open topic, unless you are typing in a field.
   useEffect(() => {
