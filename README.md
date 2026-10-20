@@ -156,6 +156,7 @@ Run `make` to see all commands:
 | `make dev` | Run backend and UI locally with live reload |
 | `make test` | Run backend tests |
 | `make lint` | Lint the backend and type-check the UI |
+| `make scan` | Security scan with Trivy: the image (HIGH and CRITICAL), then lockfiles, Dockerfile and secrets |
 | `make ci` | Install from lockfiles, test and build |
 | `make clean` | Remove build output and dev data (keeps `data/` and `backups/`) |
 
@@ -232,4 +233,4 @@ docs/screenshots/   Images used in this README
 - Backend: Python 3.12, FastAPI, SQLite with FTS5, Pillow for thumbnails. Dependencies are in `backend/pyproject.toml`.
 - Frontend: React, Vite, Tailwind CSS, Geist font, Lucide icons. Each page is its own chunk and loads on first visit; the Weekly report chart is plain HTML and CSS.
 - Docker: a three-stage build (Node builds the UI, uv builds the Python environment, the runtime image has neither) on Alpine, about 130 MB. The app runs as a non-root user (UID 1000, change with `--build-arg APP_UID=...`). Responses are gzip-compressed and hashed assets are cached by the browser for a year.
-- `make lint` runs ruff on the backend and the TypeScript check on the UI.
+- `make lint` runs ruff on the backend and the TypeScript check on the UI. `make scan` runs Trivy (in Docker, nothing to install) on the image and the source. The build runs `apk upgrade` so Alpine fixes land even between base image releases; when the scan reports something, bump the pinned versions (Dockerfile `ARG`s, `backend/pyproject.toml`, `frontend/package.json`) and rebuild.

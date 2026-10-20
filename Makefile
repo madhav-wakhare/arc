@@ -18,7 +18,7 @@ DEV_ENV := DATA_DIR=../.dev/data VAULT_DIR=../.dev/vault BACKUP_DIR=../.dev/back
 
 .DEFAULT_GOAL := help
 .PHONY: help check check-dev env legacy up down restart logs status open backup restore note-ids \
-        install dev dev-api dev-ui test lint build-ui ci clean
+        install dev dev-api dev-ui test lint scan build-ui ci clean
 
 help: ## List all commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36mmake %-10s\033[0m %s\n", $$1, $$2}'
@@ -125,6 +125,15 @@ dev-ui: ## Run only the UI dev server
 
 test: ## Run backend tests
 	cd backend && uv run --frozen pytest -q
+
+TRIVY := aquasec/trivy:0.57.1
+TRIVY_RUN := docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(CURDIR):/src:ro -v $(HOME)/.cache/trivy:/root/.cache $(TRIVY)
+
+scan: ## Security scan with Trivy: the arc image, then the source (lockfiles, Dockerfile, secrets)
+	@mkdir -p $(HOME)/.cache/trivy
+	$(TRIVY_RUN) image --quiet --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed arc:latest
+	$(TRIVY_RUN) fs --quiet --scanners vuln,secret,misconfig --severity MEDIUM,HIGH,CRITICAL \
+		--skip-dirs /src/frontend/node_modules,/src/backend/.venv,/src/data,/src/backups,/src/.dev /src
 
 lint: ## Lint the backend (ruff) and type-check the UI
 	cd backend && uv run --frozen ruff check app tests
