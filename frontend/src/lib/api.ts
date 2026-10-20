@@ -114,6 +114,8 @@ export interface Overview {
   previous: RangeStats;
   open: number;
   inbox_open: number;
+  /** Open items waiting 30+ days since they were created. */
+  stale_open: number;
   revise_open: number;
   overdue: number;
   by_status: { status: Status; count: number }[];

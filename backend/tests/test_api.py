@@ -590,3 +590,13 @@ def test_notes_from_before_the_rename_and_note_ids_command(client):
     assert maintenance.note_ids("arc") == 1 and "arc_id: LRN-1" in new_note.read_text()
     assert maintenance.note_ids("arc") == 0  # nothing left to change
     assert client.get("/api/backups").status_code == 200
+
+
+def test_overview_counts_items_waiting_30_days(client):
+    import sqlite3
+
+    old = _learning(client, title="Old topic")
+    _learning(client, title="New topic")
+    with sqlite3.connect(client.vault.parent / "data" / "arc.db") as conn:
+        conn.execute("UPDATE items SET created_at = '2020-01-01T09:00:00' WHERE id = ?", (old["id"],))
+    assert client.get("/api/stats/overview?days=1").json()["stale_open"] == 1

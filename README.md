@@ -65,10 +65,8 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 
 ### Work
 
-- **Board**: Kanban board with Backlog, In Progress, Today and Done. Drag cards between columns. The Done column shows items completed in the last 7 days by default; switch it to Today, 30 days or Lifetime from its header. Each open card shows how many days it has been pending: neutral at first, amber after 10 days, orange after 15 and red after 30.
-- **Today**: today's plan, overdue items, a quick pick from the backlog, a "Keep in mind" list from Revisit, and an end-of-day review.
-- **All items**: a sortable table of every item with filters.
-- **Item types**: tasks, learning topics and notes.
+- **Board**: Kanban board with Backlog, In Progress, Today and Done, and a **Board / List** switch in its header. List is a sortable table of every item with filters. Drag cards between columns. The Done column shows items completed in the last 7 days by default; switch it to Today, 30 days or Lifetime from its header. Each open card shows how many days it has been pending: neutral at first, amber after 10 days, orange after 15 and red after 30.
+- **Item types**: tasks and learning topics. (Notes are retired: use Radar, Revisit or Engineering Blogs. Older notes still show.)
 - **Item panel**: title, description, checklist, comments, work log and history. Properties: status, priority, type, project, due date, repeat and labels.
 - **Time tracking (Jira style)**: original estimate, "Log work" with `2h 30m`, `45m` or `1d` (1d = 8h), a start/stop timer, and a work log per item.
 - **Recurring items**: daily, weekdays, weekly or monthly. When you mark one Done, Arc makes the next one.
@@ -77,7 +75,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 ### Learning
 
 - **Radar**: topics you hear about, such as vLLM, Langfuse or tmux. Press `N` anywhere to add one. Topics stay off the board. Review each one, then create a Learning or Task ticket from it, move it to Revisit, or dismiss it. Its link and `#tags` become the ticket link and labels.
-- **Learning** has three tabs: **Topics** (what you want to study), **Engineering Blogs** (blog posts and articles you read and keep) and **Books**.
+- **Learning** has four tabs: **Topics** (what you want to study), **Revisit** (what you learned and want to keep fresh), **Engineering Blogs** (blog posts and articles you read and keep) and **Books**. New installs name the learning project **Skill Development** (key `LRN`).
 - **Topics**: things you want to learn, with status and time tracking. Type a topic, and add a video or course link if you have one (topics moved from Radar land here too). A topic with a link shows its thumbnail. Paste a link and Arc fills in the title (the real YouTube video title, or the page title for other links). Thumbnails are downloaded once, shrunk to small WebP images and cached in `data/thumbs/`, so the page loads fast on a phone too.
   If you paste a blog or article link into Topics, Arc offers to save it to Engineering Blogs instead.
 - **Engineering Blogs** (Learning → Engineering Blogs): good blog posts and articles. "Add blog post" takes a link and fills in the title, site, author and summary from the page. Add tags and notes, then move each one through To read, Reading and Read, or star it as a favourite. Search and tag filters find old ones.
@@ -88,7 +86,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 - **Books**: books to read, with covers. "Add book" searches Open Library by title or author and fills in the author, year, pages and cover (or add one by hand). Track the page you are on, move books through Want to read, Reading and Finished, and keep notes.
   - "Add to board" puts a book on the board as a Learning ticket, marked **Book** with a book icon, so you can plan it and log time on it. Moving the ticket moves the book: In Progress means Reading, Done means Finished.
   - Deleting a book keeps its ticket.
-- **Revisit**: things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (the notes stay hidden until you show them), a link and a priority.
+- **Revisit** (Learning → Revisit): things you learned and want to keep in front of you. Each topic has notes, an optional question to test yourself (the notes stay hidden until you show them), a link and a priority.
   - Add a topic with `R`, from any ticket, from Radar, or when you mark a Learning ticket Done.
   - Start a session timer or log time by hand. Each topic shows when you last revisited it, the total time and the number of sessions.
   - "Mark as revisited" moves the topic to the Revisited tab. "Revisit again" brings it back.
@@ -107,7 +105,11 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 
 ### Overview
 
-- **Dashboard**: where things stand right now. Open items, in progress, overdue, time logged today, topics to review, today's plan, items waiting longest, the Revisit list and a short summary of this week.
+- **Dashboard**: where things stand right now, and your day.
+  - **Needs attention**: overdue items, items waiting 30+ days and Radar topics to review, one click each.
+  - **Today**: the day's plan (overdue, planned, done). Tick items off, start a timer, log work, add an item, or **Plan from backlog**.
+  - **Review Radar**: Radar topics one at a time, oldest first: **To Topics**, **To Revisit**, **Dismiss** or **Later**.
+  - Open items, in progress, overdue, time logged today, topics to review, items waiting longest, the Revisit list, this week, and the **end-of-day review**.
 - **Weekly report**: what happened in a week. Time per day, time per project, completed and carried-over items, and daily reviews. Use the arrows to go back to earlier weeks.
 
 ### Other

@@ -1087,6 +1087,10 @@ def stats_overview(days: int = Query(default=30, ge=1, le=365), conn=Depends(get
         "revise_open": conn.execute("SELECT count(*) FROM revisions WHERE status = 'active'").fetchone()[0],
         "overdue": conn.execute(
             "SELECT count(*) FROM live_items WHERE status != 'done' AND due_date < ?", (t,)).fetchone()[0],
+        # Open items waiting 30+ days since they were created (the red pending badge).
+        "stale_open": conn.execute(
+            "SELECT count(*) FROM live_items WHERE status != 'done' AND date(created_at) <= date(?, '-30 days')",
+            (t,)).fetchone()[0],
         "by_status": rows(conn.execute("SELECT status, count(*) AS count FROM live_items GROUP BY status")),
         "oldest_open": [_decode(r) for r in rows(conn.execute(
             ITEM_SELECT + " WHERE i.status != 'done' AND i.type != 'note' ORDER BY i.created_at LIMIT 6"))],

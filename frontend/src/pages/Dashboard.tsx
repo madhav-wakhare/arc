@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { AttentionStrip, RadarReview } from "../components/Attention";
 import { ItemRows, Panel, Stat, StatRow } from "../components/dash";
 import { useActions } from "../components/Layout";
 import { RevisePreview } from "../components/RevisePreview";
@@ -37,6 +38,8 @@ export default function Dashboard() {
       <div className="space-y-5 px-4 md:px-6 lg:px-8">
         <p className="-mt-3 text-[13px] text-fg-3">{fmtDate(todayIso(), { weekday: "long", month: "long", day: "numeric" })}</p>
 
+        <AttentionStrip now={now} />
+
         {showWeekend && <WeekendTodayPanel action={<PanelLink to="/weekend">Weekend plan</PanelLink>} />}
 
         <StatRow>
@@ -61,6 +64,8 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-5">
+            <RadarReview />
+
             <Panel title="Waiting longest" action={<PanelLink to="/list">List view</PanelLink>}>
               <ItemRows items={now?.oldest_open.slice(0, 5) ?? []} onOpen={openItem} empty="Nothing open" />
             </Panel>
