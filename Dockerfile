@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-ins
 FROM python:${PYTHON_VERSION} AS runtime
 LABEL org.opencontainers.image.title="Arc" \
       org.opencontainers.image.description="Personal work and learning tracker" \
-      org.opencontainers.image.source="https://github.com/madhav-wakhare/smriti"
+      org.opencontainers.image.source="https://github.com/madhav-wakhare/arc"
 
 # Runs as a normal user. UID 1000 matches the first user on most Linux hosts, so files in the
 # bind-mounted data, backups and vault folders stay owned by you. Change with --build-arg APP_UID=...
