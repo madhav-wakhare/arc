@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { CalendarHeart, CalendarPlus, Check, ChevronLeft, ChevronRight, Lightbulb, MoreHorizontal, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { CalendarHeart, CalendarPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
   AddActivityModal,
@@ -27,13 +27,14 @@ import {
   useRefreshWeekend,
   useWeekend,
 } from "../components/Weekend";
-import { Button, Card, IconButton, Input, Menu, PageHeader, Select, Switch, Tabs, useToast } from "../components/ui";
+import { Button, Card, IconButton, Input, Menu, PageHeader, Select, Switch, useToast } from "../components/ui";
 import { api, type Idea, type LifeCategory, type PlanEntry, type Settings, type Weekend, type WeekendSlot } from "../lib/api";
 import { useSettings } from "../lib/hooks";
 import { fmtDate, todayIso, addDays } from "../lib/meta";
 
 type Target = { day: string; slot: WeekendSlot };
 
+/** One time-of-day cell for one day. Empty cells stay blank; "Add" shows on hover. */
 function Slot({
   day,
   slot,
@@ -49,124 +50,136 @@ function Slot({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `slot|${day}|${slot.value}`, data: { day, slot: slot.value } });
   return (
-    <div className="px-3 py-3">
-      <div className="mb-1 flex items-center gap-2 px-2 text-xs font-medium text-fg-3">
-        <slot.icon size={13} />
-        {slot.label}
-        <div className="flex-1" />
-        <button onClick={onAdd} className="rounded p-0.5 hover:bg-surface-2 hover:text-fg" title={`Add to ${slot.label.toLowerCase()}`}>
-          <Plus size={14} />
-        </button>
-      </div>
-      <div
-        ref={setNodeRef}
+    <div
+      ref={setNodeRef}
+      className={clsx("group/slot min-h-[76px] px-2 py-2 transition-colors", isOver && "bg-accent-soft")}
+    >
+      {entries.map((e) => (
+        <EntryRow key={e.id} entry={e} saturday={saturday} draggable />
+      ))}
+      <button
+        onClick={onAdd}
         className={clsx(
-          "min-h-10 rounded-md border border-dashed transition-colors",
-          isOver ? "border-accent bg-accent-soft" : "border-transparent",
+          "flex h-8 w-full items-center gap-1.5 rounded-md px-2 text-[13px] text-fg-3 transition-opacity hover:bg-surface-2 hover:text-fg",
+          entries.length ? "opacity-0 group-hover/slot:opacity-100 focus-visible:opacity-100" : "opacity-0 group-hover/slot:opacity-100 focus-visible:opacity-100 max-md:opacity-60",
         )}
+        title={`Add to ${dayName(day)} ${slot.label.toLowerCase()}`}
       >
-        {entries.map((e) => (
-          <EntryRow key={e.id} entry={e} saturday={saturday} draggable />
-        ))}
-        {!entries.length && (
-          <button onClick={onAdd} className="flex h-9 w-full items-center px-2 text-left text-[13px] text-fg-3/70 hover:text-fg-3">
-            Free
-          </button>
-        )}
-      </div>
+        <Plus size={13} /> Add
+      </button>
     </div>
   );
 }
 
-function DayCard({
-  day,
-  saturday,
-  entries,
-  onAdd,
-}: {
-  day: string;
-  saturday: string;
-  entries: PlanEntry[];
-  onAdd: (t: Target) => void;
-}) {
-  const isToday = day === todayIso();
-  const done = entries.filter((e) => e.done).length;
-  return (
-    <Card className={clsx("overflow-hidden", isToday && "border-accent/40")}>
-      <div className="flex h-12 items-center gap-2 border-b border-line px-5">
-        <h3 className="text-[14px] font-medium">{dayName(day)}</h3>
-        <span className="text-[13px] text-fg-3">{fmtDate(day)}</span>
-        {isToday && <span className="rounded bg-accent-soft px-1.5 py-px text-[11px] font-medium text-accent">Today</span>}
+/** Saturday and Sunday side by side, one row per time of day. Stacks into one column on a phone. */
+function PlanGrid({ wk, onAdd }: { wk: Weekend; onAdd: (t: Target) => void }) {
+  const days = [wk.saturday, wk.sunday];
+  const head = (d: string) => {
+    const list = wk.entries.filter((e) => e.day === d);
+    const done = list.filter((e) => e.done).length;
+    return (
+      <div className="flex h-11 items-center gap-2 px-4">
+        <span className="text-[14px] font-medium">{dayName(d)}</span>
+        <span className="text-[13px] text-fg-3">{fmtDate(d)}</span>
+        {d === todayIso() && <span className="rounded bg-accent-soft px-1.5 py-px text-[11px] font-medium text-accent">Today</span>}
         <div className="flex-1" />
-        {entries.length > 0 && (
+        {list.length > 0 && (
           <span className="text-xs tabular-nums text-fg-3">
-            {done}/{entries.length} done
+            {done}/{list.length}
           </span>
         )}
       </div>
-      <div className="divide-y divide-line">
-        {SLOTS.map((s) => (
-          <Slot
-            key={s.value}
-            day={day}
-            slot={s}
-            saturday={saturday}
-            entries={entries.filter((e) => e.slot === s.value)}
-            onAdd={() => onAdd({ day, slot: s.value })}
-          />
+    );
+  };
+  const label = (slot: (typeof SLOTS)[number]) => (
+    <div className="flex items-start gap-2 px-4 pt-4 text-xs font-medium text-fg-3">
+      <slot.icon size={13} className="mt-px" /> {slot.label}
+    </div>
+  );
+  const cell = (d: string, slot: (typeof SLOTS)[number]) => (
+    <Slot day={d} slot={slot} saturday={wk.saturday} entries={wk.entries.filter((e) => e.day === d && e.slot === slot.value)} onAdd={() => onAdd({ day: d, slot: slot.value })} />
+  );
+  return (
+    <Card className="overflow-hidden">
+      {/* desktop: label column + two day columns */}
+      <div className="hidden md:block">
+        <div className="grid grid-cols-[120px_1fr_1fr] divide-x divide-line border-b border-line">
+          <div />
+          {days.map((d) => (
+            <div key={d}>{head(d)}</div>
+          ))}
+        </div>
+        {SLOTS.map((slot) => (
+          <div key={slot.value} className="grid grid-cols-[120px_1fr_1fr] divide-x divide-line border-b border-line last:border-b-0">
+            {label(slot)}
+            {days.map((d) => (
+              <div key={d}>{cell(d, slot)}</div>
+            ))}
+          </div>
+        ))}
+      </div>
+      {/* phone: one day after the other */}
+      <div className="divide-y divide-line md:hidden">
+        {days.map((d) => (
+          <div key={d}>
+            {head(d)}
+            {SLOTS.map((slot) => (
+              <div key={slot.value} className="border-t border-line">
+                <div className="px-4 pt-3 text-xs font-medium text-fg-3">{slot.label}</div>
+                {cell(d, slot)}
+              </div>
+            ))}
+          </div>
         ))}
       </div>
     </Card>
   );
 }
 
-/** Study vs revise vs life, as one bar plus a short nudge. */
-function Balance({ entries }: { entries: PlanEntry[] }) {
+/** One quiet line under the title: the mix of study, revise and life, and a short nudge. */
+function Summary({ entries }: { entries: PlanEntry[] }) {
   const n = (k: PlanEntry["kind"]) => entries.filter((e) => e.kind === k).length;
   const study = n("study");
   const revise = n("revise");
   const life = n("life");
   const total = entries.length;
   const done = entries.filter((e) => e.done).length;
+  if (!total) return <p className="-mt-3 text-[13px] text-fg-3">Nothing planned yet. Mix some study with something for yourself.</p>;
   const nudge =
-    total === 0
-      ? "Nothing planned yet. Mix some study with something for yourself."
-      : life === 0
-        ? "All learning so far. Add something for yourself: a movie, a walk, people."
-        : study + revise === 0
-          ? "A full break this weekend. Enjoy it."
-          : life / total >= 0.3
-            ? "Good balance."
-            : "Mostly learning. Room for one more thing just for fun?";
-  const segments = [
-    { label: "Study", value: study, cls: "bg-accent" },
-    { label: "Revise", value: revise, cls: "bg-accent/45" },
-    { label: "Life", value: life, cls: "bg-life" },
+    life === 0
+      ? "All learning so far. Add something for yourself."
+      : study + revise === 0
+        ? "A full break. Enjoy it."
+        : life / total >= 0.3
+          ? "Good balance."
+          : "Mostly learning. Room for one more thing just for fun?";
+  const parts = [
+    { label: "study", value: study, cls: "bg-accent" },
+    { label: "revise", value: revise, cls: "bg-accent/45" },
+    { label: "life", value: life, cls: "bg-life" },
   ];
   return (
-    <Card className="px-5 py-4">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]">
-        {segments.map((s) => (
-          <span key={s.label} className="flex items-center gap-2">
-            <span className={clsx("size-2 rounded-full", s.cls)} />
-            <span className="text-fg-2">{s.label}</span>
-            <span className="font-medium tabular-nums">{s.value}</span>
-          </span>
-        ))}
-        <span className="text-fg-3 max-sm:w-full sm:ml-auto">{nudge}</span>
-        {total > 0 && (
-          <span className="tabular-nums text-fg-2 sm:border-l sm:border-line sm:pl-5">
-            {done}/{total} done
-          </span>
-        )}
-      </div>
-      <div className="mt-3 flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-surface-3">
-        {total > 0 &&
-          segments
-            .filter((s) => s.value)
-            .map((s) => <div key={s.label} className={clsx("h-full transition-all", s.cls)} style={{ width: `${(s.value / total) * 100}%` }} />)}
-      </div>
-    </Card>
+    <div className="-mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-fg-3">
+      <span className="flex h-1.5 w-28 gap-px overflow-hidden rounded-full bg-surface-3">
+        {parts
+          .filter((p) => p.value)
+          .map((p) => (
+            <span key={p.label} className={clsx("h-full", p.cls)} style={{ width: `${(p.value / total) * 100}%` }} />
+          ))}
+      </span>
+      {parts.map((p) => (
+        <span key={p.label} className="flex items-center gap-1.5">
+          <span className={clsx("size-1.5 rounded-full", p.cls)} />
+          <span className="tabular-nums text-fg-2">{p.value}</span> {p.label}
+        </span>
+      ))}
+      <span>·</span>
+      <span className="tabular-nums">
+        {done}/{total} done
+      </span>
+      <span>·</span>
+      <span>{nudge}</span>
+    </div>
   );
 }
 
@@ -241,36 +254,35 @@ function IdeasCard({ saturday }: { saturday: string }) {
   const list = tab === "open" ? open : done;
   return (
     <Card className="flex flex-col overflow-hidden">
-      <div className="flex h-12 items-center gap-2 border-b border-line px-5">
-        <Lightbulb size={15} className="text-fg-3" />
+      <div className="flex h-11 items-center gap-3 border-b border-line px-4">
         <h3 className="text-[14px] font-medium">Ideas</h3>
         <div className="flex-1" />
-        <Tabs
-          value={tab}
-          onChange={setTab}
-          tabs={[
-            { value: "open", label: `To do ${open.length || ""}` },
-            { value: "done", label: "Done" },
-          ]}
-          className="[&>button]:h-6 [&>button]:px-2 [&>button]:text-xs"
-        />
+        {(["open", "done"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={clsx("text-xs transition-colors", tab === t ? "font-medium text-fg" : "text-fg-3 hover:text-fg-2")}
+          >
+            {t === "open" ? `To do${open.length ? ` · ${open.length}` : ""}` : "Done"}
+          </button>
+        ))}
       </div>
       <form
-        className="flex gap-2 border-b border-line p-3"
+        className="flex gap-2 border-b border-line p-2.5"
         onSubmit={(e) => {
           e.preventDefault();
           if (title.trim()) add.mutate();
         }}
       >
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Movie, place, thing to try" className="min-w-0 flex-1" />
-        <Select value={category} onChange={(e) => setCategory(e.target.value as LifeCategory)} className="w-28 shrink-0" title="Category">
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add an idea" className="min-w-0 flex-1" />
+        <Select value={category} onChange={(e) => setCategory(e.target.value as LifeCategory)} className="w-[104px] shrink-0" title="Category">
           {CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
             </option>
           ))}
         </Select>
-        <IconButton type="submit" title="Add idea" disabled={!title.trim()} className="border border-line">
+        <IconButton type="submit" title="Add idea" disabled={!title.trim()}>
           <Plus size={15} />
         </IconButton>
       </form>
@@ -280,7 +292,7 @@ function IdeasCard({ saturday }: { saturday: string }) {
         ))}
         {!list.length && (
           <p className="px-3 py-8 text-center text-[13px] text-fg-3">
-            {tab === "open" ? "Collect movies, places and things to try during the week. Drag them into a slot." : "Nothing done yet."}
+            {tab === "open" ? "Movies, places, things to try. Drag one into a slot." : "Nothing done yet."}
           </p>
         )}
       </div>
@@ -335,37 +347,39 @@ export default function WeekendPage() {
     <div className="mx-auto w-full max-w-[1440px] pb-10">
       <PageHeader
         icon={<CalendarHeart size={18} />}
-        title="Weekend"
+        title={
+          <span className="flex items-baseline gap-2.5">
+            Weekend <span className="text-[14px] font-normal tabular-nums text-fg-3">{range}</span>
+          </span>
+        }
         actions={
           <>
-            <label className="flex h-9 items-center gap-2.5 rounded-md border border-line px-3 text-[13px]">
+            <div className="flex items-center gap-0.5">
+              <IconButton title="Previous weekend" onClick={() => wk && setDay(wk.previous)}>
+                <ChevronLeft size={16} />
+              </IconButton>
+              <Button size="sm" variant="ghost" disabled={isCurrent} onClick={() => setDay(undefined)}>
+                This weekend
+              </Button>
+              <IconButton title="Next weekend" onClick={() => wk && setDay(wk.next)}>
+                <ChevronRight size={16} />
+              </IconButton>
+            </div>
+            <span className="mx-1 h-5 w-px bg-line" />
+            <label className="flex items-center gap-2 text-[13px] text-fg-2" title="Show Weekend in the sidebar and its plan on the Dashboard on Saturday and Sunday">
               Weekend mode
               <Switch checked={settings?.weekend_mode ?? false} onChange={(v) => mode.mutate(v)} label="Weekend mode" />
             </label>
-            {!isCurrent && <Button onClick={() => setDay(undefined)}>This weekend</Button>}
-            <div className="flex h-9 items-center rounded-md border border-line">
-              <IconButton className="size-[34px] rounded-r-none" title="Previous weekend" onClick={() => wk && setDay(wk.previous)}>
-                <ChevronLeft size={15} />
-              </IconButton>
-              <span className="min-w-24 px-1 text-center text-[13px] tabular-nums">{range}</span>
-              <IconButton className="size-[34px] rounded-l-none" title="Next weekend" onClick={() => wk && setDay(wk.next)}>
-                <ChevronRight size={15} />
-              </IconButton>
-            </div>
           </>
         }
       />
       {wk && (
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragCancel={() => setDragging(null)} onDragEnd={onDragEnd}>
           <div className="space-y-5 px-4 md:px-6 lg:px-8">
-            <Balance entries={wk.entries} />
-            <div className="grid items-start gap-5 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_340px]">
-              {[wk.saturday, wk.sunday].map((d) => (
-                <DayCard key={d} day={d} saturday={wk.saturday} entries={wk.entries.filter((e) => e.day === d)} onAdd={setTarget} />
-              ))}
-              <div className="lg:col-span-2 xl:col-span-1">
-                <IdeasCard saturday={wk.saturday} />
-              </div>
+            <Summary entries={wk.entries} />
+            <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+              <PlanGrid wk={wk} onAdd={setTarget} />
+              <IdeasCard saturday={wk.saturday} />
             </div>
           </div>
           <DragOverlay>
