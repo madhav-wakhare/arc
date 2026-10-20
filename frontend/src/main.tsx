@@ -23,9 +23,9 @@ const Projects = lazy(() => import("./pages/Projects"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Trash = lazy(() => import("./pages/Trash"));
 
-/** Old /reading links (and bookmarks) now open Learning → Articles, keeping ?c= etc. */
-function ToArticles() {
-  return <Navigate to={`/learning/articles${useLocation().search}`} replace />;
+/** Old addresses (/reading, /revisit, bookmarks) open their new place, keeping ?id=, ?c= and the like. */
+function KeepQuery({ to }: { to: string }) {
+  return <Navigate to={`${to}${useLocation().search}`} replace />;
 }
 
 const queryClient = new QueryClient({
@@ -41,8 +41,9 @@ createRoot(document.getElementById("root")!).render(
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="radar" element={<Radar />} />
-              <Route path="revisit" element={<Revise />} />
-              <Route path="revise" element={<Navigate to="/revisit" replace />} />
+              <Route path="learning/revisit" element={<Revise />} />
+              <Route path="revisit" element={<KeepQuery to="/learning/revisit" />} />
+              <Route path="revise" element={<KeepQuery to="/learning/revisit" />} />
               <Route path="inbox" element={<Navigate to="/radar" replace />} />
               <Route path="today" element={<Navigate to="/" replace />} />
               <Route path="board" element={<Board />} />
@@ -50,7 +51,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="learning" element={<Learning />} />
               <Route path="learning/articles" element={<Reading />} />
               <Route path="learning/books" element={<Books />} />
-              <Route path="reading" element={<ToArticles />} />
+              <Route path="reading" element={<KeepQuery to="/learning/articles" />} />
               <Route path="reports" element={<Reports />} />
               <Route path="projects" element={<Projects />} />
               <Route path="weekend" element={<Weekend />} />

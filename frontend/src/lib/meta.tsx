@@ -25,11 +25,14 @@ export const STATUSES: { value: Status; label: string; icon: LucideIcon; tone: s
   { value: "done", label: "Done", icon: CircleCheck, tone: "text-good" },
 ];
 
-export const TYPES: { value: ItemType; label: string; icon: LucideIcon; tone: string }[] = [
+const ALL_TYPES: { value: ItemType; label: string; icon: LucideIcon; tone: string }[] = [
   { value: "task", label: "Task", icon: CheckSquare, tone: "text-task" },
   { value: "learning", label: "Learning", icon: BookOpen, tone: "text-learning" },
   { value: "note", label: "Note", icon: StickyNote, tone: "text-note" },
 ];
+/** Types offered when creating or filtering. "Note" is retired (Radar, Revisit and Blogs cover notes)
+ *  but older note items still show with their icon. */
+export const TYPES = ALL_TYPES.filter((t) => t.value !== "note");
 
 export const PRIORITIES: { value: Priority; label: string; icon: LucideIcon; tone: string }[] = [
   // Jira-style: each level has its own shape and colour so they are easy to tell apart.
@@ -49,7 +52,7 @@ export const RECURRENCES: { value: Recurrence; label: string }[] = [
 ];
 
 export const statusMeta = (s: Status) => STATUSES.find((x) => x.value === s)!;
-export const typeMeta = (t: ItemType) => TYPES.find((x) => x.value === t)!;
+export const typeMeta = (t: ItemType) => ALL_TYPES.find((x) => x.value === t)!;
 export const priorityMeta = (p: Priority) => PRIORITIES.find((x) => x.value === p)!;
 
 export function StatusIcon({ status, size = 14 }: { status: Status; size?: number }) {

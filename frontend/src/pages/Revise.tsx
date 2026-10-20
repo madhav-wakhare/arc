@@ -1,10 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowUpRight, BookMarked, Check, ChevronDown, Pencil, Play, Plus, RotateCcw, Search, Square, Ticket, Trash2, X } from "lucide-react";
+import { BookOpen, ArrowUpRight, Check, ChevronDown, Pencil, Play, Plus, RotateCcw, Search, Square, Ticket, Trash2, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
 import { AddRevisionModal, ConvertRevisionModal, RevisionForm, type RevisionFields } from "../components/Revise";
+import { LearningNav } from "../components/LearningNav";
 import { Button, Card, Drawer, IconButton, Input, Kbd, Modal, PageHeader, Tabs, useToast } from "../components/ui";
 import { api, type Priority, type Revision, type RevisionSession } from "../lib/api";
 import { useNow, useRefreshItems, useRevisions } from "../lib/hooks";
@@ -466,17 +467,18 @@ export default function Revise() {
   return (
     <div className="mx-auto w-full max-w-[1440px] pb-10">
       <PageHeader
-        icon={<BookMarked size={18} />}
-        title="Revisit"
+        icon={<BookOpen size={18} />}
+        title="Learning"
         actions={
           <>
             <Input icon={<Search size={14} />} placeholder="Search" value={filter} onChange={(e) => setFilter(e.target.value)} className="w-52" />
             <Button variant="primary" icon={<Plus size={15} />} onClick={() => setAdding(true)}>
-              Add topic
+              Add to Revisit
             </Button>
           </>
         }
       />
+      <LearningNav />
 
       <div className={clsx("grid items-start gap-5 px-4 md:px-6 lg:px-8", split && "grid-cols-[340px_minmax(0,1fr)]")}>
         {list}

@@ -20,7 +20,7 @@ export function RevisePreview({ limit = 5 }: { limit?: number }) {
         return (
           <Link
             key={r.id}
-            to={`/revisit?id=${r.id}`}
+            to={`/learning/revisit?id=${r.id}`}
             className="flex items-center gap-2.5 rounded-md px-2 py-2 text-[13px] hover:bg-surface-2"
           >
             {r.question ? <CircleHelp size={14} className="text-fg-3" /> : <NotebookText size={14} className="text-fg-3" />}
@@ -30,7 +30,7 @@ export function RevisePreview({ limit = 5 }: { limit?: number }) {
         );
       })}
       {active.length > limit && (
-        <Link to="/revisit" className="mt-1 flex items-center gap-1 px-2 py-1 text-xs text-fg-3 hover:text-fg">
+        <Link to="/learning/revisit" className="mt-1 flex items-center gap-1 px-2 py-1 text-xs text-fg-3 hover:text-fg">
           {active.length - limit} more <ArrowRight size={12} />
         </Link>
       )}

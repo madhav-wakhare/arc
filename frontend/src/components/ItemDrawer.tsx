@@ -536,7 +536,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
               </Button>
             )}
             {item.revision_id ? (
-              <Button size="sm" icon={<BookMarked size={13} />} onClick={() => navigate(`/revisit?id=${item.revision_id}`)} title="Open in Revisit">
+              <Button size="sm" icon={<BookMarked size={13} />} onClick={() => navigate(`/learning/revisit?id=${item.revision_id}`)} title="Open in Revisit">
                 <span className="hidden sm:inline">In Revisit</span>
               </Button>
             ) : (
@@ -672,6 +672,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                 <Prop label="Type">
                   <Select icon={<TypeIcon type={item.type} />} value={item.type} onChange={(e) => patch({ type: e.target.value as Item["type"] })}>
                     {TYPES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    {item.type === "note" && <option value="note">Note</option>}
                   </Select>
                 </Prop>
                 <Prop label="Project">

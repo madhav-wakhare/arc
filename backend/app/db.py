@@ -394,7 +394,7 @@ def init_db() -> None:
                 "INSERT INTO projects (key, name, description, color, created_at) VALUES (?, ?, ?, ?, ?)",
                 [
                     ("WORK", "Work", "Tasks from my job", "#2a78d6", ts),
-                    ("LRN", "Learning", "Videos, articles, courses and books", "#eb6834", ts),
+                    ("LRN", "Skill Development", "Topics, courses and books to learn", "#eb6834", ts),
                 ],
             )
         assign_missing_icons(conn)

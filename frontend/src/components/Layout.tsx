@@ -6,7 +6,6 @@ import {
   FileBarChart,
   LayoutDashboard,
   Radar as RadarIcon,
-  BookMarked,
   CirclePlus,
   Menu,
   Moon,
@@ -24,7 +23,7 @@ import { Suspense, createContext, useContext, useEffect, useState, type CSSPrope
 import { NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, type ItemType, type Quote, type Status } from "../lib/api";
-import { useJots, useRevisions, useLocalState, useNow, useProjects, useRefreshItems, useSettings, useTimer, useTrash } from "../lib/hooks";
+import { useJots, useLocalState, useNow, useProjects, useRefreshItems, useSettings, useTimer, useTrash } from "../lib/hooks";
 import { AddTopicModal } from "./Jots";
 import { AddRevisionModal } from "./Revise";
 import { CommandPalette } from "./CommandPalette";
@@ -58,7 +57,6 @@ const NAV = [
   { to: "/board", label: "Board", icon: SquareKanban, alsoActive: ["/list"] },
   { to: "/radar", label: "Radar", icon: RadarIcon },
   { to: "/learning", label: "Learning", icon: BookOpen },
-  { to: "/revisit", label: "Revisit", icon: BookMarked },
   { to: "/reports", label: "Weekly report", icon: FileBarChart },
   { to: "/weekend", label: "Weekend", icon: CalendarHeart, weekendOnly: true },
 ];
@@ -149,10 +147,8 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
   const { openSearch, newItem, quickNote } = useActions();
   const { data: jots } = useJots();
   const inboxCount = jots?.filter((j) => j.status === "open").length ?? 0;
-  const { data: revisions } = useRevisions();
   const counts: Record<string, number> = {
     "/radar": inboxCount,
-    "/revisit": revisions?.filter((r) => r.status === "active").length ?? 0,
   };
   const [theme, toggleTheme] = useTheme();
   const [groupOpen, setGroupOpen] = useLocalState("arc-nav-open", true);
