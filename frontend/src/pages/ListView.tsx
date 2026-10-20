@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowDown, ArrowUp, Filter, ListTodo, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, Filter, ListTodo, Search, SquareKanban } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FilterPanel, applyFilters, emptyFilters, type Filters } from "../components/FilterPanel";
 import { PendingBadge } from "../components/ItemCard";
 import { useActions } from "../components/Layout";
+import { BoardViewSwitch } from "../components/BoardViewSwitch";
 import { Button, Card, Empty, Input, PageHeader } from "../components/ui";
 import { api, type Item } from "../lib/api";
 import { useLocalState, useProjects } from "../lib/hooks";
@@ -57,8 +58,12 @@ export default function ListView() {
       )}
       <div className="min-w-0 flex-1 overflow-y-auto pb-10">
         <PageHeader
-          icon={<ListTodo size={18} />}
-          title="All items"
+          icon={<SquareKanban size={18} />}
+          title={
+            <span className="flex items-center gap-3">
+              Board <BoardViewSwitch />
+            </span>
+          }
           actions={
             <>
               {!showFilters && (

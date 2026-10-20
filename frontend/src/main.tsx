@@ -22,7 +22,6 @@ const Reports = lazy(() => import("./pages/Reports"));
 const Projects = lazy(() => import("./pages/Projects"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Trash = lazy(() => import("./pages/Trash"));
-const Today = lazy(() => import("./pages/Today"));
 
 /** Old /reading links (and bookmarks) now open Learning → Articles, keeping ?c= etc. */
 function ToArticles() {
@@ -45,7 +44,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="revisit" element={<Revise />} />
               <Route path="revise" element={<Navigate to="/revisit" replace />} />
               <Route path="inbox" element={<Navigate to="/radar" replace />} />
-              <Route path="today" element={<Today />} />
+              <Route path="today" element={<Navigate to="/" replace />} />
               <Route path="board" element={<Board />} />
               <Route path="list" element={<ListView />} />
               <Route path="learning" element={<Learning />} />

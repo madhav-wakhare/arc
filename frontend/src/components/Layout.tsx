@@ -1,14 +1,12 @@
 import clsx from "clsx";
 import {
   BookOpen,
-  CalendarCheck,
   CalendarHeart,
   ChevronDown,
   FileBarChart,
   LayoutDashboard,
   Radar as RadarIcon,
   BookMarked,
-  ListTodo,
   CirclePlus,
   Menu,
   Moon,
@@ -57,10 +55,8 @@ export const useActions = () => useContext(ActionsCtx);
 // Sidebar order chosen by the user: Board 2nd, Radar 3rd.
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/board", label: "Board", icon: SquareKanban },
+  { to: "/board", label: "Board", icon: SquareKanban, alsoActive: ["/list"] },
   { to: "/radar", label: "Radar", icon: RadarIcon },
-  { to: "/today", label: "Today", icon: CalendarCheck },
-  { to: "/list", label: "All items", icon: ListTodo },
   { to: "/learning", label: "Learning", icon: BookOpen },
   { to: "/revisit", label: "Revisit", icon: BookMarked },
   { to: "/reports", label: "Weekly report", icon: FileBarChart },
@@ -255,7 +251,14 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
         {(groupOpen || compact) && (
           <div className={clsx("space-y-0.5", compact ? "" : "ml-[17px] mt-0.5 border-l border-line pl-2")}>
             {NAV.filter((n) => !n.weekendOnly || settings?.weekend_mode).map((n) => (
-              <NavLink key={n.to} to={n.to} end={n.end} className={linkCls} onClick={onNavigate} title={n.label}>
+              <NavLink
+                key={n.to}
+                to={n.to}
+                end={n.end}
+                className={({ isActive }) => linkCls({ isActive: isActive || !!n.alsoActive?.includes(loc.pathname) })}
+                onClick={onNavigate}
+                title={n.label}
+              >
                 <n.icon size={16} strokeWidth={1.75} />
                 {!compact && <span className="flex-1">{n.label}</span>}
                 {!compact && !!counts[n.to] && (

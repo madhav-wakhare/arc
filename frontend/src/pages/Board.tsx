@@ -14,6 +14,7 @@ import clsx from "clsx";
 import { Check, ChevronDown, Filter, Plus, Search, Settings2, SquareKanban, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { BoardViewSwitch } from "../components/BoardViewSwitch";
 import { ItemCard } from "../components/ItemCard";
 import { FilterPanel, applyFilters, emptyFilters, type Filters } from "../components/FilterPanel";
 import { useActions } from "../components/Layout";
@@ -213,7 +214,12 @@ export default function Board() {
         <PageHeader
           quotes="board"
           icon={<SquareKanban size={18} />}
-          title={project ? `${project.name} board` : "Board"}
+          title={
+            <span className="flex items-center gap-3">
+              {project ? `${project.name} board` : "Board"}
+              {!project && <BoardViewSwitch />}
+            </span>
+          }
           actions={
             <>
               {project && (
