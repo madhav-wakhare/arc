@@ -36,7 +36,7 @@ import {
 } from "../components/Reading";
 import { Button, Card, Empty, IconButton, Menu, Modal, PageHeader, Select } from "../components/ui";
 import type { Article, Collection } from "../lib/api";
-import { useLocalState, useSettings, useOpenOnNew } from "../lib/hooks";
+import { useLocalState, useSettings, useOpenOnNew, useNonEmptyTab } from "../lib/hooks";
 import { fmtDate } from "../lib/meta";
 
 type Tab = "unread" | "reading" | "read" | "favorites" | "all";
@@ -415,6 +415,7 @@ export default function Reading() {
   const inTab = (a: Article, t: Tab) => (t === "all" ? true : t === "favorites" ? !!a.favorite : a.status === t);
   const scoped = articles.filter(inScope);
   const count = (t: Tab) => scoped.filter((a) => inTab(a, t)).length;
+  useNonEmptyTab(tab, setTab, ["unread", "reading", "read"], count, !isLoading);
   const tags = useMemo(() => [...new Set(scoped.flatMap((a) => a.tags))].sort(), [scoped]);
   const needle = q.trim().toLowerCase();
   const list = scoped.filter(
@@ -457,14 +458,19 @@ export default function Reading() {
         }
         actions={
           <>
-            <Button
-              icon={<ObsidianIcon size={14} className={folder ? "text-accent" : ""} />}
-              onClick={() => setFolderOpen(true)}
-              title="Obsidian folder for engineering blogs"
-              className="max-w-64"
-            >
-              <span className="truncate">{folder ? (current ? `${folder}/${current.name}` : folder) : "Set Obsidian folder"}</span>
-            </Button>
+            {/* Quiet once a folder is set: an icon with the folder in its tooltip. */}
+            {folder ? (
+              <IconButton
+                onClick={() => setFolderOpen(true)}
+                title={`Obsidian folder: ${current ? `${folder}/${current.name}` : folder}`}
+              >
+                <ObsidianIcon size={15} className="text-accent" />
+              </IconButton>
+            ) : (
+              <Button icon={<ObsidianIcon size={14} />} onClick={() => setFolderOpen(true)}>
+                Set Obsidian folder
+              </Button>
+            )}
             <Button variant="primary" icon={<Plus size={14} />} onClick={() => setAdding(true)}>
               Add blog post
             </Button>

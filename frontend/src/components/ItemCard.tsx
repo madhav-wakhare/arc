@@ -1,9 +1,9 @@
 import clsx from "clsx";
-import { BookOpen, CalendarDays, CheckSquare, Clock, CornerDownRight, ListTree, Hourglass, Link2, MessageSquare, Repeat, Youtube } from "lucide-react";
+import { CalendarDays, GraduationCap, CheckSquare, Clock, CornerDownRight, ListTree, Hourglass, Link2, MessageSquare, Repeat, Youtube } from "lucide-react";
 import { useState } from "react";
 import type { Item } from "../lib/api";
 import { ObsidianIcon } from "./ObsidianIcon";
-import { ItemIcon, PriorityIcon, dueTone, fmtDate, fmtMinutes, pendingDays, pendingTone, youtubeId, urlHash } from "../lib/meta";
+import { ItemIcon, PriorityIcon, dueTone, fmtDate, fmtMinutes, hostOf, pendingDays, pendingTone, youtubeId, urlHash } from "../lib/meta";
 
 /** "Pending N days" chip. Neutral, then amber (10d), orange (15d) and red (30d). */
 export function PendingBadge({ item, long }: { item: Item; long?: boolean }) {
@@ -94,7 +94,6 @@ export function ItemCard({ item, onOpen, dragging }: { item: Item; onOpen: () =>
  */
 export function Thumb({ itemId, url, className }: { itemId: number; url: string | null; className?: string }) {
   const [failed, setFailed] = useState(false);
-  const yt = youtubeId(url);
   if (url && !failed)
     return (
       <img
@@ -106,9 +105,17 @@ export function Thumb({ itemId, url, className }: { itemId: number; url: string 
         className={clsx("bg-surface-2 object-cover", className)}
       />
     );
+  return <Cover url={url} className={className} />;
+}
+
+/** Stand-in picture for a link without one, or a topic without a link: a soft tint, an icon and the site. */
+export function Cover({ url, className }: { url: string | null; className?: string }) {
+  const yt = youtubeId(url);
+  const Icon = yt ? Youtube : url ? Link2 : GraduationCap;
   return (
-    <div className={clsx("flex items-center justify-center bg-surface-2", className)}>
-      {yt ? <Youtube size={22} className="text-fg-3" /> : url ? <Link2 size={20} className="text-fg-3" /> : <BookOpen size={22} className="text-fg-3" />}
+    <div className={clsx("flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-learning/12 via-surface-2 to-surface-2", className)}>
+      <Icon size={22} className="text-learning/70" />
+      {url && <span className="max-w-[80%] truncate text-[11px] text-fg-3">{hostOf(url)}</span>}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { ArrowRight, BookOpen, Check, GraduationCap, Clock, Link2, LoaderCircle, Newspaper, Play, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PendingBadge, Thumb } from "../components/ItemCard";
+import { Cover, PendingBadge, Thumb } from "../components/ItemCard";
 import { useActions } from "../components/Layout";
 import { LearningNav } from "../components/LearningNav";
 import { ObsidianIcon } from "../components/ObsidianIcon";
@@ -11,7 +11,7 @@ import { LearningToolbar } from "../components/LearningToolbar";
 import { SimilarWarning } from "../components/SimilarWarning";
 import { Button, Card, Empty, IconButton, Input, Modal, PageHeader, useToast } from "../components/ui";
 import { api, type Item, type LinkPreview, type Status } from "../lib/api";
-import { useLinkPreview, useLocalState, useProjects, useRefreshItems, useUpdateItem, useOpenOnNew } from "../lib/hooks";
+import { useLinkPreview, useLocalState, useProjects, useRefreshItems, useUpdateItem, useOpenOnNew, useNonEmptyTab } from "../lib/hooks";
 import { StatusIcon, fmtMinutes, hostOf, statusMeta, youtubeId, isUrl } from "../lib/meta";
 
 type Tab = "queue" | "in_progress" | "done" | "all";
@@ -33,11 +33,6 @@ function LearningCard({ item }: { item: Item }) {
   const start = useMutation({ mutationFn: () => api.post(`/items/${item.id}/timer/start`), onSuccess: refresh });
   const done = item.status === "done";
 
-  const saved = item.obsidian_path && (
-    <span className="flex h-5 items-center gap-1 rounded bg-black/60 px-1.5 text-[11px] text-white">
-      <ObsidianIcon size={11} /> Saved
-    </span>
-  );
   const firstLine = item.description.split("\n").find((l) => l.trim())?.trim();
 
   return (
@@ -51,26 +46,16 @@ function LearningCard({ item }: { item: Item }) {
       }}
       className="group flex cursor-pointer flex-col overflow-hidden rounded-lg border border-line bg-surface outline-none transition-colors hover:border-line-strong focus-visible:border-accent"
     >
-      {item.url ? (
-        <div className="relative block aspect-video w-full overflow-hidden bg-surface-2">
-          <Thumb itemId={item.id} url={item.url} className="size-full" />
-          {/* Solid backing so the tinted badge stays readable on any picture. */}
-          <span className="absolute left-2 top-2 rounded bg-bg/85 backdrop-blur-sm">
-            <PendingBadge item={item} />
-          </span>
-          {saved && <span className="absolute right-2 top-2">{saved}</span>}
-        </div>
-      ) : (
-        // A topic without a link: no empty picture, just the topic.
-        <div className="flex items-center gap-2 px-3 pt-3">
+      <div className="relative aspect-video w-full overflow-hidden bg-surface-2">
+        {item.url ? <Thumb itemId={item.id} url={item.url} className="size-full" /> : <Cover url={null} className="size-full" />}
+        {/* Solid backing so the tinted badge stays readable on any picture. */}
+        <span className="absolute left-2 top-2 rounded bg-bg/85 backdrop-blur-sm">
           <PendingBadge item={item} />
-          <div className="flex-1" />
-          {saved}
-        </div>
-      )}
+        </span>
+      </div>
       <div className="flex flex-1 flex-col p-3">
         <div>
-          <p className={clsx("line-clamp-2 font-medium leading-snug", item.url ? "text-[13px]" : "text-[14px]", done && "text-fg-3")}>{item.title}</p>
+          <p className={clsx("line-clamp-2 text-[13px] font-medium leading-snug", done && "text-fg-3")}>{item.title}</p>
         </div>
         {!item.url && firstLine && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-fg-3">{firstLine}</p>}
         <div className="mt-1.5 flex min-w-0 items-center gap-2 text-xs text-fg-3">
@@ -123,7 +108,7 @@ function LearningCard({ item }: { item: Item }) {
 }
 
 export default function Learning() {
-  const { data: all = [] } = useQuery({
+  const { data: all = [], isFetched } = useQuery({
     queryKey: ["items", "learning"],
     queryFn: () => api.get<Item[]>("/items?type=learning"),
   });
@@ -140,6 +125,7 @@ export default function Learning() {
     (i) => inTab(i, tab) && (!needle || `${i.key} ${i.title} ${i.description} ${i.labels.join(" ")}`.toLowerCase().includes(needle)),
   );
   const count = (t: Tab) => items.filter((i) => inTab(i, t)).length;
+  useNonEmptyTab(tab, setTab, ["queue", "in_progress", "done"], count, isFetched);
 
   return (
     <div className="mx-auto w-full max-w-[1440px] pb-10">

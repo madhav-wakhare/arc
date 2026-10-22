@@ -439,7 +439,7 @@ export default function Revise() {
                     ? `Revisited ${timeAgo(r.revised_at)}`
                     : r.last_revised_at
                       ? `Last revisited ${timeAgo(r.last_revised_at)}`
-                      : "Not revisited yet"}
+                      : `Added ${timeAgo(r.created_at)}`}
                   {r.total_minutes > 0 && ` · ${fmtMinutes(r.total_minutes)}`}
                 </span>
               </span>

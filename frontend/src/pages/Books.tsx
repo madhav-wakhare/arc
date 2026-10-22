@@ -9,7 +9,7 @@ import { LearningToolbar } from "../components/LearningToolbar";
 import { SimilarWarning } from "../components/SimilarWarning";
 import { Button, Card, Drawer, Empty, Field, IconButton, Input, Modal, PageHeader, Tabs, Textarea, useToast } from "../components/ui";
 import { api, type Book, type BookHit, type BookStatus } from "../lib/api";
-import { useLocalState, useRefreshItems, useOpenOnNew } from "../lib/hooks";
+import { useLocalState, useRefreshItems, useOpenOnNew, useNonEmptyTab } from "../lib/hooks";
 import { normTitle } from "../lib/learningIndex";
 import { fmtDate, urlHash } from "../lib/meta";
 
@@ -379,6 +379,7 @@ export default function Books() {
     });
 
   const count = (t: Tab) => books.filter((b) => t === "all" || b.status === t).length;
+  useNonEmptyTab(tab, setTab, ["reading", "want", "finished"] as Tab[], count, !isLoading);
   // Opening a book from elsewhere (its ticket) shows it even if it is not in the current tab.
   const needle = q.trim().toLowerCase();
   const list = books.filter(

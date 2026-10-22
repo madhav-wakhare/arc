@@ -120,3 +120,19 @@ export function useOpenOnNew(open: () => void) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [want]);
 }
+
+/**
+ * On first load, if the remembered tab is empty but another tab has something, switch to the first one
+ * that has. Picking an empty tab by hand afterwards is left alone.
+ */
+export function useNonEmptyTab<T extends string>(tab: T, setTab: (t: T) => void, order: T[], count: (t: T) => number, ready: boolean) {
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || !ready) return;
+    done.current = true;
+    if (count(tab) > 0) return;
+    const first = order.find((t) => count(t) > 0);
+    if (first) setTab(first);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+}
