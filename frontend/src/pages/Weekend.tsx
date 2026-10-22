@@ -34,7 +34,12 @@ import { fmtDate, todayIso, addDays } from "../lib/meta";
 
 type Target = { day: string; slot: WeekendSlot };
 
-/** One time of day inside a day card: its label, its activities, and a quiet "Add" line. */
+const SLOT_HOURS: Record<WeekendSlot, string> = { morning: "Until noon", afternoon: "12 – 5 pm", evening: "After 5 pm" };
+
+/**
+ * One time of day inside a day card, laid out like a calendar row: the time on the left, plans on the right.
+ * An empty slot is a quiet dashed area that says what it is for only on hover; "+" on the right adds more.
+ */
 function Slot({
   day,
   slot,
@@ -49,24 +54,43 @@ function Slot({
   onAdd: () => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `slot|${day}|${slot.value}`, data: { day, slot: slot.value } });
+  const where = `${dayName(day)} ${slot.label.toLowerCase()}`;
   return (
-    <div ref={setNodeRef} className={clsx("rounded-md px-2 py-2.5 transition-colors", isOver && "bg-accent-soft")}>
-      <p className="mb-1 flex items-center gap-2 px-2 text-xs text-fg-3">
-        <slot.icon size={13} /> {slot.label}
-      </p>
-      {entries.map((e) => (
-        <EntryRow key={e.id} entry={e} saturday={saturday} draggable />
-      ))}
-      <button
-        onClick={onAdd}
-        className={clsx(
-          "flex h-8 w-full items-center gap-2 rounded-md px-2 text-[13px] text-fg-3/70 transition hover:bg-surface-2 hover:text-fg",
-          entries.length > 0 && "text-fg-3/50",
+    <div ref={setNodeRef} className="group/slot grid grid-cols-[96px_minmax(0,1fr)] gap-3 px-4 py-3">
+      <div className="pt-1.5">
+        <p className="flex items-center gap-1.5 text-[13px] font-medium text-fg-2">
+          <slot.icon size={13} className="text-fg-3" /> {slot.label}
+        </p>
+        <p className="mt-0.5 pl-[19px] text-[11px] text-fg-3">{SLOT_HOURS[slot.value]}</p>
+      </div>
+      <div className="relative min-w-0">
+        {entries.length ? (
+          <div className={clsx("rounded-md pr-8 transition-colors", isOver && "bg-accent-soft")}>
+            {entries.map((e) => (
+              <EntryRow key={e.id} entry={e} saturday={saturday} draggable />
+            ))}
+            <button
+              onClick={onAdd}
+              title={`Add to ${where}`}
+              className="absolute right-0 top-1 flex size-7 items-center justify-center rounded-md text-fg-3 opacity-0 transition hover:bg-surface-2 hover:text-fg focus-visible:opacity-100 group-hover/slot:opacity-100 max-md:opacity-100"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onAdd}
+            className={clsx(
+              "flex h-11 w-full items-center justify-center gap-1.5 rounded-md border border-dashed text-[12px] transition-colors",
+              isOver
+                ? "border-accent/70 bg-accent-soft text-accent"
+                : "border-line text-transparent hover:border-line-strong hover:bg-surface-2/60 hover:text-fg-3 focus-visible:text-fg-3 max-md:text-fg-3/70",
+            )}
+          >
+            <Plus size={13} /> Plan {slot.label.toLowerCase()}
+          </button>
         )}
-        title={`Add to ${dayName(day)} ${slot.label.toLowerCase()}`}
-      >
-        <Plus size={13} /> {entries.length ? "Add" : "Free"}
-      </button>
+      </div>
     </div>
   );
 }
@@ -88,7 +112,7 @@ function DayCard({ wk, day, onAdd }: { wk: Weekend; day: string; onAdd: (t: Targ
           </span>
         )}
       </div>
-      <div className="p-1.5">
+      <div className="divide-y divide-line">
         {SLOTS.map((slot) => (
           <Slot
             key={slot.value}
@@ -225,7 +249,7 @@ function IdeasCard({ saturday }: { saturday: string }) {
     <section>
       <div className="mb-2 flex items-center gap-3 px-1">
         <h3 className="text-[14px] font-medium">Ideas</h3>
-        <span className="text-xs text-fg-3">Movies, places, things to try. Drag one onto a day.</span>
+        <span className="hidden truncate text-xs text-fg-3 sm:inline">Movies, places, things to try. Drag one onto a day.</span>
         <div className="flex-1" />
         {(["open", "done"] as const).map((t) => (
           <button
