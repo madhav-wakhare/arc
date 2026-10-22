@@ -95,6 +95,7 @@ class ItemIn(BaseModel):
     labels: list[str] = []
     estimate_minutes: int | None = Field(default=None, ge=0)
     recurrence: Recurrence = "none"
+    parent_id: int | None = None
 
 
 class ItemPatch(BaseModel):
@@ -110,6 +111,7 @@ class ItemPatch(BaseModel):
     estimate_minutes: int | None = Field(default=None, ge=0)
     recurrence: Recurrence | None = None
     position: float | None = None
+    parent_id: int | None = None
 
 
 class SubtaskIn(BaseModel):
@@ -227,9 +229,37 @@ SELECT i.*, p.key AS project_key, p.name AS project_name, p.color AS project_col
        (SELECT count(*) FROM comments c WHERE c.item_id = i.id) AS comment_count,
        (SELECT r.id FROM revisions r WHERE r.item_id = i.id AND r.status = 'active' LIMIT 1) AS revision_id,
        (SELECT b.id FROM books b WHERE b.item_id = i.id LIMIT 1) AS book_id,
-       (SELECT a.id FROM articles a WHERE a.item_id = i.id LIMIT 1) AS article_id
+       (SELECT a.id FROM articles a WHERE a.item_id = i.id LIMIT 1) AS article_id,
+       (SELECT pp.key || '-' || par.number FROM live_items par JOIN projects pp ON pp.id = par.project_id
+         WHERE par.id = i.parent_id) AS parent_key,
+       (SELECT par.title FROM live_items par WHERE par.id = i.parent_id) AS parent_title,
+       (SELECT count(*) FROM live_items c WHERE c.parent_id = i.id) AS child_count,
+       (SELECT count(*) FROM live_items c WHERE c.parent_id = i.id AND c.status = 'done') AS child_done
 FROM live_items i JOIN projects p ON p.id = i.project_id
 """
+
+
+def _item_key(conn, item_id: int | None) -> str | None:
+    r = conn.execute(
+        "SELECT p.key || '-' || i.number FROM items i JOIN projects p ON p.id = i.project_id WHERE i.id = ?", (item_id,)
+    ).fetchone()
+    return r[0] if r else None
+
+
+def check_parent(conn, item_id: int | None, parent_id: int) -> None:
+    """Child tickets are one level deep, like Jira: a child cannot have children of its own."""
+    # A parent link to a ticket in the trash does not count.
+    parent = row(conn.execute(
+        "SELECT i.id, (SELECT g.id FROM live_items g WHERE g.id = i.parent_id) AS parent_id FROM live_items i WHERE i.id = ?",
+        (parent_id,)))
+    if not parent:
+        raise HTTPException(422, "Parent ticket not found")
+    if parent_id == item_id:
+        raise HTTPException(422, "A ticket cannot be its own parent")
+    if parent["parent_id"]:
+        raise HTTPException(422, "That ticket is already a child ticket. Pick its parent instead.")
+    if item_id and conn.execute("SELECT 1 FROM live_items WHERE parent_id = ?", (item_id,)).fetchone():
+        raise HTTPException(422, "This ticket has child tickets, so it cannot become a child itself")
 
 
 def _decode(item: dict | None) -> dict | None:
@@ -306,13 +336,13 @@ def insert_item(conn, data: ItemIn) -> int:
     cur = conn.execute(
         """INSERT INTO items (project_id, number, type, title, description, status, priority, due_date, url,
                               labels, estimate_minutes, position, recurrence, created_at, updated_at,
-                              status_changed_at, completed_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                              status_changed_at, completed_at, parent_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             data.project_id, proj["next_number"], data.type, data.title.strip(), data.description,
             data.status, data.priority, data.due_date.isoformat() if data.due_date else None,
             (data.url or "").strip() or None, json.dumps(data.labels), data.estimate_minutes, pos,
-            data.recurrence, ts, ts, ts, ts if data.status == "done" else None,
+            data.recurrence, ts, ts, ts, ts if data.status == "done" else None, data.parent_id,
         ),
     )
     conn.execute("UPDATE projects SET next_number = next_number + 1 WHERE id = ?", (data.project_id,))
@@ -406,6 +436,8 @@ def list_items(
 
 @app.post("/api/items", status_code=201)
 def create_item(data: ItemIn, conn=Depends(get_db)):
+    if data.parent_id:
+        check_parent(conn, None, data.parent_id)
     return load_item(conn, insert_item(conn, data))
 
 
@@ -413,6 +445,7 @@ def create_item(data: ItemIn, conn=Depends(get_db)):
 def get_item(item_id: int, conn=Depends(get_db)):
     item = load_item(conn, item_id)
     item["subtasks"] = rows(conn.execute("SELECT * FROM subtasks WHERE item_id = ? ORDER BY position, id", (item_id,)))
+    item["children"] = [_decode(r) for r in rows(conn.execute(ITEM_SELECT + " WHERE i.parent_id = ? ORDER BY i.id", (item_id,)))]
     return item
 
 
@@ -435,11 +468,15 @@ def update_item(item_id: int, data: ItemPatch, conn=Depends(get_db)):
         if old == v:
             continue
         updates[k] = v
-        if k not in ("position", "description"):
+        if k == "parent_id":
+            log_history(conn, item_id, "parent", item["parent_key"], _item_key(conn, v))
+        elif k not in ("position", "description"):
             log_history(conn, item_id, k, old, v)
         elif k == "description":
             log_history(conn, item_id, k, None, None)
 
+    if updates.get("parent_id"):
+        check_parent(conn, item_id, updates["parent_id"])
     if "project_id" in updates:
         proj = row(conn.execute(
             "SELECT * FROM projects WHERE id = ? AND deleted_at IS NULL", (updates["project_id"],)))

@@ -50,7 +50,14 @@ export interface Item {
   book_id: number | null;
   /** Set when this ticket was made from a blog post on Learning → Engineering Blogs. */
   article_id: number | null;
+  /** Child tickets, Jira style: one level deep. */
+  parent_id: number | null;
+  parent_key: string | null;
+  parent_title: string | null;
+  child_count: number;
+  child_done: number;
   subtasks?: Subtask[];
+  children?: Item[];
 }
 
 export interface Subtask {

@@ -295,6 +295,7 @@ MIGRATIONS = [
     ("articles", "collection_id", "INTEGER REFERENCES collections(id) ON DELETE SET NULL"),
     ("items", "thumb", "TEXT"),
     ("articles", "item_id", "INTEGER REFERENCES items(id) ON DELETE SET NULL"),  # its ticket on the board  # preview image URL for links; NULL = not looked up yet, '' = none
+    ("items", "parent_id", "INTEGER REFERENCES items(id) ON DELETE SET NULL"),  # child ticket of this item
 ]
 
 # Project icons (Lucide names). New projects take the first one not in use.

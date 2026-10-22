@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { BookOpen, CalendarDays, CheckSquare, Clock, Hourglass, Link2, MessageSquare, Repeat, Youtube } from "lucide-react";
+import { BookOpen, CalendarDays, CheckSquare, Clock, CornerDownRight, ListTree, Hourglass, Link2, MessageSquare, Repeat, Youtube } from "lucide-react";
 import { useState } from "react";
 import type { Item } from "../lib/api";
 import { ObsidianIcon } from "./ObsidianIcon";
@@ -38,6 +38,11 @@ export function ItemCard({ item, onOpen, dragging }: { item: Item; onOpen: () =>
         <span className="font-mono">{item.key}</span>
         {item.book_id && <span className="font-medium text-book">Book</span>}
         {item.article_id && <span className="font-medium text-accent">Blog</span>}
+        {item.parent_key && (
+          <span className="flex min-w-0 items-center gap-0.5 truncate" title={`Child of ${item.parent_key}: ${item.parent_title}`}>
+            <CornerDownRight size={11} /> {item.parent_key}
+          </span>
+        )}
         <div className="flex-1" />
         <PendingBadge item={item} />
       </div>
@@ -53,6 +58,11 @@ export function ItemCard({ item, onOpen, dragging }: { item: Item; onOpen: () =>
           <span className="flex items-center gap-1">
             <Clock size={12} /> {fmtMinutes(item.logged_minutes)}
             {item.estimate_minutes ? ` / ${fmtMinutes(item.estimate_minutes)}` : ""}
+          </span>
+        )}
+        {item.child_count > 0 && (
+          <span className="flex items-center gap-1" title="Child tickets done">
+            <ListTree size={12} /> {item.child_done}/{item.child_count}
           </span>
         )}
         {item.subtask_count > 0 && (

@@ -119,13 +119,14 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
   - **Needs attention**: overdue items, items waiting 30+ days and Radar topics to review, one click each.
   - **Today**: the day's plan (overdue, planned, done). Tick items off, start a timer, log work, add an item, or **Plan from backlog**. Done items stay folded until you open them, and a long plan shows the first 8 with **Show all**.
   - **Review Radar**: Radar topics one at a time, oldest first: **To Topics**, **To Revisit**, **Dismiss** or **Later**.
-  - Open items, in progress, overdue, time logged today, topics to review, items waiting longest, the Revisit list, this week, and the **end-of-day review**.
+  - Open items, in progress, overdue, time logged today, topics to review, items waiting longest, the Revisit list, this week, and the **end-of-day review**: three short lines (went well, blocked by, tomorrow) that save when you leave a line.
 - **Weekly report**: what happened in a week. Time per day, time per project, completed and carried-over items, and daily reviews. Use the arrows to go back to earlier weeks.
 
 ### Other
 
 - **Search**: `⌘K` / `Ctrl K` searches titles, descriptions, links, comments and Radar topics. Type a key like `LRN-4` to jump to an item.
 - **Obsidian export**: for items with a link, "Export to Obsidian" writes one note named after the item title. If you later change the title or link, Arc overwrites the note. You can turn this off in Settings.
+- **Child tickets**: like Jira, a ticket can have child tickets, one level deep. Add them under **Child tickets** in the ticket, or set **Parent** in its side panel. The parent shows how many children are done, and each child shows its parent key on the card and in the ticket header.
 - **New menu**: one **New** button in the sidebar (and the **+** in the phone tab bar) creates anything: a task, a topic to learn, a blog post, a book, a Revisit entry or a Radar capture.
 - **Undo**: deleting an item or dismissing a Radar topic happens at once, with **Undo** in the message at the bottom for a few seconds.
 - **Trash**: deleted items and projects stay in Trash for 30 days. You can restore them or delete them for good. After 30 days, Arc removes them automatically.

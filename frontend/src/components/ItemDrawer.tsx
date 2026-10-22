@@ -40,6 +40,8 @@ import { ItemIcon,
   pendingTone,
   timeAgo,
 } from "../lib/meta";
+import { ChildTickets, ParentPicker } from "./ChildTickets";
+import { useActions } from "./Layout";
 import { Thumb } from "./ItemCard";
 import { ObsidianIcon } from "./ObsidianIcon";
 import { Button, Checkbox, DateInput, Drawer, Field, IconButton, Input, Modal, Select, Textarea, useToast } from "./ui";
@@ -296,6 +298,7 @@ function Activity({ item }: { item: Item }) {
       labels: "changed labels",
       url: "changed link",
       recurrence: "changed repeat",
+      parent: "changed parent",
     };
     if (h.field === "created") return <>created the item</>;
     if (h.field === "from_inbox") return <>created from Radar topic “{h.new_value}”</>;
@@ -463,6 +466,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
     onError: (e: Error) => toast(e.message, "error"),
   });
   const navigate = useNavigate();
+  const { openItem } = useActions();
   const addRevise = useMutation({
     mutationFn: () => api.post<{ id: number }>(`/items/${itemId}/revise`),
     onSuccess: () => {
@@ -512,6 +516,18 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
         <>
           <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-4">
             <ItemIcon item={item} size={15} />
+            {item.parent_key && (
+              <>
+                <button
+                  onClick={() => openItem(item.parent_id!)}
+                  title={`Parent: ${item.parent_title}`}
+                  className="font-mono text-[13px] text-fg-3 hover:text-fg hover:underline"
+                >
+                  {item.parent_key}
+                </button>
+                <span className="text-fg-3">/</span>
+              </>
+            )}
             <span className="font-mono text-[13px] text-fg-2">{item.key}</span>
             {item.book_id && (
               <Link
@@ -667,6 +683,8 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                 </div>
               </div>
 
+              <ChildTickets item={item} />
+
               <Activity item={item} />
             </div>
 
@@ -696,6 +714,9 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                   >
                     {projects.filter((p) => !p.archived || p.id === item.project_id).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </Select>
+                </Prop>
+                <Prop label="Parent">
+                  <ParentPicker item={item} />
                 </Prop>
                 <Prop label="Due date">
                   <DateInput value={item.due_date ?? ""} onChange={(v) => patch({ due_date: v || null })} placeholder="No due date" />

@@ -620,3 +620,23 @@ def test_blog_post_to_ticket_and_status_sync(client):
     assert got["status"] == "read" and got["read_at"]
     c.patch(f"/api/items/{item['id']}", json={"status": "backlog"})
     assert c.get("/api/articles").json()[0]["status"] == "unread"
+
+
+def test_child_tickets(client):
+    parent = client.post("/api/items", json={"project_id": 1, "title": "Migrate cluster"}).json()
+    a = client.post("/api/items", json={"project_id": 1, "title": "Drain nodes", "parent_id": parent["id"]}).json()
+    b = client.post("/api/items", json={"project_id": 1, "title": "Upgrade"}).json()
+    assert a["parent_key"] == parent["key"]
+    client.patch(f"/api/items/{b['id']}", json={"parent_id": parent["id"], "status": "done"})
+    got = client.get(f"/api/items/{parent['id']}").json()
+    assert (got["child_count"], got["child_done"]) == (2, 1)
+    assert [c["title"] for c in got["children"]] == ["Drain nodes", "Upgrade"]
+    # One level deep: no grandchildren, no parent for a ticket with children, no self-parent.
+    assert client.post("/api/items", json={"project_id": 1, "title": "x", "parent_id": a["id"]}).status_code == 422
+    assert client.patch(f"/api/items/{parent['id']}", json={"parent_id": b["id"]}).status_code == 422
+    assert client.patch(f"/api/items/{b['id']}", json={"parent_id": b["id"]}).status_code == 422
+    # Unlinking keeps the child ticket; trashing the parent hides the link.
+    assert client.patch(f"/api/items/{b['id']}", json={"parent_id": None}).json()["parent_id"] is None
+    client.delete(f"/api/items/{parent['id']}")
+    assert client.get(f"/api/items/{a['id']}").json()["parent_key"] is None
+    assert client.post("/api/items", json={"project_id": 1, "title": "y", "parent_id": a["id"]}).status_code == 201
