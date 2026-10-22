@@ -4,7 +4,7 @@ import { Book as BookIcon, BookOpen, LoaderCircle, Plus, Search, SquareKanban, T
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
-import { LearningNav } from "../components/LearningNav";
+import { LearningShell } from "../components/LearningNav";
 import { LearningToolbar } from "../components/LearningToolbar";
 import { SimilarWarning } from "../components/SimilarWarning";
 import { Button, Card, Drawer, Empty, Field, IconButton, Input, Modal, PageHeader, Tabs, Textarea, useToast } from "../components/ui";
@@ -398,8 +398,8 @@ export default function Books() {
           </Button>
         }
       />
-      <LearningNav />
-      <div className="space-y-5 px-4 md:px-6 lg:px-8">
+      <LearningShell>
+      <div className="space-y-5">
         <LearningToolbar
           value={tab}
           onChange={setTab}
@@ -438,6 +438,7 @@ export default function Books() {
           )
         )}
       </div>
+      </LearningShell>
       <AddBookModal open={adding} onClose={() => setAdding(false)} />
       <BookPanel book={open} onClose={() => setOpen(null)} />
     </div>

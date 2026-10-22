@@ -20,7 +20,7 @@ import {
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
-import { LearningNav } from "../components/LearningNav";
+import { LearningShell } from "../components/LearningNav";
 import { LearningToolbar } from "../components/LearningToolbar";
 import { ObsidianIcon } from "../components/ObsidianIcon";
 import {
@@ -477,7 +477,6 @@ export default function Reading() {
           </>
         }
       />
-      <LearningNav />
       <DndContext
         sensors={sensors}
         collisionDetection={pointerWithin}
@@ -485,16 +484,18 @@ export default function Reading() {
         onDragCancel={() => setDragging(null)}
         onDragEnd={onDragEnd}
       >
-        <div className="grid gap-6 px-4 md:px-6 lg:grid-cols-[210px_minmax(0,1fr)] lg:px-8">
-          <aside className="hidden lg:block">
-            <div className="sticky top-4">
+        {/* Collections sit in the Learning rail, under the section list. */}
+        <LearningShell
+          sub={
+            <div className="border-t border-line pt-4">
               <CollectionsPanel
                 scope={scope}
                 setScope={setScope}
                 counts={{ all: articles.length, unfiled: articles.filter((a) => !a.collections.length).length }}
               />
             </div>
-          </aside>
+          }
+        >
 
           <div className="min-w-0 space-y-4">
             <Select
@@ -592,7 +593,7 @@ export default function Reading() {
               )
             )}
           </div>
-        </div>
+        </LearningShell>
         <DragOverlay dropAnimation={null}>
           {dragging && (
             <div className="flex max-w-72 items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 text-[13px] shadow-[var(--shadow)]">

@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Panel, Stat, StatRow } from "../components/dash";
 import { useActions } from "../components/Layout";
-import { LearningNav } from "../components/LearningNav";
+import { LearningShell } from "../components/LearningNav";
 import { RevisePreview } from "../components/RevisePreview";
 import { Card, Input, PageHeader } from "../components/ui";
 import { api, type Article, type Book, type Item } from "../lib/api";
@@ -120,13 +120,13 @@ export default function LearningOverview() {
           />
         }
       />
-      <LearningNav />
+      <LearningShell>
       {q.trim() ? (
-        <div className="px-4 md:px-6 lg:px-8">
+        <div>
           <SearchResults q={q.trim()} index={index} onOpen={(e) => (e.itemId ? openItem(e.itemId) : e.to && navigate(e.to))} />
         </div>
       ) : (
-      <div className="space-y-5 px-4 md:px-6 lg:px-8">
+      <div className="space-y-5">
         <StatRow>
           <Stat label="Topics to learn" value={topicsNext.length} sub={`${topicsNow.length} in progress`} to="/learning/topics" />
           <Stat label="Blogs to read" value={blogsNext.length} sub={`${blogsNow.length} reading`} to="/learning/articles" />
@@ -201,6 +201,7 @@ export default function LearningOverview() {
         </div>
       </div>
       )}
+      </LearningShell>
     </div>
   );
 }

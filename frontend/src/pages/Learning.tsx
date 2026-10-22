@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Cover, PendingBadge, Thumb } from "../components/ItemCard";
 import { useActions } from "../components/Layout";
-import { LearningNav } from "../components/LearningNav";
+import { LearningShell } from "../components/LearningNav";
 import { ObsidianIcon } from "../components/ObsidianIcon";
 import { LearningToolbar } from "../components/LearningToolbar";
 import { SimilarWarning } from "../components/SimilarWarning";
@@ -138,8 +138,8 @@ export default function Learning() {
           </Button>
         }
       />
-      <LearningNav />
-      <div className="space-y-5 px-4 md:px-6 lg:px-8">
+      <LearningShell>
+      <div className="space-y-5">
         <LearningToolbar
           value={tab}
           onChange={setTab}
@@ -174,6 +174,7 @@ export default function Learning() {
           </div>
         )}
       </div>
+      </LearningShell>
       <AddTopicDialog open={adding} onClose={() => setAdding(false)} />
     </div>
   );

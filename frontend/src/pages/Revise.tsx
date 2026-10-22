@@ -5,7 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
 import { AddRevisionModal, ConvertRevisionModal, RevisionForm, type RevisionFields } from "../components/Revise";
-import { LearningNav } from "../components/LearningNav";
+import { LearningShell } from "../components/LearningNav";
 import { LearningToolbar } from "../components/LearningToolbar";
 import { Button, Card, Drawer, IconButton, Input, Kbd, Modal, PageHeader, useToast } from "../components/ui";
 import { api, type Priority, type Revision, type RevisionSession } from "../lib/api";
@@ -15,7 +15,8 @@ import { PRIORITIES, PriorityIcon, fmtDateTime, fmtMinutes, hostOf, parseDuratio
 type Tab = "active" | "revised";
 
 function useIsDesktop() {
-  const q = "(min-width: 1024px)";
+  // Wide enough for the rail, the list and the open topic side by side.
+  const q = "(min-width: 1280px)";
   const [v, setV] = useState(() => window.matchMedia(q).matches);
   useEffect(() => {
     const m = window.matchMedia(q);
@@ -462,9 +463,8 @@ export default function Revise() {
           </Button>
         }
       />
-      <LearningNav />
-
-      <div className="mb-5 px-4 md:px-6 lg:px-8">
+      <LearningShell>
+      <div className="mb-5">
         <LearningToolbar
           value={tab}
           onChange={(t) => {
@@ -481,7 +481,7 @@ export default function Revise() {
         />
       </div>
 
-      <div className={clsx("grid items-start gap-5 px-4 md:px-6 lg:px-8", split && "grid-cols-[340px_minmax(0,1fr)]")}>
+      <div className={clsx("grid items-start gap-5", split && "grid-cols-[320px_minmax(0,1fr)]")}>
         {list}
         {split && (
           <Card className="sticky top-4 max-h-[calc(100vh-32px)] overflow-y-auto px-8 py-7">
@@ -489,6 +489,8 @@ export default function Revise() {
           </Card>
         )}
       </div>
+
+      </LearningShell>
 
       {!isDesktop && selected && (
         <Drawer open onClose={() => select(null)}>
