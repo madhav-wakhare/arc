@@ -85,7 +85,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 - **Overview** (Learning → Overview): counts for each tab, **Continue learning** (topics in progress, books you are reading with progress, blogs you are reading), **Up next** for each kind, and **Revisit next**.
 - **Search all of Learning**: the search box on the Overview finds topics, blog posts, books, Revisit topics and Radar topics by any word in their title, notes, tags, author or link, grouped by where they live. ⌘K finds them too.
 - **No duplicates**: every add dialog (Topics, Engineering Blogs, Books, Revisit, Radar) shows **Already in Arc** with an Open link when the same link or a very similar title already exists. A YouTube video counts as the same however its link is written. Book search results you already have are marked **In Books**. You can still add it if it is something different.
-- **Topics**: things you want to learn, with status and time tracking. **Add topic** takes a name, and a video or course link if you have one (topics moved from Radar land here too). A topic with a link shows its thumbnail. Paste a link and Arc fills in the title (the real YouTube video title, or the page title for other links). Thumbnails are downloaded once, shrunk to small WebP images and cached in `data/thumbs/`, so the page loads fast on a phone too.
+- **Topics**: things you want to learn, with status and time tracking. **New → Topic to learn** (or **Add topic** on the tab) takes a name, and a video or course link if you have one (topics moved from Radar land here too). A topic with a link shows its thumbnail. Paste a link and Arc fills in the title (the real YouTube video title, or the page title for other links). Thumbnails are downloaded once, shrunk to small WebP images and cached in `data/thumbs/`, so the page loads fast on a phone too.
   If you paste a blog or article link into Topics, Arc offers to save it to Engineering Blogs instead.
 - **Engineering Blogs** (Learning → Engineering Blogs): good blog posts and articles. "Add blog post" takes a link and fills in the title, site, author and summary from the page. Add tags and notes, then move each one through To read, Reading and Read, or star it as a favourite. Search and tag filters find old ones.
   - "Save to Obsidian" writes one note per article (link, tags, status, summary and your notes) into its own folder. The first time, Arc asks which folder to use, for example `Arc/Articles`. Change it later on the Engineering Blogs tab or in Settings.
@@ -117,7 +117,7 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 
 - **Dashboard**: where things stand right now, and your day.
   - **Needs attention**: overdue items, items waiting 30+ days and Radar topics to review, one click each.
-  - **Today**: the day's plan (overdue, planned, done). Tick items off, start a timer, log work, add an item, or **Plan from backlog**.
+  - **Today**: the day's plan (overdue, planned, done). Tick items off, start a timer, log work, add an item, or **Plan from backlog**. Done items stay folded until you open them, and a long plan shows the first 8 with **Show all**.
   - **Review Radar**: Radar topics one at a time, oldest first: **To Topics**, **To Revisit**, **Dismiss** or **Later**.
   - Open items, in progress, overdue, time logged today, topics to review, items waiting longest, the Revisit list, this week, and the **end-of-day review**.
 - **Weekly report**: what happened in a week. Time per day, time per project, completed and carried-over items, and daily reviews. Use the arrows to go back to earlier weeks.
@@ -126,19 +126,24 @@ Use it to plan your day, track time on tasks like in Jira, keep a list of things
 
 - **Search**: `⌘K` / `Ctrl K` searches titles, descriptions, links, comments and Radar topics. Type a key like `LRN-4` to jump to an item.
 - **Obsidian export**: for items with a link, "Export to Obsidian" writes one note named after the item title. If you later change the title or link, Arc overwrites the note. You can turn this off in Settings.
+- **New menu**: one **New** button in the sidebar (and the **+** in the phone tab bar) creates anything: a task, a topic to learn, a blog post, a book, a Revisit entry or a Radar capture.
+- **Undo**: deleting an item or dismissing a Radar topic happens at once, with **Undo** in the message at the bottom for a few seconds.
 - **Trash**: deleted items and projects stay in Trash for 30 days. You can restore them or delete them for good. After 30 days, Arc removes them automatically.
 - **Backups**: once a month, Arc copies the database to `backups/YYYY-MM/arc-YYYY-MM-DD.db`. Settings has a "Back up now" button and a switch for the monthly backup.
 - **Quotes**: your own quotes in a glass dock at the top of the Dashboard and the Board, one at a time. Add them, choose where they show and how often they change on the Quotes page (sidebar). Long quotes use two lines; hover to pause and read the full quote.
-- **Themes**: dark and light. The layout works on a phone on the same Wi-Fi.
+- **Themes**: dark and light.
+- **Phone**: on a narrow screen a tab bar at the bottom holds Dashboard, Board, New, Learning and Radar. The layout works on a phone on the same Wi-Fi.
 
 ## Keyboard shortcuts
 
 | Key | Action |
 | --- | --- |
 | `⌘K` / `Ctrl K` | Search and commands |
-| `C` | New work item |
-| `N` | Add a topic to Radar |
-| `R` | Add a topic to Revisit |
+| `?` | Show all shortcuts |
+| `C` | New task |
+| `N` | Capture to Radar |
+| `R` | Add to Revisit |
+| `G` then `D` `B` `R` `L` `T` `W` `E` `S` | Go to Dashboard, Board, Radar, Learning, Topics, Weekly report, Weekend, Settings |
 | `Esc` | Close a panel or dialog |
 | `⌘ Enter` | Post a comment |
 
