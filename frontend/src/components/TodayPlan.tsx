@@ -1,5 +1,5 @@
 /** Today's plan and the end-of-day review, shown on the Dashboard (they used to be the Today page). */
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
 import { Check, ChevronDown, ChevronRight, Clock, Play, Plus, Square } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -10,7 +10,7 @@ import { Panel } from "./dash";
 import { PendingBadge } from "./ItemCard";
 import { LogWorkModal } from "./ItemDrawer";
 import { useActions } from "./Layout";
-import { Button, Field, IconButton, Textarea, useToast } from "./ui";
+import { Button, IconButton, useToast } from "./ui";
 
 function Row({ item, onLog }: { item: Item; onLog: (i: Item) => void }) {
   const { openItem } = useActions();
@@ -159,6 +159,13 @@ export function TodayPanel() {
   );
 }
 
+const REVIEW_FIELDS = [
+  { key: "went_well", label: "Went well" },
+  { key: "blockers", label: "Blocked by" },
+  { key: "tomorrow", label: "Tomorrow" },
+] as const;
+
+/** End-of-day review: three short lines that save on their own when you leave a field. */
 export function EndOfDayReview() {
   const day = todayIso();
   const toast = useToast();
@@ -167,37 +174,37 @@ export function EndOfDayReview() {
   useEffect(() => {
     if (data) setForm({ went_well: data.went_well, blockers: data.blockers, tomorrow: data.tomorrow });
   }, [data]);
+  const qc = useQueryClient();
   const save = useMutation({
     mutationFn: () => api.put<Review>(`/reviews/${day}`, form),
-    onSuccess: () => toast("Daily review saved"),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["review", day] }),
     onError: (e: Error) => toast(e.message, "error"),
   });
+  const dirty = !!data && REVIEW_FIELDS.some((f) => form[f.key] !== data[f.key]);
   return (
     <Panel
-      title="End-of-day review"
+      title="End of day"
       action={
         <span className="text-xs text-fg-3">
-          {data?.updated_at ? `Saved ${fmtDate(data.updated_at, { hour: "2-digit", minute: "2-digit" })}` : "Not saved yet"}
+          {save.isPending ? "Saving…" : data?.updated_at ? `Saved ${fmtDate(data.updated_at, { hour: "2-digit", minute: "2-digit" })}` : ""}
         </span>
       }
     >
-      <div className="space-y-3">
-        <Field label="What went well">
-          <Textarea className="field-sizing-content min-h-14" value={form.went_well} onChange={(e) => setForm({ ...form, went_well: e.target.value })} />
-        </Field>
-        <Field label="What blocked me">
-          <Textarea className="field-sizing-content min-h-14" value={form.blockers} onChange={(e) => setForm({ ...form, blockers: e.target.value })} />
-        </Field>
-        <Field label="Plan for tomorrow">
-          <Textarea className="field-sizing-content min-h-14" value={form.tomorrow} onChange={(e) => setForm({ ...form, tomorrow: e.target.value })} />
-        </Field>
-        <div className="flex justify-end">
-          <Button size="sm" variant="primary" onClick={() => save.mutate()} disabled={save.isPending}>
-            Save review
-          </Button>
-        </div>
+      <div className="-mx-1 divide-y divide-line">
+        {REVIEW_FIELDS.map((f) => (
+          <label key={f.key} className="flex items-start gap-3 px-1 py-2">
+            <span className="w-20 shrink-0 pt-px text-xs text-fg-3">{f.label}</span>
+            <textarea
+              rows={1}
+              placeholder="…"
+              value={form[f.key]}
+              onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+              onBlur={() => dirty && save.mutate()}
+              className="field-sizing-content min-w-0 flex-1 resize-none bg-transparent text-[13px] leading-5 outline-none placeholder:text-fg-3/60"
+            />
+          </label>
+        ))}
       </div>
     </Panel>
   );
 }
-
