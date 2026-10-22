@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Book as BookIcon, BookOpen, LoaderCircle, Plus, Search, SquareKanban, Trash2, X } from "lucide-react";
+import { Book as BookIcon, LoaderCircle, Plus, Search, SquareKanban, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
 import { LearningShell } from "../components/LearningNav";
 import { LearningToolbar } from "../components/LearningToolbar";
 import { SimilarWarning } from "../components/SimilarWarning";
-import { Button, Card, Drawer, Empty, Field, IconButton, Input, Modal, PageHeader, Tabs, Textarea, useToast } from "../components/ui";
+import { Button, Card, Drawer, Empty, Field, IconButton, Input, Modal, Tabs, Textarea, useToast } from "../components/ui";
 import { api, type Book, type BookHit, type BookStatus } from "../lib/api";
 import { useLocalState, useRefreshItems, useOpenOnNew, useNonEmptyTab } from "../lib/hooks";
 import { normTitle } from "../lib/learningIndex";
@@ -389,16 +389,13 @@ export default function Books() {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] pb-10">
-      <PageHeader
-        icon={<BookOpen size={18} />}
-        title="Learning"
+      <LearningShell
         actions={
           <Button variant="primary" icon={<Plus size={14} />} onClick={() => setAdding(true)}>
             Add book
           </Button>
         }
-      />
-      <LearningShell>
+      >
       <div className="space-y-5">
         <LearningToolbar
           value={tab}

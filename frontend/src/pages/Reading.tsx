@@ -1,7 +1,6 @@
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, pointerWithin, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import clsx from "clsx";
 import {
-  BookOpen,
   Check,
   ExternalLink,
   Folder,
@@ -34,7 +33,7 @@ import {
   useCollectionMutations,
   useCollections,
 } from "../components/Reading";
-import { Button, Card, Empty, IconButton, Menu, Modal, PageHeader, Select } from "../components/ui";
+import { Button, Card, Empty, IconButton, Menu, Modal, Select } from "../components/ui";
 import type { Article, Collection } from "../lib/api";
 import { useLocalState, useSettings, useOpenOnNew, useNonEmptyTab } from "../lib/hooks";
 import { fmtDate } from "../lib/meta";
@@ -441,22 +440,22 @@ export default function Reading() {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] pb-10">
-      <PageHeader
-        icon={<BookOpen size={18} />}
-        title={
-          scope === "all" ? (
-            "Learning"
-          ) : (
-            <span className="flex items-center gap-2">
-              <button onClick={() => setScope("all")} className="text-fg-3 hover:text-fg">
-                Learning
-              </button>
-              <span className="text-fg-3">/</span>
-              {current?.name ?? "Unfiled"}
-            </span>
-          )
-        }
-        actions={
+      <DndContext
+        sensors={sensors}
+        collisionDetection={pointerWithin}
+        onDragStart={(e) => setDragging((e.active.data.current?.article as Article) ?? null)}
+        onDragCancel={() => setDragging(null)}
+        onDragEnd={onDragEnd}
+      >
+        {/* Collections sit in the Learning rail, under the section list. */}
+        <LearningShell
+          title={scope === "all" ? undefined : (current?.name ?? "Unfiled")}
+          subtitle={scope === "all" ? undefined : (
+            <button onClick={() => setScope("all")} className="hover:text-fg">
+              Engineering Blogs
+            </button>
+          )}
+          actions={
           <>
             {/* Quiet once a folder is set: an icon with the folder in its tooltip. */}
             {folder ? (
@@ -475,17 +474,7 @@ export default function Reading() {
               Add blog post
             </Button>
           </>
-        }
-      />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={pointerWithin}
-        onDragStart={(e) => setDragging((e.active.data.current?.article as Article) ?? null)}
-        onDragCancel={() => setDragging(null)}
-        onDragEnd={onDragEnd}
-      >
-        {/* Collections sit in the Learning rail, under the section list. */}
-        <LearningShell
+          }
           sub={
             <div className="border-t border-line pt-4">
               <CollectionsPanel

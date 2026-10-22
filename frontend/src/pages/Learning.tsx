@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowRight, BookOpen, Check, GraduationCap, Clock, Link2, LoaderCircle, Newspaper, Play, Plus } from "lucide-react";
+import { ArrowRight, Check, GraduationCap, Clock, Link2, LoaderCircle, Newspaper, Play, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Cover, PendingBadge, Thumb } from "../components/ItemCard";
@@ -9,7 +9,7 @@ import { LearningShell } from "../components/LearningNav";
 import { ObsidianIcon } from "../components/ObsidianIcon";
 import { LearningToolbar } from "../components/LearningToolbar";
 import { SimilarWarning } from "../components/SimilarWarning";
-import { Button, Card, Empty, IconButton, Input, Modal, PageHeader, useToast } from "../components/ui";
+import { Button, Card, Empty, IconButton, Input, Modal, useToast } from "../components/ui";
 import { api, type Item, type LinkPreview, type Status } from "../lib/api";
 import { useLinkPreview, useLocalState, useProjects, useRefreshItems, useUpdateItem, useOpenOnNew, useNonEmptyTab } from "../lib/hooks";
 import { StatusIcon, fmtMinutes, hostOf, statusMeta, youtubeId, isUrl } from "../lib/meta";
@@ -129,16 +129,13 @@ export default function Learning() {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] pb-10">
-      <PageHeader
-        icon={<BookOpen size={18} />}
-        title="Learning"
+      <LearningShell
         actions={
           <Button variant="primary" icon={<Plus size={14} />} onClick={() => setAdding(true)}>
             Add topic
           </Button>
         }
-      />
-      <LearningShell>
+      >
       <div className="space-y-5">
         <LearningToolbar
           value={tab}

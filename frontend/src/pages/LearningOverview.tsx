@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Book as BookIcon, BookMarked, BookOpen, GraduationCap, Newspaper, Radar as RadarIcon, Search } from "lucide-react";
+import { ArrowRight, Book as BookIcon, BookMarked, GraduationCap, Newspaper, Radar as RadarIcon, Search } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Panel, Stat, StatRow } from "../components/dash";
 import { useActions } from "../components/Layout";
 import { LearningShell } from "../components/LearningNav";
 import { RevisePreview } from "../components/RevisePreview";
-import { Card, Input, PageHeader } from "../components/ui";
+import { Card, Input } from "../components/ui";
 import { api, type Article, type Book, type Item } from "../lib/api";
 import { useRevisions } from "../lib/hooks";
 import { KIND_LABEL, useLearningIndex, type LearningEntry, type LearningKind } from "../lib/learningIndex";
@@ -106,9 +106,7 @@ export default function LearningOverview() {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] pb-10">
-      <PageHeader
-        icon={<BookOpen size={18} />}
-        title="Learning"
+      <LearningShell
         actions={
           <Input
             icon={<Search size={14} />}
@@ -119,8 +117,7 @@ export default function LearningOverview() {
             className="w-full sm:w-80"
           />
         }
-      />
-      <LearningShell>
+      >
       {q.trim() ? (
         <div>
           <SearchResults q={q.trim()} index={index} onOpen={(e) => (e.itemId ? openItem(e.itemId) : e.to && navigate(e.to))} />

@@ -74,7 +74,7 @@ export function LearningNav({ className }: { className?: string }) {
   const { ref: bar, pill: p } = useActivePill("x", deps);
   const pill = p && { left: p.start, width: p.size };
   return (
-    <div className={clsx("mb-5 overflow-x-auto px-4 [scrollbar-width:none] md:px-6 lg:px-8", className)}>
+    <div className={clsx("mb-6 overflow-x-auto [scrollbar-width:none]", className)}>
       <div ref={bar} className="relative inline-flex items-center gap-0.5 rounded-xl border border-line bg-surface p-1">
         {pill && (
           <span
@@ -111,36 +111,39 @@ export function LearningNav({ className }: { className?: string }) {
   );
 }
 
-/** The vertical rail: Learning sections stacked, with a sliding highlight and an edge mark for the active one. */
+/** The vertical rail, in the manner of a macOS sidebar: a flat highlight that slides, plain counts. */
 function LearningRail({ sub }: { sub?: ReactNode }) {
   const { tabs, deps } = useLearningTabs();
   const { ref, pill } = useActivePill("y", deps);
   return (
-    <div className="sticky top-4 space-y-6">
-      <div ref={ref} className="relative flex flex-col gap-0.5">
-        {pill && <span aria-hidden className={clsx(PILL, "inset-x-0 transition-[top,height]")} style={{ top: pill.start, height: pill.size }} />}
+    <div className="sticky top-6 space-y-7">
+      <p className="px-3 text-[20px] font-semibold tracking-[-0.01em]">Learning</p>
+      <div ref={ref} className="relative flex flex-col gap-px">
+        {pill && (
+          <span
+            aria-hidden
+            className="absolute inset-x-0 rounded-[10px] bg-surface-2 transition-[top,height] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+            style={{ top: pill.start, height: pill.size }}
+          />
+        )}
         {tabs.map((t) => (
           <Fragment key={t.to}>
-            {t.divider && <span className="mx-3 my-2 h-px bg-line" aria-hidden />}
+            {t.divider && <span className="mx-3 my-2.5 h-px bg-line/70" aria-hidden />}
             <NavLink
               to={t.to}
               end={t.end}
               className={({ isActive }) =>
                 clsx(
-                  "group relative z-10 flex h-9 items-center gap-2.5 rounded-lg pl-3 pr-2 text-[13px] font-medium transition-colors",
-                  isActive ? "text-fg" : "text-fg-3 hover:bg-surface-2/60 hover:text-fg-2",
+                  "relative z-10 flex h-9 items-center gap-3 rounded-[10px] px-3 text-[14px] transition-colors",
+                  isActive ? "font-medium text-fg" : "text-fg-2 hover:text-fg",
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <span
-                    aria-hidden
-                    className={clsx("absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-fg/70 transition-opacity", isActive ? "opacity-100" : "opacity-0")}
-                  />
-                  <t.icon size={15} className={clsx("shrink-0 transition-colors", isActive && "text-fg")} />
+                  <t.icon size={16} strokeWidth={1.75} className={clsx("shrink-0", isActive ? "text-fg" : "text-fg-3")} />
                   <span className="flex-1 truncate">{t.label}</span>
-                  <Count n={t.count} active={isActive} />
+                  {!!t.count && <span className="text-[12px] tabular-nums text-fg-3">{t.count}</span>}
                 </>
               )}
             </NavLink>
@@ -152,20 +155,52 @@ function LearningRail({ sub }: { sub?: ReactNode }) {
   );
 }
 
+const SUBTITLES: Record<string, string> = {
+  "/learning": "Where you are, and what comes next.",
+  "/learning/topics": "Subjects, courses and talks you want to learn.",
+  "/learning/articles": "Engineering posts worth reading, kept in Obsidian.",
+  "/learning/books": "Your reading shelf.",
+  "/learning/revisit": "Keep what you have learned fresh.",
+};
+
 /**
  * Page body for every Learning tab: the section rail on the left (with an optional `sub` panel under it,
- * like Engineering Blogs' collections) and the tab's content on the right. Phones get the horizontal bar.
+ * like Engineering Blogs' collections), and on the right a large title, the tab's actions and its content.
+ * Phones get the horizontal bar under the title instead of the rail.
  */
-export function LearningShell({ sub, children }: { sub?: ReactNode; children: ReactNode }) {
+export function LearningShell({
+  title,
+  subtitle,
+  actions,
+  sub,
+  children,
+}: {
+  title?: ReactNode;
+  subtitle?: ReactNode;
+  actions?: ReactNode;
+  sub?: ReactNode;
+  children: ReactNode;
+}) {
+  const { pathname } = useLocation();
+  const { tabs } = useLearningTabs();
+  const here = tabs.find((t) => (t.end ? pathname === t.to : pathname.startsWith(t.to)));
   return (
-    <>
-      <LearningNav className="lg:hidden" />
-      <div className="px-4 md:px-6 lg:grid lg:grid-cols-[216px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:pt-1">
-        <aside className="hidden lg:block">
-          <LearningRail sub={sub} />
-        </aside>
-        <div className="min-w-0">{children}</div>
+    <div className="px-4 pt-6 md:px-6 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 lg:px-8 lg:pt-8">
+      <aside className="hidden lg:block">
+        <LearningRail sub={sub} />
+      </aside>
+      <div className="min-w-0">
+        <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+          <div className="min-w-0">
+            <p className="mb-1 text-[12px] font-medium text-fg-3 lg:hidden">Learning</p>
+            <h1 className="truncate text-[28px] font-semibold leading-tight tracking-[-0.02em]">{title ?? here?.label}</h1>
+            <p className="mt-1 text-[14px] text-fg-3">{subtitle ?? SUBTITLES[here?.to ?? ""]}</p>
+          </div>
+          {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        </header>
+        <LearningNav className="lg:hidden" />
+        {children}
       </div>
-    </>
+    </div>
   );
 }

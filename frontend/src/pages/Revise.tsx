@@ -1,13 +1,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { BookOpen, ArrowUpRight, Check, ChevronDown, Pencil, Play, Plus, RotateCcw, Square, Ticket, Trash2, X } from "lucide-react";
+import { ArrowUpRight, Check, ChevronDown, Pencil, Play, Plus, RotateCcw, Square, Ticket, Trash2, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
 import { AddRevisionModal, ConvertRevisionModal, RevisionForm, type RevisionFields } from "../components/Revise";
 import { LearningShell } from "../components/LearningNav";
 import { LearningToolbar } from "../components/LearningToolbar";
-import { Button, Card, Drawer, IconButton, Input, Kbd, Modal, PageHeader, useToast } from "../components/ui";
+import { Button, Card, Drawer, IconButton, Input, Kbd, Modal, useToast } from "../components/ui";
 import { api, type Priority, type Revision, type RevisionSession } from "../lib/api";
 import { useNow, useRefreshItems, useRevisions } from "../lib/hooks";
 import { PRIORITIES, PriorityIcon, fmtDateTime, fmtMinutes, hostOf, parseDuration, priorityMeta, timeAgo } from "../lib/meta";
@@ -454,16 +454,13 @@ export default function Revise() {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] pb-10">
-      <PageHeader
-        icon={<BookOpen size={18} />}
-        title="Learning"
+      <LearningShell
         actions={
           <Button variant="primary" icon={<Plus size={14} />} onClick={() => setAdding(true)}>
             Add to Revisit
           </Button>
         }
-      />
-      <LearningShell>
+      >
       <div className="mb-5">
         <LearningToolbar
           value={tab}
