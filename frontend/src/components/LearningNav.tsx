@@ -17,11 +17,11 @@ function useLearningTabs() {
   const { data: revisions } = useRevisions();
   // Counts show what is still open: topics not done, blogs not read, books not finished, topics to revisit.
   const tabs = [
-    { to: "/learning", end: true, label: "Overview", icon: LayoutGrid, tint: "text-fg", bar: "bg-fg" },
-    { to: "/learning/topics", label: "Topics", icon: GraduationCap, tint: "text-learning", bar: "bg-learning", count: items?.filter((i) => i.status !== "done" && !i.book_id && !i.article_id).length },
-    { to: "/learning/articles", label: "Engineering Blogs", icon: Newspaper, tint: "text-accent", bar: "bg-accent", count: articles?.filter((a) => a.status !== "read").length },
-    { to: "/learning/books", label: "Books", icon: BookIcon, tint: "text-book", bar: "bg-book", count: books?.filter((b) => b.status !== "finished").length },
-    { to: "/learning/revisit", label: "Revisit", icon: BookMarked, tint: "text-good", bar: "bg-good", count: revisions?.filter((r) => r.status === "active").length, divider: true },
+    { to: "/learning", end: true, label: "Overview", icon: LayoutGrid },
+    { to: "/learning/topics", label: "Topics", icon: GraduationCap, count: items?.filter((i) => i.status !== "done" && !i.book_id && !i.article_id).length },
+    { to: "/learning/articles", label: "Engineering Blogs", icon: Newspaper, count: articles?.filter((a) => a.status !== "read").length },
+    { to: "/learning/books", label: "Books", icon: BookIcon, count: books?.filter((b) => b.status !== "finished").length },
+    { to: "/learning/revisit", label: "Revisit", icon: BookMarked, count: revisions?.filter((r) => r.status === "active").length, divider: true },
   ];
   return { tabs, deps: [items, articles, books, revisions] };
 }
@@ -98,7 +98,7 @@ export function LearningNav({ className }: { className?: string }) {
             >
               {({ isActive }) => (
                 <>
-                  <t.icon size={14} className={clsx("transition-colors", isActive && t.tint)} />
+                  <t.icon size={14} className={clsx("transition-colors", isActive && "text-fg")} />
                   {t.label}
                   <Count n={t.count} active={isActive} />
                 </>
@@ -111,7 +111,7 @@ export function LearningNav({ className }: { className?: string }) {
   );
 }
 
-/** The vertical rail: Learning sections stacked, with a sliding highlight and a colour bar for the active one. */
+/** The vertical rail: Learning sections stacked, with a sliding highlight and an edge mark for the active one. */
 function LearningRail({ sub }: { sub?: ReactNode }) {
   const { tabs, deps } = useLearningTabs();
   const { ref, pill } = useActivePill("y", deps);
@@ -136,9 +136,9 @@ function LearningRail({ sub }: { sub?: ReactNode }) {
                 <>
                   <span
                     aria-hidden
-                    className={clsx("absolute left-0 top-2 bottom-2 w-[3px] rounded-full transition-opacity", t.bar, isActive ? "opacity-100" : "opacity-0")}
+                    className={clsx("absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-fg/70 transition-opacity", isActive ? "opacity-100" : "opacity-0")}
                   />
-                  <t.icon size={15} className={clsx("shrink-0 transition-colors", isActive && t.tint)} />
+                  <t.icon size={15} className={clsx("shrink-0 transition-colors", isActive && "text-fg")} />
                   <span className="flex-1 truncate">{t.label}</span>
                   <Count n={t.count} active={isActive} />
                 </>
