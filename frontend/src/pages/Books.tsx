@@ -9,7 +9,7 @@ import { LearningToolbar } from "../components/LearningToolbar";
 import { SimilarWarning } from "../components/SimilarWarning";
 import { Button, Card, Drawer, Empty, Field, IconButton, Input, Modal, PageHeader, Tabs, Textarea, useToast } from "../components/ui";
 import { api, type Book, type BookHit, type BookStatus } from "../lib/api";
-import { useLocalState, useRefreshItems } from "../lib/hooks";
+import { useLocalState, useRefreshItems, useOpenOnNew } from "../lib/hooks";
 import { normTitle } from "../lib/learningIndex";
 import { fmtDate, urlHash } from "../lib/meta";
 
@@ -367,6 +367,7 @@ export default function Books() {
   const { data: books = [], isLoading } = useBooks();
   const [tab, setTab] = useLocalState<Tab>("arc-books-tab", "reading");
   const [adding, setAdding] = useState(false);
+  useOpenOnNew(() => setAdding(true));
   const [q, setQ] = useState("");
   const [params, setParams] = useSearchParams();
   const openId = Number(params.get("book")) || null;

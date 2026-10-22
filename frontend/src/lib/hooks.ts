@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api, type LinkPreview, type Item, type Jot, type Project, type Revision, type Settings, type Timer, type Trash } from "./api";
 import { useToast } from "../components/ui";
 import { isUrl } from "./meta";
@@ -100,4 +101,22 @@ export function useLinkPreview(url: string, onFound: (p: LinkPreview) => void, e
     };
   }, [url, enabled]);
   return loading;
+}
+
+/** Opens a page's add dialog when it is reached with ?new=1 (from the New menu), then drops the flag. */
+export function useOpenOnNew(open: () => void) {
+  const [params, setParams] = useSearchParams();
+  const want = params.get("new") === "1";
+  useEffect(() => {
+    if (!want) return;
+    open();
+    setParams(
+      (p) => {
+        p.delete("new");
+        return p;
+      },
+      { replace: true },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [want]);
 }

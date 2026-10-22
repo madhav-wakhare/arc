@@ -36,7 +36,7 @@ import {
 } from "../components/Reading";
 import { Button, Card, Empty, IconButton, Menu, Modal, PageHeader, Select } from "../components/ui";
 import type { Article, Collection } from "../lib/api";
-import { useLocalState, useSettings } from "../lib/hooks";
+import { useLocalState, useSettings, useOpenOnNew } from "../lib/hooks";
 import { fmtDate } from "../lib/meta";
 
 type Tab = "unread" | "reading" | "read" | "favorites" | "all";
@@ -217,6 +217,7 @@ function CollectionsPanel({
   const { data: collections = [] } = useCollections();
   const { create, rename, remove } = useCollectionMutations();
   const [adding, setAdding] = useState(false);
+  useOpenOnNew(() => setAdding(true));
   const [name, setName] = useState("");
   const [editing, setEditing] = useState<Collection | null>(null);
   const [deleting, setDeleting] = useState<Collection | null>(null);

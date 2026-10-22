@@ -83,8 +83,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       onClose();
     };
     const pages: Entry[] = [
-      { id: "new", icon: <Plus size={15} />, label: "New work item", hint: <Kbd>C</Kbd>, run: () => (onClose(), newItem()) },
-      { id: "note", icon: <Radar size={15} />, label: "Add topic to Radar", hint: <Kbd>N</Kbd>, run: () => (onClose(), quickNote()) },
+      { id: "new", icon: <Plus size={15} />, label: "New task", hint: <Kbd>C</Kbd>, run: () => (onClose(), newItem()) },
+      { id: "note", icon: <Radar size={15} />, label: "Capture to Radar", hint: <Kbd>N</Kbd>, run: () => (onClose(), quickNote()) },
       { id: "revise", icon: <BookMarked size={15} />, label: "Add to Revisit", hint: <Kbd>R</Kbd>, run: () => (onClose(), addRevision()) },
       {
         id: "new-learning",

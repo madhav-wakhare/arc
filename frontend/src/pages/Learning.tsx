@@ -11,7 +11,7 @@ import { LearningToolbar } from "../components/LearningToolbar";
 import { SimilarWarning } from "../components/SimilarWarning";
 import { Button, Card, Empty, IconButton, Input, Modal, PageHeader, useToast } from "../components/ui";
 import { api, type Item, type LinkPreview, type Status } from "../lib/api";
-import { useLinkPreview, useLocalState, useProjects, useRefreshItems, useUpdateItem } from "../lib/hooks";
+import { useLinkPreview, useLocalState, useProjects, useRefreshItems, useUpdateItem, useOpenOnNew } from "../lib/hooks";
 import { StatusIcon, fmtMinutes, hostOf, statusMeta, youtubeId, isUrl } from "../lib/meta";
 
 type Tab = "queue" | "in_progress" | "done" | "all";
@@ -132,6 +132,7 @@ export default function Learning() {
   const [tab, setTab] = useLocalState<Tab>("arc-topics-tab", "queue");
   const [q, setQ] = useState("");
   const [adding, setAdding] = useState(false);
+  useOpenOnNew(() => setAdding(true));
 
   const inTab = (i: Item, t: Tab) => (t === "all" ? true : t === "queue" ? i.status === "backlog" || i.status === "today" : i.status === t);
   const needle = q.trim().toLowerCase();

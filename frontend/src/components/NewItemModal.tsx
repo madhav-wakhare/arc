@@ -87,7 +87,7 @@ export function NewItemModal({ defaults, onClose }: { defaults: NewItemDefaults 
     <Modal
       open={!!defaults}
       onClose={onClose}
-      title="New work item"
+      title="New item"
       width="max-w-2xl"
       footer={
         <div className="flex w-full items-center justify-between">

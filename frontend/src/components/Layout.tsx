@@ -1,12 +1,16 @@
 import clsx from "clsx";
 import {
+  Book,
+  BookMarked,
   BookOpen,
+  CheckSquare,
+  GraduationCap,
+  Newspaper,
   CalendarHeart,
   ChevronDown,
   FileBarChart,
   LayoutDashboard,
   Radar as RadarIcon,
-  CirclePlus,
   Menu,
   Moon,
   PanelLeft,
@@ -20,7 +24,7 @@ import {
   Sun,
 } from "lucide-react";
 import { Suspense, createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from "react";
-import { NavLink, Outlet, useLocation, useSearchParams } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, type ItemType, type Quote, type Status } from "../lib/api";
 import { useJots, useLocalState, useNow, useProjects, useRefreshItems, useSettings, useTimer, useTrash } from "../lib/hooks";
@@ -30,7 +34,7 @@ import { CommandPalette } from "./CommandPalette";
 import { ItemDrawer } from "./ItemDrawer";
 import { NewItemModal } from "./NewItemModal";
 import { ProjectModal } from "./ProjectModal";
-import { IconButton, Kbd } from "./ui";
+import { IconButton, Kbd, Menu as UiMenu } from "./ui";
 import { ProjectIcon } from "../lib/projectIcons";
 
 export type NewItemDefaults = { type?: ItemType; status?: Status; project_id?: number; url?: string };
@@ -137,6 +141,34 @@ function RunningTimer({ compact }: { compact: boolean }) {
   );
 }
 
+/**
+ * The one place to create anything. Keyboard shortcuts still work everywhere:
+ * C new task, N capture to Radar, R add to Revisit.
+ */
+function NewMenu({ trigger }: { trigger: ReactNode }) {
+  const { newItem, quickNote, addRevision } = useActions();
+  const navigate = useNavigate();
+  const row = (label: string, kbd?: string) => (
+    <span className="flex w-full items-center justify-between gap-3">
+      {label}
+      {kbd && <Kbd>{kbd}</Kbd>}
+    </span>
+  );
+  return (
+    <UiMenu
+      trigger={trigger}
+      items={[
+        { label: row("Task", "C"), icon: <CheckSquare size={14} className="text-task" />, onClick: () => newItem({ type: "task" }) },
+        { label: row("Topic to learn"), icon: <GraduationCap size={14} className="text-learning" />, onClick: () => navigate("/learning/topics?new=1") },
+        { label: row("Blog post"), icon: <Newspaper size={14} className="text-accent" />, onClick: () => navigate("/learning/articles?new=1") },
+        { label: row("Book"), icon: <Book size={14} className="text-book" />, onClick: () => navigate("/learning/books?new=1") },
+        { label: row("Add to Revisit", "R"), icon: <BookMarked size={14} className="text-fg-2" />, onClick: addRevision },
+        { label: row("Capture to Radar", "N"), icon: <RadarIcon size={14} className="text-accent" />, onClick: quickNote },
+      ]}
+    />
+  );
+}
+
 function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle: () => void; onNavigate?: () => void }) {
   const { data: projects } = useProjects();
   const { data: settings } = useSettings();
@@ -144,7 +176,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
   const { data: quotes } = useQuery({ queryKey: ["quotes"], queryFn: () => api.get<Quote[]>("/quotes") });
   const quoteCount = quotes?.length ?? 0;
   const trashCount = (trash?.items.filter((i) => !i.deleted_with_project).length ?? 0) + (trash?.projects.length ?? 0);
-  const { openSearch, newItem, quickNote } = useActions();
+  const { openSearch } = useActions();
   const { data: jots } = useJots();
   const inboxCount = jots?.filter((j) => j.status === "open").length ?? 0;
   const counts: Record<string, number> = {
@@ -193,12 +225,13 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
             <IconButton onClick={openSearch} title="Search" className="w-full">
               <Search size={16} />
             </IconButton>
-            <IconButton onClick={() => newItem()} title="New work item" className="w-full">
-              <Plus size={16} />
-            </IconButton>
-            <IconButton onClick={quickNote} title="Add topic to Radar (N)" className="w-full">
-              <CirclePlus size={16} />
-            </IconButton>
+            <NewMenu
+              trigger={
+                <IconButton title="New" className="w-full">
+                  <Plus size={16} />
+                </IconButton>
+              }
+            />
           </>
         ) : (
           <>
@@ -213,22 +246,15 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
                 <Kbd>K</Kbd>
               </span>
             </button>
-            <button
-              onClick={() => newItem()}
-              className="flex h-8 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-2.5 text-[13px] text-fg hover:bg-surface-2"
-            >
-              <Plus size={14} />
-              <span className="flex-1 text-left">New work item</span>
-              <Kbd>C</Kbd>
-            </button>
-            <button
-              onClick={quickNote}
-              className="flex h-8 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-2.5 text-[13px] text-fg hover:bg-surface-2"
-            >
-              <RadarIcon size={14} />
-              <span className="flex-1 text-left">Add topic</span>
-              <Kbd>N</Kbd>
-            </button>
+            <NewMenu
+              trigger={
+                <button className="flex h-8 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-2.5 text-[13px] text-fg hover:bg-surface-2">
+                  <Plus size={14} />
+                  <span className="flex-1 text-left">New</span>
+                  <ChevronDown size={14} className="text-fg-3" />
+                </button>
+              }
+            />
           </>
         )}
       </div>

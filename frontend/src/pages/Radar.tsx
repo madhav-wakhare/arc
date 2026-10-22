@@ -440,7 +440,7 @@ export default function Radar() {
           <>
             <Input icon={<Search size={14} />} placeholder="Search topics" value={filter} onChange={(e) => setFilter(e.target.value)} className="w-52" />
             <Button variant="primary" icon={<Plus size={15} />} onClick={() => setAdding(true)}>
-              Add topic
+              Capture
             </Button>
           </>
         }

@@ -57,7 +57,7 @@ export function AddTopicModal({ open, onClose, onAdded }: { open: boolean; onClo
     <Modal
       open={open}
       onClose={onClose}
-      title="Add topic"
+      title="Capture to Radar"
       footer={
         <div className="flex w-full items-center justify-between">
           <span className="hidden items-center gap-1.5 text-xs text-fg-3 sm:flex">
@@ -66,7 +66,7 @@ export function AddTopicModal({ open, onClose, onAdded }: { open: boolean; onClo
           <div className="flex gap-2">
             <Button onClick={onClose}>Cancel</Button>
             <Button variant="primary" disabled={!body.trim() || save.isPending} onClick={submit}>
-              {bodies.length > 1 ? `Add ${bodies.length} topics` : "Add topic"}
+              {bodies.length > 1 ? `Add ${bodies.length} topics` : "Capture"}
             </Button>
           </div>
         </div>

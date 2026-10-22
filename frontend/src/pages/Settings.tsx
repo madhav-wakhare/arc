@@ -190,8 +190,8 @@ export default function Settings() {
           <div className="grid gap-2 text-[13px] sm:grid-cols-2">
             {[
               ["Search and commands", "⌘K / Ctrl K"],
-              ["New work item", "C"],
-              ["Add topic to Radar", "N"],
+              ["New task", "C"],
+              ["Capture to Radar", "N"],
               ["Add to Revisit", "R"],
               ["Close panel or dialog", "Esc"],
               ["Post a comment", "⌘ Enter"],
