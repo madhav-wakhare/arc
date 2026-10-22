@@ -115,9 +115,12 @@ export function Switch({
 export function Menu({
   trigger,
   items,
+  block,
 }: {
   trigger: ReactNode;
   items: { label: ReactNode; icon?: ReactNode; onClick: () => void; danger?: boolean }[];
+  /** Let the trigger fill its row, for a full-width button. */
+  block?: boolean;
 }) {
   const [pos, setPos] = useState<{ top: number; left: number; up: boolean; bottom: number } | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -157,7 +160,7 @@ export function Menu({
   }, [pos]);
 
   return (
-    <div ref={triggerRef} className="inline-block" onClick={(e) => {
+    <div ref={triggerRef} className={block ? "block" : "inline-block"} onClick={(e) => {
       e.stopPropagation();
       if (pos) setPos(null);
       else openMenu();

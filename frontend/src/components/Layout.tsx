@@ -146,7 +146,7 @@ function RunningTimer({ compact }: { compact: boolean }) {
  * The one place to create anything. Keyboard shortcuts still work everywhere:
  * C new task, N capture to Radar, R add to Revisit.
  */
-function NewMenu({ trigger }: { trigger: ReactNode }) {
+function NewMenu({ trigger, block }: { trigger: ReactNode; block?: boolean }) {
   const { newItem, quickNote, addRevision } = useActions();
   const navigate = useNavigate();
   const row = (label: string, kbd?: string) => (
@@ -158,6 +158,7 @@ function NewMenu({ trigger }: { trigger: ReactNode }) {
   return (
     <UiMenu
       trigger={trigger}
+      block={block}
       items={[
         { label: row("Task", "C"), icon: <CheckSquare size={14} className="text-task" />, onClick: () => newItem({ type: "task" }) },
         { label: row("Topic to learn"), icon: <GraduationCap size={14} className="text-learning" />, onClick: () => navigate("/learning/topics?new=1") },
@@ -227,6 +228,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
               <Search size={16} />
             </IconButton>
             <NewMenu
+              block
               trigger={
                 <IconButton title="New" className="w-full">
                   <Plus size={16} />
@@ -248,6 +250,7 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
               </span>
             </button>
             <NewMenu
+              block
               trigger={
                 <button className="flex h-8 w-full items-center gap-2.5 rounded-md border border-line bg-surface px-2.5 text-[13px] text-fg hover:bg-surface-2">
                   <Plus size={14} />
