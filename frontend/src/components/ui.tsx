@@ -341,7 +341,8 @@ export function Field({ label, children, hint }: { label: string; children: Reac
 // ---------------------------------------------------------------- layout pieces
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={clsx("rounded-lg border border-line bg-surface", className)}>{children}</div>;
+  // A caller's own corner radius wins over the default one.
+  return <div className={clsx(!/(^|\s)rounded-/.test(className ?? "") && "rounded-lg", "border border-line bg-surface", className)}>{children}</div>;
 }
 
 export function PageHeader({

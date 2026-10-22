@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import clsx from "clsx";
 import { Book as BookIcon, LoaderCircle, Plus, Search, SquareKanban, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActions } from "../components/Layout";
+import { BookCover as Cover } from "../components/BookCover";
 import { LearningShell } from "../components/LearningNav";
 import { LearningToolbar } from "../components/LearningToolbar";
 import { SimilarWarning } from "../components/SimilarWarning";
@@ -11,7 +11,7 @@ import { Button, Card, Drawer, Empty, Field, IconButton, Input, Modal, Tabs, Tex
 import { api, type Book, type BookHit, type BookStatus } from "../lib/api";
 import { useLocalState, useRefreshItems, useOpenOnNew, useNonEmptyTab } from "../lib/hooks";
 import { normTitle } from "../lib/learningIndex";
-import { fmtDate, urlHash } from "../lib/meta";
+import { fmtDate } from "../lib/meta";
 
 type Tab = BookStatus | "all";
 
@@ -49,20 +49,6 @@ function useBookMutations() {
   };
 }
 
-/** Book cover from Arc's cache, or a quiet placeholder with the title. */
-function Cover({ book, className, small }: { book: Pick<Book, "id" | "cover" | "title"> & { id?: number }; className?: string; small?: boolean }) {
-  const [failed, setFailed] = useState(false);
-  const src = book.cover ? (book.id ? `/api/books/${book.id}/cover?v=${urlHash(book.cover)}` : book.cover.replace("-L.jpg", "-M.jpg")) : null;
-  if (src && !failed)
-    return <img src={src} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} className={clsx("bg-surface-2 object-cover", className)} />;
-  return (
-    <div className={clsx("flex flex-col items-center justify-center gap-2 bg-surface-2 p-3 text-center", className)}>
-      <BookIcon size={small ? 15 : 18} className="text-book" />
-      {!small && <span className="line-clamp-3 text-[11px] leading-snug text-fg-3">{book.title}</span>}
-    </div>
-  );
-}
-
 function Progress({ book }: { book: Book }) {
   if (!book.pages) return null;
   const pct = Math.min(100, Math.round((book.current_page / book.pages) * 100));
@@ -78,18 +64,22 @@ function BookCard({ book, onOpen }: { book: Book; onOpen: () => void }) {
   return (
     <button onClick={onOpen} className="group flex flex-col text-left">
       <div className="relative">
-        <Cover book={book} className="aspect-[2/3] w-full rounded-md border border-line shadow-sm transition-transform group-hover:-translate-y-0.5" />
+        {/* Like a shelf in Apple Books: a soft shadow under the cover, a lift on hover. */}
+        <Cover
+          book={book}
+          className="aspect-[2/3] w-full rounded-lg shadow-[0_8px_20px_-10px_rgb(0_0_0/0.7)] ring-1 ring-inset ring-white/[0.06] transition duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_16px_32px_-12px_rgb(0_0_0/0.8)]"
+        />
         {book.item_key && (
           <span className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded bg-bg/85 px-1.5 py-px font-mono text-[10px] text-fg-2 backdrop-blur-sm">
             <SquareKanban size={10} /> {book.item_key}
           </span>
         )}
       </div>
-      <p className="mt-2.5 line-clamp-2 text-[13px] font-medium leading-snug">{book.title}</p>
-      {book.author && <p className="mt-0.5 truncate text-xs text-fg-3">{book.author}</p>}
+      <p className="mt-3 line-clamp-2 text-[14px] font-medium leading-snug tracking-[-0.005em]">{book.title}</p>
+      {book.author && <p className="mt-0.5 truncate text-[12px] text-fg-3">{book.author}</p>}
       <div className="mt-2 space-y-1.5">
-        <Progress book={book} />
-        <p className="text-[11px] text-fg-3">
+        {book.status === "reading" && <Progress book={book} />}
+        <p className="text-[12px] text-fg-3">
           {book.status === "reading" && book.pages ? `Page ${book.current_page} of ${book.pages}` : status}
           {book.status === "finished" && book.finished_at && ` · ${fmtDate(book.finished_at)}`}
         </p>
@@ -411,14 +401,14 @@ export default function Books() {
           placeholder="Search title, author, notes"
         />
         {list.length ? (
-          <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-[repeat(auto-fill,minmax(150px,180px))]">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-9 sm:grid-cols-[repeat(auto-fill,minmax(150px,170px))]">
             {list.map((b) => (
               <BookCard key={b.id} book={b} onOpen={() => setOpen(b.id)} />
             ))}
           </div>
         ) : (
           !isLoading && (
-            <Card>
+            <Card className="rounded-2xl">
               <Empty
                 icon={<BookIcon size={28} />}
                 title={books.length ? "Nothing here" : "No books yet"}

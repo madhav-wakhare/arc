@@ -539,7 +539,7 @@ export default function Reading() {
             )}
 
             {list.length ? (
-              <Card className="divide-y divide-line overflow-hidden">
+              <Card className="divide-y divide-line overflow-hidden rounded-2xl">
                 {list.map((a) => (
                   <ArticleRow
                     key={a.id}
@@ -553,7 +553,7 @@ export default function Reading() {
               </Card>
             ) : (
               !isLoading && (
-                <Card>
+                <Card className="rounded-2xl">
                   <Empty
                     icon={current ? <FolderOpen size={28} /> : <Newspaper size={28} />}
                     title={

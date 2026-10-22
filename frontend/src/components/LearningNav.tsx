@@ -196,7 +196,7 @@ export function LearningShell({
             <h1 className="truncate text-[28px] font-semibold leading-tight tracking-[-0.02em]">{title ?? here?.label}</h1>
             <p className="mt-1 text-[14px] text-fg-3">{subtitle ?? SUBTITLES[here?.to ?? ""]}</p>
           </div>
-          {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+          {actions && <div className="flex items-center gap-2 max-sm:w-full sm:shrink-0">{actions}</div>}
         </header>
         <LearningNav className="lg:hidden" />
         {children}

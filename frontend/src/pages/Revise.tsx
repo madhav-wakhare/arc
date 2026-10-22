@@ -407,7 +407,7 @@ export default function Revise() {
   const split = isDesktop && selected;
 
   const list = (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden rounded-2xl">
       <div className="max-h-[calc(100vh-260px)] overflow-y-auto">
         {!isLoading && visible.length === 0 && (
           <div className="px-6 py-14 text-center">
@@ -481,7 +481,7 @@ export default function Revise() {
       <div className={clsx("grid items-start gap-5", split && "grid-cols-[320px_minmax(0,1fr)]")}>
         {list}
         {split && (
-          <Card className="sticky top-4 max-h-[calc(100vh-32px)] overflow-y-auto px-8 py-7">
+          <Card className="sticky top-4 max-h-[calc(100vh-32px)] overflow-y-auto rounded-2xl px-8 py-7">
             <RevisionPanel key={selected.id} rev={selected} onClose={() => select(null)} />
           </Card>
         )}

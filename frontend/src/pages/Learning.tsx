@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowRight, Check, GraduationCap, Clock, Link2, LoaderCircle, Newspaper, Play, Plus } from "lucide-react";
+import { ArrowRight, Check, GraduationCap, Link2, LoaderCircle, Newspaper, Play, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Cover, PendingBadge, Thumb } from "../components/ItemCard";
@@ -9,7 +9,7 @@ import { LearningShell } from "../components/LearningNav";
 import { ObsidianIcon } from "../components/ObsidianIcon";
 import { LearningToolbar } from "../components/LearningToolbar";
 import { SimilarWarning } from "../components/SimilarWarning";
-import { Button, Card, Empty, IconButton, Input, Modal, useToast } from "../components/ui";
+import { Button, Card, Empty, Input, Modal, useToast } from "../components/ui";
 import { api, type Item, type LinkPreview, type Status } from "../lib/api";
 import { useLinkPreview, useLocalState, useProjects, useRefreshItems, useUpdateItem, useOpenOnNew, useNonEmptyTab } from "../lib/hooks";
 import { StatusIcon, fmtMinutes, hostOf, statusMeta, youtubeId, isUrl } from "../lib/meta";
@@ -36,7 +36,8 @@ function LearningCard({ item }: { item: Item }) {
   const firstLine = item.description.split("\n").find((l) => l.trim())?.trim();
 
   return (
-    // The whole card opens the topic; the buttons at the bottom do their own thing.
+    // Apple-style tile: the picture carries the card, text sits underneath with no box around it.
+    // The whole tile opens the topic; the round buttons on the picture appear on hover and do their own thing.
     <div
       role="button"
       tabIndex={0}
@@ -44,64 +45,50 @@ function LearningCard({ item }: { item: Item }) {
       onKeyDown={(e) => {
         if (e.key === "Enter" && e.target === e.currentTarget) openItem(item.id);
       }}
-      className="group flex cursor-pointer flex-col overflow-hidden rounded-lg border border-line bg-surface outline-none transition-colors hover:border-line-strong focus-visible:border-accent"
+      className="group cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-surface-2">
-        {item.url ? <Thumb itemId={item.id} url={item.url} className="size-full" /> : <Cover url={null} className="size-full" />}
-        {/* Solid backing so the tinted badge stays readable on any picture. */}
-        <span className="absolute left-2 top-2 rounded bg-bg/85 backdrop-blur-sm">
+      <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-surface-2 ring-1 ring-inset ring-white/[0.06] transition duration-300 ease-out group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_32px_-12px_rgb(0_0_0/0.6)]">
+        {item.url ? (
+          <Thumb itemId={item.id} url={item.url} className="size-full transition duration-500 ease-out group-hover:scale-[1.03]" />
+        ) : (
+          <Cover url={null} className="size-full" />
+        )}
+        <span className="absolute left-2.5 top-2.5 rounded bg-bg/80 backdrop-blur-md">
           <PendingBadge item={item} />
         </span>
-      </div>
-      <div className="flex flex-1 flex-col p-3">
-        <div>
-          <p className={clsx("line-clamp-2 text-[13px] font-medium leading-snug", done && "text-fg-3")}>{item.title}</p>
-        </div>
-        {!item.url && firstLine && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-fg-3">{firstLine}</p>}
-        <div className="mt-1.5 flex min-w-0 items-center gap-2 text-xs text-fg-3">
-          <span className="shrink-0 whitespace-nowrap font-mono">{item.key}</span>
-          {item.url && <span className="min-w-0 truncate">· {hostOf(item.url)}</span>}
-          {item.logged_minutes > 0 && (
-            <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-              · <Clock size={11} /> {fmtMinutes(item.logged_minutes)}
-            </span>
-          )}
-        </div>
-        {!item.url && item.labels.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {item.labels.slice(0, 3).map((l) => (
-              <span key={l} className="rounded border border-line px-1.5 py-px text-[11px] text-fg-2">
-                {l}
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="mt-auto flex items-center gap-1 pt-3" onClick={(e) => (e.target as HTMLElement).closest("button") && e.stopPropagation()}>
-          <span className="flex flex-1 items-center gap-1.5 text-xs text-fg-2">
-            <StatusIcon status={item.status} /> {statusMeta(item.status).label}
-          </span>
+        <div
+          className="absolute bottom-2.5 right-2.5 flex gap-1.5 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100 max-md:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+        >
           {item.url && (
-            <IconButton
-              className="size-7"
-              title={item.obsidian_path ? "Re-export to Obsidian" : "Export to Obsidian"}
-              onClick={() => exportNote.mutate()}
-            >
-              <ObsidianIcon size={14} className={item.obsidian_path ? "text-accent" : ""} />
-            </IconButton>
+            <button className="flex size-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition hover:bg-black/75" title={item.obsidian_path ? "Re-export to Obsidian" : "Export to Obsidian"} onClick={() => exportNote.mutate()}>
+              <ObsidianIcon size={14} />
+            </button>
           )}
           {!done && (
-            <IconButton className="size-7" title="Start timer" onClick={() => start.mutate()}>
-              <Play size={13} />
-            </IconButton>
+            <button className="flex size-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition hover:bg-black/75" title="Start timer" onClick={() => start.mutate()}>
+              <Play size={13} fill="currentColor" />
+            </button>
           )}
-          <IconButton
-            className="size-7"
+          <button
+            className="flex size-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition hover:bg-black/75"
             title={done ? "Mark as not done" : "Mark as done"}
             onClick={() => update.mutate({ id: item.id, status: (done ? "backlog" : "done") as Status })}
           >
-            <Check size={14} className={done ? "text-good" : ""} />
-          </IconButton>
+            <Check size={14} strokeWidth={2.5} />
+          </button>
         </div>
+      </div>
+      <div className="px-1 pt-3">
+        <p className={clsx("line-clamp-2 text-[14px] font-medium leading-snug tracking-[-0.005em]", done && "text-fg-3")}>{item.title}</p>
+        {!item.url && firstLine && <p className="mt-1 line-clamp-1 text-[13px] text-fg-3">{firstLine}</p>}
+        <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[12px] text-fg-3">
+          <StatusIcon status={item.status} />
+          <span className="shrink-0">{statusMeta(item.status).label}</span>
+          {item.url && <span className="min-w-0 truncate">· {hostOf(item.url)}</span>}
+          {item.logged_minutes > 0 && <span className="shrink-0 whitespace-nowrap">· {fmtMinutes(item.logged_minutes)}</span>}
+          {item.obsidian_path && <ObsidianIcon size={11} className="ml-auto shrink-0 text-accent" />}
+        </p>
       </div>
     </div>
   );
@@ -152,7 +139,7 @@ export default function Learning() {
         />
 
         {filtered.length === 0 ? (
-          <Card>
+          <Card className="rounded-2xl">
             <Empty
               icon={<GraduationCap size={28} />}
               title={items.length ? "Nothing here" : "No topics yet"}
@@ -164,7 +151,7 @@ export default function Learning() {
             />
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
+          <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
             {filtered.map((i) => (
               <LearningCard key={i.id} item={i} />
             ))}
