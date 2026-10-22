@@ -76,8 +76,8 @@ function SearchResults({ q, index, onOpen }: { q: string; index: LearningEntry[]
 function Shelf({ title, to, children }: { title: string; to?: string; children: ReactNode }) {
   return (
     <section>
-      <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-[20px] font-semibold tracking-[-0.01em]">{title}</h2>
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="text-[15px] font-semibold">{title}</h2>
         {to && (
           <Link to={to} className="flex items-center gap-0.5 text-[13px] text-fg-3 transition-colors hover:text-fg">
             See all <ChevronRight size={14} />
@@ -91,7 +91,7 @@ function Shelf({ title, to, children }: { title: string; to?: string; children: 
 
 /** A row of tiles that scrolls sideways when it does not fit. */
 function Row({ children }: { children: ReactNode }) {
-  return <div className="-mx-1 flex snap-x gap-5 overflow-x-auto px-1 pb-2 [scrollbar-width:none]">{children}</div>;
+  return <div className="-mx-1 flex snap-x items-start gap-4 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">{children}</div>;
 }
 
 /** A picture tile: wide for videos and posts, tall for book covers. */
@@ -113,16 +113,16 @@ function Tile({
   onClick: () => void;
 }) {
   return (
-    <button onClick={onClick} className={clsx("group shrink-0 snap-start text-left", book ? "w-[132px]" : wide && "w-[264px]")}>
+    <button onClick={onClick} className={clsx("group shrink-0 snap-start text-left", book ? "w-[100px]" : wide && "w-[220px]")}>
       <div
         className={clsx(
           "overflow-hidden bg-surface-2 ring-1 ring-inset ring-white/[0.06] transition duration-300 ease-out group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_28px_-12px_rgb(0_0_0/0.7)]",
-          book ? "aspect-[2/3] rounded-lg shadow-[0_8px_20px_-10px_rgb(0_0_0/0.7)]" : "aspect-video rounded-2xl",
+          book ? "aspect-[2/3] rounded-md shadow-[0_6px_16px_-8px_rgb(0_0_0/0.7)]" : "aspect-video rounded-xl",
         )}
       >
         {picture}
       </div>
-      <p className="mt-2.5 line-clamp-2 text-[13px] font-medium leading-snug">{title}</p>
+      <p className="mt-2 line-clamp-2 text-[13px] font-medium leading-snug">{title}</p>
       {detail && <p className="mt-0.5 truncate text-[12px] text-fg-3">{detail}</p>}
       {progress !== undefined && (
         <span className="mt-2 block h-[3px] overflow-hidden rounded-full bg-surface-3">
@@ -135,15 +135,15 @@ function Tile({
 
 /** An inset grouped list, like iOS Settings. */
 function Grouped({ children }: { children: ReactNode }) {
-  return <div className="divide-y divide-line/70 overflow-hidden rounded-2xl border border-line/70 bg-surface">{children}</div>;
+  return <div className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">{children}</div>;
 }
 
 function ListRow({ lead, title, detail, onClick }: { lead: ReactNode; title: string; detail?: ReactNode; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-2/60">
+    <button onClick={onClick} className="flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors hover:bg-surface-2/60">
       {lead}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14px]">{title}</span>
+        <span className="block truncate text-[13px]">{title}</span>
         {detail && <span className="block truncate text-[12px] text-fg-3">{detail}</span>}
       </span>
       <ChevronRight size={15} className="shrink-0 text-fg-3/60" />
@@ -154,17 +154,17 @@ function ListRow({ lead, title, detail, onClick }: { lead: ReactNode; title: str
 function Figure({ label, value, sub, to }: { label: string; value: ReactNode; sub?: string; to?: string }) {
   const body = (
     <>
-      <p className="text-[32px] font-semibold leading-none tracking-[-0.02em] tabular-nums">{value}</p>
-      <p className="mt-2 text-[13px] text-fg-2">{label}</p>
-      {sub && <p className="text-[12px] text-fg-3">{sub}</p>}
+      <p className="text-[12px] text-fg-3">{label}</p>
+      <p className="mt-1 text-[22px] font-semibold leading-tight tracking-[-0.01em] tabular-nums">{value}</p>
+      <p className="h-4 text-[11px] text-fg-3">{sub}</p>
     </>
   );
   return to ? (
-    <Link to={to} className="block rounded-xl transition-opacity hover:opacity-80">
+    <Link to={to} className="block px-4 py-3 transition-colors hover:bg-surface-2/60">
       {body}
     </Link>
   ) : (
-    <div>{body}</div>
+    <div className="px-4 py-3">{body}</div>
   );
 }
 
@@ -211,9 +211,9 @@ export default function LearningOverview() {
           <SearchResults q={q.trim()} index={index} onOpen={(e) => (e.itemId ? openItem(e.itemId) : e.to && navigate(e.to))} />
         </div>
       ) : (
-      <div className="space-y-12 pb-6">
+      <div className="space-y-7 pb-6">
         {/* Quiet numbers, no boxes. */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-line bg-surface sm:grid-cols-3 xl:grid-cols-5 [&>*]:border-line max-xl:[&>*]:border-b xl:[&>*:not(:first-child)]:border-l">
           <Figure label="Topics to learn" value={topicsNext.length} sub={`${topicsNow.length} in progress`} to="/learning/topics" />
           <Figure label="Blogs to read" value={blogsNext.length} sub={`${blogsNow.length} reading`} to="/learning/articles" />
           <Figure label="Books to read" value={booksNext.length} sub={`${booksNow.length} reading`} to="/learning/books" />
@@ -278,7 +278,7 @@ export default function LearningOverview() {
           </Shelf>
         )}
 
-        <div className="grid gap-12 xl:grid-cols-2">
+        <div className="grid gap-7 xl:grid-cols-2">
           {blogsNext.length > 0 && (
             <Shelf title="Blogs to read" to="/learning/articles">
               <Grouped>

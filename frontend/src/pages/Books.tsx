@@ -75,7 +75,7 @@ function BookCard({ book, onOpen }: { book: Book; onOpen: () => void }) {
           </span>
         )}
       </div>
-      <p className="mt-3 line-clamp-2 text-[14px] font-medium leading-snug tracking-[-0.005em]">{book.title}</p>
+      <p className="mt-2.5 line-clamp-2 text-[13px] font-medium leading-snug">{book.title}</p>
       {book.author && <p className="mt-0.5 truncate text-[12px] text-fg-3">{book.author}</p>}
       <div className="mt-2 space-y-1.5">
         {book.status === "reading" && <Progress book={book} />}
@@ -401,7 +401,7 @@ export default function Books() {
           placeholder="Search title, author, notes"
         />
         {list.length ? (
-          <div className="grid grid-cols-2 gap-x-6 gap-y-9 sm:grid-cols-[repeat(auto-fill,minmax(150px,170px))]">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(130px,150px))]">
             {list.map((b) => (
               <BookCard key={b.id} book={b} onOpen={() => setOpen(b.id)} />
             ))}

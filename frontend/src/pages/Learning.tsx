@@ -45,9 +45,9 @@ function LearningCard({ item }: { item: Item }) {
       onKeyDown={(e) => {
         if (e.key === "Enter" && e.target === e.currentTarget) openItem(item.id);
       }}
-      className="group cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+      className="group cursor-pointer rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
     >
-      <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-surface-2 ring-1 ring-inset ring-white/[0.06] transition duration-300 ease-out group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_32px_-12px_rgb(0_0_0/0.6)]">
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-surface-2 ring-1 ring-inset ring-white/[0.06] transition duration-300 ease-out group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_32px_-12px_rgb(0_0_0/0.6)]">
         {item.url ? (
           <Thumb itemId={item.id} url={item.url} className="size-full transition duration-500 ease-out group-hover:scale-[1.03]" />
         ) : (
@@ -79,8 +79,8 @@ function LearningCard({ item }: { item: Item }) {
           </button>
         </div>
       </div>
-      <div className="px-1 pt-3">
-        <p className={clsx("line-clamp-2 text-[14px] font-medium leading-snug tracking-[-0.005em]", done && "text-fg-3")}>{item.title}</p>
+      <div className="px-0.5 pt-2">
+        <p className={clsx("line-clamp-2 text-[13px] font-medium leading-snug", done && "text-fg-3")}>{item.title}</p>
         {!item.url && firstLine && <p className="mt-1 line-clamp-1 text-[13px] text-fg-3">{firstLine}</p>}
         <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[12px] text-fg-3">
           <StatusIcon status={item.status} />
@@ -151,7 +151,7 @@ export default function Learning() {
             />
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]">
             {filtered.map((i) => (
               <LearningCard key={i.id} item={i} />
             ))}

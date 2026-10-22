@@ -116,32 +116,32 @@ function LearningRail({ sub }: { sub?: ReactNode }) {
   const { tabs, deps } = useLearningTabs();
   const { ref, pill } = useActivePill("y", deps);
   return (
-    <div className="sticky top-6 space-y-7">
-      <p className="px-3 text-[20px] font-semibold tracking-[-0.01em]">Learning</p>
+    <div className="sticky top-5 space-y-4">
+      <p className="px-3 text-[15px] font-semibold">Learning</p>
       <div ref={ref} className="relative flex flex-col gap-px">
         {pill && (
           <span
             aria-hidden
-            className="absolute inset-x-0 rounded-[10px] bg-surface-2 transition-[top,height] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+            className="absolute inset-x-0 rounded-lg bg-surface-2 transition-[top,height] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
             style={{ top: pill.start, height: pill.size }}
           />
         )}
         {tabs.map((t) => (
           <Fragment key={t.to}>
-            {t.divider && <span className="mx-3 my-2.5 h-px bg-line/70" aria-hidden />}
+            {t.divider && <span className="mx-3 my-1.5 h-px bg-line/70" aria-hidden />}
             <NavLink
               to={t.to}
               end={t.end}
               className={({ isActive }) =>
                 clsx(
-                  "relative z-10 flex h-9 items-center gap-3 rounded-[10px] px-3 text-[14px] transition-colors",
+                  "relative z-10 flex h-8 items-center gap-2.5 rounded-lg px-3 text-[13px] transition-colors",
                   isActive ? "font-medium text-fg" : "text-fg-2 hover:text-fg",
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <t.icon size={16} strokeWidth={1.75} className={clsx("shrink-0", isActive ? "text-fg" : "text-fg-3")} />
+                  <t.icon size={15} strokeWidth={1.75} className={clsx("shrink-0", isActive ? "text-fg" : "text-fg-3")} />
                   <span className="flex-1 truncate">{t.label}</span>
                   {!!t.count && <span className="text-[12px] tabular-nums text-fg-3">{t.count}</span>}
                 </>
@@ -185,16 +185,16 @@ export function LearningShell({
   const { tabs } = useLearningTabs();
   const here = tabs.find((t) => (t.end ? pathname === t.to : pathname.startsWith(t.to)));
   return (
-    <div className="px-4 pt-6 md:px-6 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 lg:px-8 lg:pt-8">
+    <div className="px-4 pt-4 md:px-6 lg:grid lg:grid-cols-[196px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:pt-5">
       <aside className="hidden lg:block">
         <LearningRail sub={sub} />
       </aside>
       <div className="min-w-0">
-        <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+        <header className="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
             <p className="mb-1 text-[12px] font-medium text-fg-3 lg:hidden">Learning</p>
-            <h1 className="truncate text-[28px] font-semibold leading-tight tracking-[-0.02em]">{title ?? here?.label}</h1>
-            <p className="mt-1 text-[14px] text-fg-3">{subtitle ?? SUBTITLES[here?.to ?? ""]}</p>
+            <h1 className="truncate text-[20px] font-semibold leading-tight tracking-[-0.01em]">{title ?? here?.label}</h1>
+            <p className="mt-0.5 text-[13px] text-fg-3">{subtitle ?? SUBTITLES[here?.to ?? ""]}</p>
           </div>
           {actions && <div className="flex items-center gap-2 max-sm:w-full sm:shrink-0">{actions}</div>}
         </header>
