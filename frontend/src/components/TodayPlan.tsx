@@ -1,7 +1,7 @@
 /** Today's plan and the end-of-day review, shown on the Dashboard (they used to be the Today page). */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Check, Clock, Play, Plus, Square } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Clock, Play, Plus, Square } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api, type Item, type Review } from "../lib/api";
 import { useRefreshItems, useTimer, useUpdateItem } from "../lib/hooks";
@@ -72,6 +72,8 @@ export function TodayPanel() {
   const update = useUpdateItem();
   const [logItem, setLogItem] = useState<Item | null>(null);
   const [picking, setPicking] = useState(false);
+  const [showDone, setShowDone] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const t = todayIso();
 
   const open = items.filter((i) => i.status !== "done");
@@ -80,19 +82,38 @@ export function TodayPanel() {
   const planned = open.filter((i) => !(i.due_date && i.due_date < t));
   const suggestions = backlog.filter((i) => !items.some((x) => x.id === i.id)).slice(0, 10);
 
-  const section = (title: string, list: Item[], tone?: string) =>
-    list.length > 0 && (
+  // Long days stay short: the planned list shows the first few, and done items stay folded until asked for.
+  const LIMIT = 8;
+  const section = (title: string, list: Item[], tone?: string, fold?: { open: boolean; toggle: () => void }) => {
+    if (!list.length) return null;
+    const shown = fold && !fold.open ? [] : title === "Planned" && !showAll ? list.slice(0, LIMIT) : list;
+    const Chevron = fold?.open ? ChevronDown : ChevronRight;
+    return (
       <div>
-        <div className={clsx("border-b border-line bg-surface-2/50 px-4 py-1.5 text-xs font-medium", tone ?? "text-fg-2")}>
+        <div
+          onClick={fold?.toggle}
+          className={clsx(
+            "flex items-center gap-1 border-b border-line bg-surface-2/50 px-4 py-1.5 text-xs font-medium",
+            tone ?? "text-fg-2",
+            fold && "cursor-pointer select-none hover:bg-surface-2",
+          )}
+        >
+          {fold && <Chevron size={12} />}
           {title} · {list.length}
         </div>
         <div className="divide-y divide-line">
-          {list.map((i) => (
+          {shown.map((i) => (
             <Row key={i.id} item={i} onLog={setLogItem} />
           ))}
         </div>
+        {shown.length < list.length && !fold && (
+          <button onClick={() => setShowAll(true)} className="w-full border-t border-line py-2 text-xs text-fg-3 hover:bg-surface-2 hover:text-fg">
+            Show all {list.length}
+          </button>
+        )}
       </div>
     );
+  };
 
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-surface">
@@ -130,7 +151,7 @@ export function TodayPanel() {
         <>
           {section("Overdue", overdue, "text-critical")}
           {section("Planned", planned)}
-          {section("Done", done, "text-good")}
+          {section("Done", done, "text-good", { open: showDone, toggle: () => setShowDone(!showDone) })}
         </>
       )}
       {logItem && <LogWorkModal item={logItem} open onClose={() => setLogItem(null)} />}
