@@ -439,7 +439,6 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
   const [estimate, setEstimate] = useState("");
   const [newSub, setNewSub] = useState("");
   const [logOpen, setLogOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (item) {
@@ -477,10 +476,15 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
   const remove = useMutation({
     mutationFn: () => api.del(`/items/${itemId}`),
     onSuccess: () => {
-      toast(`${item?.key} moved to Trash`);
+      const id = itemId;
+      toast(`${item?.key} moved to Trash`, "default", {
+        label: "Undo",
+        onClick: () => api.post(`/trash/items/${id}/restore`).then(refresh, (e: Error) => toast(e.message, "error")),
+      });
       onClose();
       refresh();
     },
+    onError: (e: Error) => toast(e.message, "error"),
   });
   const subAdd = useMutation({
     mutationFn: () => api.post(`/items/${itemId}/subtasks`, { title: newSub }),
@@ -562,7 +566,7 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
                 <span className="hidden sm:inline">Start timer</span>
               </Button>
             )}
-            <IconButton title="Move to Trash" onClick={() => setConfirmDelete(true)}>
+            <IconButton title="Move to Trash" onClick={() => remove.mutate()}>
               <Trash2 size={15} />
             </IconButton>
             <IconButton title="Close (Esc)" onClick={onClose}>
@@ -763,25 +767,6 @@ export function ItemDrawer({ itemId, onClose }: { itemId: number | null; onClose
           </div>
 
           <LogWorkModal item={item} open={logOpen} onClose={() => setLogOpen(false)} />
-          <Modal
-            open={confirmDelete}
-            onClose={() => setConfirmDelete(false)}
-            title={`Delete ${item.key}?`}
-            footer={
-              <>
-                <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
-                <Button variant="danger" onClick={() => remove.mutate()}>
-                  Move to Trash
-                </Button>
-              </>
-            }
-          >
-            <p className="text-[13px] text-fg-2">
-              The item goes to Trash with its checklist, comments and work log. You can restore it for 30 days.
-              After that, Arc deletes it for good.
-              {item.obsidian_path && " The note in Obsidian stays in your vault."}
-            </p>
-          </Modal>
         </>
       )}
     </Drawer>

@@ -98,7 +98,9 @@ function TopicPanel({ jot, onGone, onClose }: { jot: Jot; onGone: () => void; on
     mutationFn: (s: "open" | "archived") => api.patch(`/jots/${jot.id}`, { status: s }),
     onSuccess: (_d, s) => {
       refresh();
-      toast(s === "archived" ? "Topic dismissed" : "Topic moved back to review");
+      if (s === "archived")
+        toast("Topic dismissed", "default", { label: "Undo", onClick: () => api.patch(`/jots/${jot.id}`, { status: "open" }).then(refresh) });
+      else toast("Topic moved back to review");
       onGone();
     },
   });

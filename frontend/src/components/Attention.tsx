@@ -66,15 +66,18 @@ export function RadarReview() {
 
   const act = useMutation({
     mutationFn: async (action: "topic" | "revisit" | "dismiss") => {
-      if (!jot) return;
+      if (!jot) return null;
       if (action === "topic") await api.post(`/jots/${jot.id}/convert`, { project_id: learning!.id, type: "learning", status: "backlog" });
       if (action === "revisit") await api.post(`/jots/${jot.id}/revise`);
       if (action === "dismiss") await api.patch(`/jots/${jot.id}`, { status: "archived" });
-      return action;
+      return { action, id: jot.id };
     },
-    onSuccess: (action) => {
+    onSuccess: (done) => {
+      if (!done) return;
       refresh();
-      toast(action === "topic" ? "Added to Topics" : action === "revisit" ? "Added to Revisit" : "Topic dismissed");
+      if (done.action === "dismiss")
+        toast("Topic dismissed", "default", { label: "Undo", onClick: () => api.patch(`/jots/${done.id}`, { status: "open" }).then(refresh) });
+      else toast(done.action === "topic" ? "Added to Topics" : "Added to Revisit");
     },
     onError: (e: Error) => toast(e.message, "error"),
   });
