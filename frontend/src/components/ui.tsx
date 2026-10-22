@@ -119,7 +119,7 @@ export function Menu({
   trigger: ReactNode;
   items: { label: ReactNode; icon?: ReactNode; onClick: () => void; danger?: boolean }[];
 }) {
-  const [pos, setPos] = useState<{ top: number; left: number; up: boolean } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; up: boolean; bottom: number } | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const WIDTH = 200;
@@ -128,7 +128,9 @@ export function Menu({
     const r = triggerRef.current!.getBoundingClientRect();
     const up = window.innerHeight - r.bottom < items.length * 34 + 16;
     setPos({
-      top: up ? r.top - 4 : r.bottom + 4,
+      top: r.bottom + 4,
+      // Opening upward is anchored by `bottom`, not a transform, so the open animation cannot undo it.
+      bottom: window.innerHeight - r.top + 4,
       left: Math.max(8, Math.min(r.right - WIDTH, window.innerWidth - WIDTH - 8)),
       up,
     });
@@ -166,7 +168,7 @@ export function Menu({
           <div
             ref={menuRef}
             role="menu"
-            style={{ top: pos.top, left: pos.left, width: WIDTH, transform: pos.up ? "translateY(-100%)" : undefined }}
+            style={pos.up ? { bottom: pos.bottom, left: pos.left, width: WIDTH } : { top: pos.top, left: pos.left, width: WIDTH }}
             className="anim-drop fixed z-[70] rounded-lg border border-line bg-surface p-1 shadow-[var(--shadow)]"
             onClick={(e) => e.stopPropagation()}
           >

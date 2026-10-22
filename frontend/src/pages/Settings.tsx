@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { Archive, CalendarHeart, CheckCircle2, FolderOpen, Settings as SettingsIcon, XCircle } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { ObsidianIcon } from "../components/ObsidianIcon";
+import { ShortcutList } from "../components/Shortcuts";
 import { Button, Card, Field, Input, PageHeader, Switch, useToast } from "../components/ui";
 import { api, type Backup, type Settings as SettingsT } from "../lib/api";
 import { useSettings } from "../lib/hooks";
@@ -187,21 +188,7 @@ export default function Settings() {
 
         <Card className="p-5">
           <h3 className="mb-3 text-[15px] font-medium">Keyboard shortcuts</h3>
-          <div className="grid gap-2 text-[13px] sm:grid-cols-2">
-            {[
-              ["Search and commands", "⌘K / Ctrl K"],
-              ["New task", "C"],
-              ["Capture to Radar", "N"],
-              ["Add to Revisit", "R"],
-              ["Close panel or dialog", "Esc"],
-              ["Post a comment", "⌘ Enter"],
-            ].map(([a, b]) => (
-              <div key={a} className="flex justify-between rounded-md border border-line px-3 py-2">
-                <span className="text-fg-2">{a}</span>
-                <span className="font-mono text-xs">{b}</span>
-              </div>
-            ))}
-          </div>
+          <ShortcutList />
           {data && <p className="mt-4 text-xs text-fg-3">Arc v{data.version} · time zone {data.timezone}</p>}
         </Card>
       </div>

@@ -35,6 +35,7 @@ import { ItemDrawer } from "./ItemDrawer";
 import { NewItemModal } from "./NewItemModal";
 import { ProjectModal } from "./ProjectModal";
 import { IconButton, Kbd, Menu as UiMenu } from "./ui";
+import { GO_TO, ShortcutsModal } from "./Shortcuts";
 import { ProjectIcon } from "../lib/projectIcons";
 
 export type NewItemDefaults = { type?: ItemType; status?: Status; project_id?: number; url?: string };
@@ -350,6 +351,45 @@ function Sidebar({ compact, onToggle, onNavigate }: { compact: boolean; onToggle
   );
 }
 
+/** Phone only: the main places one tap away, with New in the middle. */
+function MobileTabs() {
+  const { data: jots } = useJots();
+  const radar = jots?.filter((j) => j.status === "open").length ?? 0;
+  const tab = ({ isActive }: { isActive: boolean }) =>
+    clsx("flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px]", isActive ? "text-fg" : "text-fg-3");
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-30 flex h-14 items-stretch border-t border-line bg-sidebar/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <NavLink to="/" end className={tab}>
+        <LayoutDashboard size={19} strokeWidth={1.75} /> Dashboard
+      </NavLink>
+      <NavLink to="/board" className={({ isActive }) => tab({ isActive: isActive || location.pathname === "/list" })}>
+        <SquareKanban size={19} strokeWidth={1.75} /> Board
+      </NavLink>
+      <div className="flex flex-1 items-center justify-center">
+        <NewMenu
+          trigger={
+            <button aria-label="New" className="flex size-10 items-center justify-center rounded-full bg-fg text-bg shadow-[var(--shadow)]">
+              <Plus size={20} />
+            </button>
+          }
+        />
+      </div>
+      <NavLink to="/learning" className={tab}>
+        <BookOpen size={19} strokeWidth={1.75} /> Learning
+      </NavLink>
+      <NavLink to="/radar" className={tab}>
+        <span className="relative">
+          <RadarIcon size={19} strokeWidth={1.75} />
+          {radar > 0 && (
+            <span className="absolute -right-2.5 -top-1.5 rounded-full bg-accent px-1 font-mono text-[9px] leading-[14px] text-accent-fg">{radar}</span>
+          )}
+        </span>
+        Radar
+      </NavLink>
+    </nav>
+  );
+}
+
 export function Layout() {
   const location = useLocation();
   const [compact, setCompact] = useLocalState("arc-sidebar-compact", false);
@@ -373,10 +413,30 @@ export function Layout() {
     addRevision: () => setReviseOpen(true),
   };
 
+  const navigate = useNavigate();
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   useEffect(() => {
+    let gAt = 0; // when G was pressed; the next key within a second picks a page
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       const typing = el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName);
+      const plain = !typing && !e.metaKey && !e.ctrlKey && !e.altKey;
+      const key = e.key.toLowerCase();
+      if (plain && Date.now() - gAt < 1000 && GO_TO[key]) {
+        e.preventDefault();
+        gAt = 0;
+        navigate(GO_TO[key].to);
+        return;
+      }
+      if (plain && key === "g") {
+        gAt = Date.now();
+        return;
+      }
+      if (plain && e.key === "?") {
+        e.preventDefault();
+        setShortcutsOpen((v) => !v);
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setSearchOpen((v) => !v);
@@ -393,7 +453,7 @@ export function Layout() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [navigate]);
 
   return (
     <ActionsCtx.Provider value={actions}>
@@ -419,14 +479,8 @@ export function Layout() {
             <IconButton onClick={() => setSearchOpen(true)} aria-label="Search">
               <Search size={17} />
             </IconButton>
-            <IconButton onClick={() => setNoteOpen(true)} aria-label="Add topic">
-              <RadarIcon size={17} />
-            </IconButton>
-            <IconButton onClick={() => setNewDefaults({})} aria-label="New item">
-              <Plus size={18} />
-            </IconButton>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
             <div key={location.pathname} className="anim-page h-full">
               <Suspense fallback={null}>
                 <Outlet />
@@ -435,6 +489,8 @@ export function Layout() {
           </div>
         </main>
       </div>
+      <MobileTabs />
+      <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
       <NewItemModal defaults={newDefaults} onClose={() => setNewDefaults(null)} />
       <AddTopicModal open={noteOpen} onClose={() => setNoteOpen(false)} />
