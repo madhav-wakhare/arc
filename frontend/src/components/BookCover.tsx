@@ -12,7 +12,7 @@ export function BookCover({ book, className, small }: { book: Pick<Book, "id" | 
     return <img src={src} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} className={clsx("bg-surface-2 object-cover", className)} />;
   return (
     <div className={clsx("flex flex-col items-center justify-center gap-2 bg-surface-2 p-3 text-center", className)}>
-      <BookIcon size={small ? 15 : 18} className="text-book" />
+      <BookIcon size={small ? 15 : 18} className="text-fg-3" />
       {!small && <span className="line-clamp-3 text-[11px] leading-snug text-fg-3">{book.title}</span>}
     </div>
   );

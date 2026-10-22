@@ -113,8 +113,16 @@ export function Cover({ url, className }: { url: string | null; className?: stri
   const yt = youtubeId(url);
   const Icon = yt ? Youtube : url ? Link2 : GraduationCap;
   return (
-    <div className={clsx("flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-learning/12 via-surface-2 to-surface-2", className)}>
-      <Icon size={22} className="text-learning/70" />
+    // Frosted glass: a faint light wash with a bright top edge, neutral icon. No colour.
+    <div
+      className={clsx(
+        "relative flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-white/[0.075] to-white/[0.02] shadow-[inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl",
+        className,
+      )}
+    >
+      <span className="flex size-10 items-center justify-center rounded-full bg-white/[0.06] ring-1 ring-inset ring-white/[0.08]">
+        <Icon size={18} strokeWidth={1.75} className="text-fg-2" />
+      </span>
       {url && <span className="max-w-[80%] truncate text-[11px] text-fg-3">{hostOf(url)}</span>}
     </div>
   );
