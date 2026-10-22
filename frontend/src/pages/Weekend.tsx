@@ -27,14 +27,14 @@ import {
   useRefreshWeekend,
   useWeekend,
 } from "../components/Weekend";
-import { Button, Card, IconButton, Input, Menu, PageHeader, Select, Switch, useToast } from "../components/ui";
+import { Button, Card, IconButton, Menu, PageHeader, Switch, useToast } from "../components/ui";
 import { api, type Idea, type LifeCategory, type PlanEntry, type Settings, type Weekend, type WeekendSlot } from "../lib/api";
 import { useSettings } from "../lib/hooks";
 import { fmtDate, todayIso, addDays } from "../lib/meta";
 
 type Target = { day: string; slot: WeekendSlot };
 
-/** One time-of-day cell for one day. Empty cells stay blank; "Add" shows on hover. */
+/** One time of day inside a day card: its label, its activities, and a quiet "Add" line. */
 function Slot({
   day,
   slot,
@@ -50,86 +50,54 @@ function Slot({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `slot|${day}|${slot.value}`, data: { day, slot: slot.value } });
   return (
-    <div
-      ref={setNodeRef}
-      className={clsx("group/slot min-h-[76px] px-2 py-2 transition-colors", isOver && "bg-accent-soft")}
-    >
+    <div ref={setNodeRef} className={clsx("rounded-md px-2 py-2.5 transition-colors", isOver && "bg-accent-soft")}>
+      <p className="mb-1 flex items-center gap-2 px-2 text-xs text-fg-3">
+        <slot.icon size={13} /> {slot.label}
+      </p>
       {entries.map((e) => (
         <EntryRow key={e.id} entry={e} saturday={saturday} draggable />
       ))}
       <button
         onClick={onAdd}
         className={clsx(
-          "flex h-8 w-full items-center gap-1.5 rounded-md px-2 text-[13px] text-fg-3 transition-opacity hover:bg-surface-2 hover:text-fg",
-          entries.length ? "opacity-0 group-hover/slot:opacity-100 focus-visible:opacity-100" : "opacity-0 group-hover/slot:opacity-100 focus-visible:opacity-100 max-md:opacity-60",
+          "flex h-8 w-full items-center gap-2 rounded-md px-2 text-[13px] text-fg-3/70 transition hover:bg-surface-2 hover:text-fg",
+          entries.length > 0 && "text-fg-3/50",
         )}
         title={`Add to ${dayName(day)} ${slot.label.toLowerCase()}`}
       >
-        <Plus size={13} /> Add
+        <Plus size={13} /> {entries.length ? "Add" : "Free"}
       </button>
     </div>
   );
 }
 
-/** Saturday and Sunday side by side, one row per time of day. Stacks into one column on a phone. */
-function PlanGrid({ wk, onAdd }: { wk: Weekend; onAdd: (t: Target) => void }) {
-  const days = [wk.saturday, wk.sunday];
-  const head = (d: string) => {
-    const list = wk.entries.filter((e) => e.day === d);
-    const done = list.filter((e) => e.done).length;
-    return (
-      <div className="flex h-11 items-center gap-2 px-4">
-        <span className="text-[14px] font-medium">{dayName(d)}</span>
-        <span className="text-[13px] text-fg-3">{fmtDate(d)}</span>
-        {d === todayIso() && <span className="rounded bg-accent-soft px-1.5 py-px text-[11px] font-medium text-accent">Today</span>}
+/** One card per day with its three times of day stacked. Saturday and Sunday sit side by side. */
+function DayCard({ wk, day, onAdd }: { wk: Weekend; day: string; onAdd: (t: Target) => void }) {
+  const list = wk.entries.filter((e) => e.day === day);
+  const done = list.filter((e) => e.done).length;
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex h-11 items-center gap-2 border-b border-line px-4">
+        <span className="text-[14px] font-medium">{dayName(day)}</span>
+        <span className="text-[13px] text-fg-3">{fmtDate(day)}</span>
+        {day === todayIso() && <span className="rounded bg-accent-soft px-1.5 py-px text-[11px] font-medium text-accent">Today</span>}
         <div className="flex-1" />
         {list.length > 0 && (
           <span className="text-xs tabular-nums text-fg-3">
-            {done}/{list.length}
+            {done}/{list.length} done
           </span>
         )}
       </div>
-    );
-  };
-  const label = (slot: (typeof SLOTS)[number]) => (
-    <div className="flex items-start gap-2 px-4 pt-4 text-xs font-medium text-fg-3">
-      <slot.icon size={13} className="mt-px" /> {slot.label}
-    </div>
-  );
-  const cell = (d: string, slot: (typeof SLOTS)[number]) => (
-    <Slot day={d} slot={slot} saturday={wk.saturday} entries={wk.entries.filter((e) => e.day === d && e.slot === slot.value)} onAdd={() => onAdd({ day: d, slot: slot.value })} />
-  );
-  return (
-    <Card className="overflow-hidden">
-      {/* desktop: label column + two day columns */}
-      <div className="hidden md:block">
-        <div className="grid grid-cols-[120px_1fr_1fr] divide-x divide-line border-b border-line">
-          <div />
-          {days.map((d) => (
-            <div key={d}>{head(d)}</div>
-          ))}
-        </div>
+      <div className="p-1.5">
         {SLOTS.map((slot) => (
-          <div key={slot.value} className="grid grid-cols-[120px_1fr_1fr] divide-x divide-line border-b border-line last:border-b-0">
-            {label(slot)}
-            {days.map((d) => (
-              <div key={d}>{cell(d, slot)}</div>
-            ))}
-          </div>
-        ))}
-      </div>
-      {/* phone: one day after the other */}
-      <div className="divide-y divide-line md:hidden">
-        {days.map((d) => (
-          <div key={d}>
-            {head(d)}
-            {SLOTS.map((slot) => (
-              <div key={slot.value} className="border-t border-line">
-                <div className="px-4 pt-3 text-xs font-medium text-fg-3">{slot.label}</div>
-                {cell(d, slot)}
-              </div>
-            ))}
-          </div>
+          <Slot
+            key={slot.value}
+            day={day}
+            slot={slot}
+            saturday={wk.saturday}
+            entries={list.filter((e) => e.slot === slot.value)}
+            onAdd={() => onAdd({ day, slot: slot.value })}
+          />
         ))}
       </div>
     </Card>
@@ -252,10 +220,12 @@ function IdeasCard({ saturday }: { saturday: string }) {
   const open = ideas.filter((i) => !i.done_at);
   const done = ideas.filter((i) => i.done_at);
   const list = tab === "open" ? open : done;
+  const Icon = categoryMeta(category).icon;
   return (
-    <Card className="flex flex-col overflow-hidden">
-      <div className="flex h-11 items-center gap-3 border-b border-line px-4">
+    <section>
+      <div className="mb-2 flex items-center gap-3 px-1">
         <h3 className="text-[14px] font-medium">Ideas</h3>
+        <span className="text-xs text-fg-3">Movies, places, things to try. Drag one onto a day.</span>
         <div className="flex-1" />
         {(["open", "done"] as const).map((t) => (
           <button
@@ -263,40 +233,46 @@ function IdeasCard({ saturday }: { saturday: string }) {
             onClick={() => setTab(t)}
             className={clsx("text-xs transition-colors", tab === t ? "font-medium text-fg" : "text-fg-3 hover:text-fg-2")}
           >
-            {t === "open" ? `To do${open.length ? ` · ${open.length}` : ""}` : "Done"}
+            {t === "open" ? `To do${open.length ? ` · ${open.length}` : ""}` : `Done${done.length ? ` · ${done.length}` : ""}`}
           </button>
         ))}
       </div>
-      <form
-        className="flex gap-2 border-b border-line p-2.5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (title.trim()) add.mutate();
-        }}
-      >
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add an idea" className="min-w-0 flex-1" />
-        <Select value={category} onChange={(e) => setCategory(e.target.value as LifeCategory)} className="w-[104px] shrink-0" title="Category">
-          {CATEGORIES.map((c) => (
-            <option key={c.value} value={c.value}>
-              {c.label}
-            </option>
-          ))}
-        </Select>
-        <IconButton type="submit" title="Add idea" disabled={!title.trim()}>
-          <Plus size={15} />
-        </IconButton>
-      </form>
-      <div className="max-h-[520px] overflow-y-auto p-2">
-        {list.map((i) => (
-          <IdeaRow key={i.id} idea={i} saturday={saturday} />
-        ))}
-        {!list.length && (
-          <p className="px-3 py-8 text-center text-[13px] text-fg-3">
-            {tab === "open" ? "Movies, places, things to try. Drag one into a slot." : "Nothing done yet."}
-          </p>
+      <Card className="p-1.5">
+        {tab === "open" && (
+          <form
+            className="flex h-9 items-center gap-2.5 rounded-md px-2 focus-within:bg-surface-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (title.trim()) add.mutate();
+            }}
+          >
+            <Menu
+              trigger={
+                <button type="button" title={`Category: ${categoryMeta(category).label}`} className="flex size-5 items-center justify-center text-life">
+                  <Icon size={14} />
+                </button>
+              }
+              items={CATEGORIES.map((c) => ({ label: c.label, icon: <c.icon size={13} className="text-life" />, onClick: () => setCategory(c.value) }))}
+            />
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={`Add an idea · ${categoryMeta(category).label}`}
+              className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-fg-3"
+            />
+            {title.trim() && <span className="text-[11px] text-fg-3">Enter</span>}
+          </form>
         )}
-      </div>
-    </Card>
+        {list.length > 0 && (
+          <div className="grid gap-x-2 sm:grid-cols-2 lg:grid-cols-3">
+            {list.map((i) => (
+              <IdeaRow key={i.id} idea={i} saturday={saturday} />
+            ))}
+          </div>
+        )}
+        {tab === "done" && !list.length && <p className="px-3 py-6 text-center text-[13px] text-fg-3">Nothing done yet.</p>}
+      </Card>
+    </section>
   );
 }
 
@@ -344,7 +320,7 @@ export default function WeekendPage() {
   const range = wk ? `${fmtDate(wk.saturday, { month: "short", day: "numeric" })} – ${fmtDate(wk.sunday, { day: "numeric" })}` : "";
 
   return (
-    <div className="mx-auto w-full max-w-[1440px] pb-10">
+    <div className="mx-auto w-full max-w-[1100px] pb-10">
       <PageHeader
         icon={<CalendarHeart size={18} />}
         title={
@@ -375,12 +351,13 @@ export default function WeekendPage() {
       />
       {wk && (
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragCancel={() => setDragging(null)} onDragEnd={onDragEnd}>
-          <div className="space-y-5 px-4 md:px-6 lg:px-8">
+          <div className="space-y-6 px-4 md:px-6 lg:px-8">
             <Summary entries={wk.entries} />
-            <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
-              <PlanGrid wk={wk} onAdd={setTarget} />
-              <IdeasCard saturday={wk.saturday} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <DayCard wk={wk} day={wk.saturday} onAdd={setTarget} />
+              <DayCard wk={wk} day={wk.sunday} onAdd={setTarget} />
             </div>
+            <IdeasCard saturday={wk.saturday} />
           </div>
           <DragOverlay>
             {dragging && (
