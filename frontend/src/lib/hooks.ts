@@ -17,7 +17,7 @@ export const useTimer = () =>
 export function useRefreshItems() {
   const qc = useQueryClient();
   return () => {
-    for (const k of ["items", "item", "stats", "weekly", "projects", "timer", "worklogs", "history", "comments", "trash", "jots", "revisions"])
+    for (const k of ["items", "item", "stats", "weekly", "projects", "timer", "worklogs", "history", "comments", "trash", "jots", "revisions", "weekend"])
       qc.invalidateQueries({ queryKey: [k] });
   };
 }

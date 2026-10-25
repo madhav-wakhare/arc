@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta
 from typing import Literal
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -18,10 +18,10 @@ from pydantic import BaseModel, Field
 
 from . import backup, linkpreview, obsidian, thumbs
 from .db import (
+    DB,
     PROJECT_ICONS,
     TRASH_DAYS,
     adopt_legacy_db,
-    get_db,
     get_setting,
     hard_delete_items,
     init_db,
@@ -354,7 +354,7 @@ def insert_item(conn, data: ItemIn) -> int:
 
 
 @app.get("/api/projects")
-def list_projects(conn=Depends(get_db)):
+def list_projects(conn=DB):
     return rows(conn.execute("""
         SELECT p.*,
                (SELECT count(*) FROM live_items i WHERE i.project_id = p.id) AS item_count,
@@ -363,7 +363,7 @@ def list_projects(conn=Depends(get_db)):
 
 
 @app.post("/api/projects", status_code=201)
-def create_project(data: ProjectIn, conn=Depends(get_db)):
+def create_project(data: ProjectIn, conn=DB):
     key = data.key.upper()
     clash = row(conn.execute("SELECT deleted_at FROM projects WHERE key = ?", (key,)))
     if clash:
@@ -379,7 +379,7 @@ def create_project(data: ProjectIn, conn=Depends(get_db)):
 
 
 @app.patch("/api/projects/{project_id}")
-def update_project(project_id: int, data: ProjectPatch, conn=Depends(get_db)):
+def update_project(project_id: int, data: ProjectPatch, conn=DB):
     fields = data.model_dump(exclude_unset=True)
     if "icon" in fields and fields["icon"] not in PROJECT_ICONS:
         raise HTTPException(422, "Unknown icon")
@@ -392,7 +392,7 @@ def update_project(project_id: int, data: ProjectPatch, conn=Depends(get_db)):
 
 
 @app.delete("/api/projects/{project_id}", status_code=204)
-def delete_project(project_id: int, conn=Depends(get_db)):
+def delete_project(project_id: int, conn=DB):
     """Move the project and its items to the trash. They can be restored for TRASH_DAYS days."""
     if not conn.execute("SELECT 1 FROM projects WHERE id = ? AND deleted_at IS NULL", (project_id,)).fetchone():
         raise HTTPException(404, "Project not found")
@@ -413,7 +413,7 @@ def list_items(
     project_id: list[int] = Query(default=[]),
     label: str | None = None,
     view: Literal["all", "today"] = "all",
-    conn=Depends(get_db),
+    conn=DB,
 ):
     where, args = [], []
     for col, values in (("i.status", status), ("i.type", type), ("i.priority", priority), ("i.project_id", project_id)):
@@ -435,14 +435,14 @@ def list_items(
 
 
 @app.post("/api/items", status_code=201)
-def create_item(data: ItemIn, conn=Depends(get_db)):
+def create_item(data: ItemIn, conn=DB):
     if data.parent_id:
         check_parent(conn, None, data.parent_id)
     return load_item(conn, insert_item(conn, data))
 
 
 @app.get("/api/items/{item_id}")
-def get_item(item_id: int, conn=Depends(get_db)):
+def get_item(item_id: int, conn=DB):
     item = load_item(conn, item_id)
     item["subtasks"] = rows(conn.execute("SELECT * FROM subtasks WHERE item_id = ? ORDER BY position, id", (item_id,)))
     item["children"] = [_decode(r) for r in rows(conn.execute(ITEM_SELECT + " WHERE i.parent_id = ? ORDER BY i.id", (item_id,)))]
@@ -450,7 +450,7 @@ def get_item(item_id: int, conn=Depends(get_db)):
 
 
 @app.patch("/api/items/{item_id}")
-def update_item(item_id: int, data: ItemPatch, conn=Depends(get_db)):
+def update_item(item_id: int, data: ItemPatch, conn=DB):
     item = load_item(conn, item_id)
     fields = data.model_dump(exclude_unset=True)
     ts = now()
@@ -512,7 +512,7 @@ def update_item(item_id: int, data: ItemPatch, conn=Depends(get_db)):
 
 
 @app.delete("/api/items/{item_id}", status_code=204)
-def delete_item(item_id: int, conn=Depends(get_db)):
+def delete_item(item_id: int, conn=DB):
     """Move the item to the trash. It can be restored for TRASH_DAYS days."""
     load_item(conn, item_id)
     _stop_timer_if(conn, "SELECT ?", (item_id,))
@@ -520,7 +520,7 @@ def delete_item(item_id: int, conn=Depends(get_db)):
 
 
 @app.post("/api/items/{item_id}/export")
-def export_item(item_id: int, conn=Depends(get_db)):
+def export_item(item_id: int, conn=DB):
     item = load_item(conn, item_id)
     try:
         path = obsidian.export_item(conn, item, item["key"])
@@ -534,7 +534,7 @@ def export_item(item_id: int, conn=Depends(get_db)):
 
 
 @app.post("/api/items/{item_id}/subtasks", status_code=201)
-def add_subtask(item_id: int, data: SubtaskIn, conn=Depends(get_db)):
+def add_subtask(item_id: int, data: SubtaskIn, conn=DB):
     load_item(conn, item_id)
     pos = conn.execute("SELECT coalesce(max(position), 0) + 1 FROM subtasks WHERE item_id = ?", (item_id,)).fetchone()[0]
     cur = conn.execute("INSERT INTO subtasks (item_id, title, position) VALUES (?, ?, ?)", (item_id, data.title, pos))
@@ -542,7 +542,7 @@ def add_subtask(item_id: int, data: SubtaskIn, conn=Depends(get_db)):
 
 
 @app.patch("/api/subtasks/{subtask_id}")
-def update_subtask(subtask_id: int, data: SubtaskPatch, conn=Depends(get_db)):
+def update_subtask(subtask_id: int, data: SubtaskPatch, conn=DB):
     fields = data.model_dump(exclude_unset=True)
     if fields:
         update_row(conn, "subtasks", subtask_id, fields)
@@ -550,7 +550,7 @@ def update_subtask(subtask_id: int, data: SubtaskPatch, conn=Depends(get_db)):
 
 
 @app.delete("/api/subtasks/{subtask_id}", status_code=204)
-def delete_subtask(subtask_id: int, conn=Depends(get_db)):
+def delete_subtask(subtask_id: int, conn=DB):
     conn.execute("DELETE FROM subtasks WHERE id = ?", (subtask_id,))
 
 
@@ -558,20 +558,20 @@ def delete_subtask(subtask_id: int, conn=Depends(get_db)):
 
 
 @app.get("/api/items/{item_id}/comments")
-def list_comments(item_id: int, conn=Depends(get_db)):
+def list_comments(item_id: int, conn=DB):
     # Oldest first: comments read top to bottom like a conversation.
     return rows(conn.execute("SELECT * FROM comments WHERE item_id = ? ORDER BY created_at, id", (item_id,)))
 
 
 @app.post("/api/items/{item_id}/comments", status_code=201)
-def add_comment(item_id: int, data: CommentIn, conn=Depends(get_db)):
+def add_comment(item_id: int, data: CommentIn, conn=DB):
     load_item(conn, item_id)
     cur = conn.execute("INSERT INTO comments (item_id, body, created_at) VALUES (?, ?, ?)", (item_id, data.body, now()))
     return row(conn.execute("SELECT * FROM comments WHERE id = ?", (cur.lastrowid,)))
 
 
 @app.patch("/api/comments/{comment_id}")
-def edit_comment(comment_id: int, data: CommentIn, conn=Depends(get_db)):
+def edit_comment(comment_id: int, data: CommentIn, conn=DB):
     if not conn.execute("SELECT 1 FROM comments WHERE id = ?", (comment_id,)).fetchone():
         raise HTTPException(404, "Comment not found")
     conn.execute("UPDATE comments SET body = ?, edited_at = ? WHERE id = ?", (data.body.strip(), now(), comment_id))
@@ -579,12 +579,12 @@ def edit_comment(comment_id: int, data: CommentIn, conn=Depends(get_db)):
 
 
 @app.delete("/api/comments/{comment_id}", status_code=204)
-def delete_comment(comment_id: int, conn=Depends(get_db)):
+def delete_comment(comment_id: int, conn=DB):
     conn.execute("DELETE FROM comments WHERE id = ?", (comment_id,))
 
 
 @app.get("/api/items/{item_id}/history")
-def list_history(item_id: int, conn=Depends(get_db)):
+def list_history(item_id: int, conn=DB):
     return rows(conn.execute("SELECT * FROM history WHERE item_id = ? ORDER BY created_at DESC, id DESC", (item_id,)))
 
 
@@ -592,12 +592,12 @@ def list_history(item_id: int, conn=Depends(get_db)):
 
 
 @app.get("/api/items/{item_id}/worklogs")
-def list_worklogs(item_id: int, conn=Depends(get_db)):
+def list_worklogs(item_id: int, conn=DB):
     return rows(conn.execute("SELECT * FROM worklogs WHERE item_id = ? ORDER BY started_at DESC, id DESC", (item_id,)))
 
 
 @app.post("/api/items/{item_id}/worklogs", status_code=201)
-def add_worklog(item_id: int, data: WorklogIn, conn=Depends(get_db)):
+def add_worklog(item_id: int, data: WorklogIn, conn=DB):
     load_item(conn, item_id)
     minutes = parse_duration(data.time_spent)
     started = (data.started_at.replace(tzinfo=None, microsecond=0).isoformat() if data.started_at else now())
@@ -610,12 +610,12 @@ def add_worklog(item_id: int, data: WorklogIn, conn=Depends(get_db)):
 
 
 @app.delete("/api/worklogs/{worklog_id}", status_code=204)
-def delete_worklog(worklog_id: int, conn=Depends(get_db)):
+def delete_worklog(worklog_id: int, conn=DB):
     conn.execute("DELETE FROM worklogs WHERE id = ?", (worklog_id,))
 
 
 @app.get("/api/timer")
-def get_timer(conn=Depends(get_db)):
+def get_timer(conn=DB):
     t = row(conn.execute(
         """SELECT t.*, p.key || '-' || i.number AS key, i.title FROM active_timer t
            JOIN live_items i ON i.id = t.item_id JOIN projects p ON p.id = i.project_id"""))
@@ -623,7 +623,7 @@ def get_timer(conn=Depends(get_db)):
 
 
 @app.post("/api/items/{item_id}/timer/start")
-def start_timer(item_id: int, conn=Depends(get_db)):
+def start_timer(item_id: int, conn=DB):
     load_item(conn, item_id)
     _stop_timer(conn)
     conn.execute("INSERT INTO active_timer (id, item_id, started_at) VALUES (1, ?, ?)", (item_id, now()))
@@ -646,12 +646,12 @@ def _stop_timer(conn, comment: str = "") -> dict | None:
 
 
 @app.post("/api/timer/stop")
-def stop_timer(conn=Depends(get_db)):
+def stop_timer(conn=DB):
     return _stop_timer(conn)
 
 
 @app.delete("/api/timer", status_code=204)
-def discard_timer(conn=Depends(get_db)):
+def discard_timer(conn=DB):
     conn.execute("DELETE FROM active_timer WHERE id = 1")
 
 
@@ -671,7 +671,7 @@ def _days_left(deleted_at: str) -> int:
 
 
 @app.get("/api/trash")
-def list_trash(conn=Depends(get_db)):
+def list_trash(conn=DB):
     projects = rows(conn.execute("""
         SELECT p.*, (SELECT count(*) FROM items i WHERE i.project_id = p.id) AS item_count
         FROM projects p WHERE p.deleted_at IS NOT NULL ORDER BY p.deleted_at DESC"""))
@@ -688,7 +688,7 @@ def list_trash(conn=Depends(get_db)):
 
 
 @app.post("/api/trash/items/{item_id}/restore")
-def restore_item(item_id: int, conn=Depends(get_db)):
+def restore_item(item_id: int, conn=DB):
     it = row(conn.execute("SELECT * FROM items WHERE id = ? AND deleted_at IS NOT NULL", (item_id,)))
     if not it:
         raise HTTPException(404, "Item is not in the trash")
@@ -700,7 +700,7 @@ def restore_item(item_id: int, conn=Depends(get_db)):
 
 
 @app.post("/api/trash/projects/{project_id}/restore")
-def restore_project(project_id: int, conn=Depends(get_db)):
+def restore_project(project_id: int, conn=DB):
     p = row(conn.execute("SELECT * FROM projects WHERE id = ? AND deleted_at IS NOT NULL", (project_id,)))
     if not p:
         raise HTTPException(404, "Project is not in the trash")
@@ -712,14 +712,14 @@ def restore_project(project_id: int, conn=Depends(get_db)):
 
 
 @app.delete("/api/trash/items/{item_id}", status_code=204)
-def purge_item(item_id: int, conn=Depends(get_db)):
+def purge_item(item_id: int, conn=DB):
     if not conn.execute("SELECT 1 FROM items WHERE id = ? AND deleted_at IS NOT NULL", (item_id,)).fetchone():
         raise HTTPException(404, "Item is not in the trash")
     hard_delete_items(conn, [item_id])
 
 
 @app.delete("/api/trash/projects/{project_id}", status_code=204)
-def purge_project(project_id: int, conn=Depends(get_db)):
+def purge_project(project_id: int, conn=DB):
     if not conn.execute("SELECT 1 FROM projects WHERE id = ? AND deleted_at IS NOT NULL", (project_id,)).fetchone():
         raise HTTPException(404, "Project is not in the trash")
     hard_delete_items(conn, [r[0] for r in conn.execute("SELECT id FROM items WHERE project_id = ?", (project_id,))])
@@ -727,7 +727,7 @@ def purge_project(project_id: int, conn=Depends(get_db)):
 
 
 @app.delete("/api/trash", status_code=204)
-def empty_trash(conn=Depends(get_db)):
+def empty_trash(conn=DB):
     hard_delete_items(conn, [r[0] for r in conn.execute(
         """SELECT id FROM items WHERE deleted_at IS NOT NULL
            OR project_id IN (SELECT id FROM projects WHERE deleted_at IS NOT NULL)""")])
@@ -764,7 +764,7 @@ def load_jot(conn, jot_id: int) -> dict:
 
 
 @app.get("/api/jots")
-def list_jots(q: str | None = None, conn=Depends(get_db)):
+def list_jots(q: str | None = None, conn=DB):
     # A topic whose ticket is in Trash is hidden; it comes back if the ticket is restored.
     sql, args = JOT_SELECT + " WHERE NOT (j.status = 'converted' AND (i.id IS NULL OR i.deleted_at IS NOT NULL))", []
     if q and q.strip():
@@ -774,7 +774,7 @@ def list_jots(q: str | None = None, conn=Depends(get_db)):
 
 
 @app.post("/api/jots", status_code=201)
-def create_jot(data: JotIn, conn=Depends(get_db)):
+def create_jot(data: JotIn, conn=DB):
     ts = now()
     cur = conn.execute(
         "INSERT INTO jots (body, details, url, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
@@ -784,7 +784,7 @@ def create_jot(data: JotIn, conn=Depends(get_db)):
 
 
 @app.patch("/api/jots/{jot_id}")
-def update_jot(jot_id: int, data: JotPatch, conn=Depends(get_db)):
+def update_jot(jot_id: int, data: JotPatch, conn=DB):
     j = load_jot(conn, jot_id)
     fields = {k: (v.strip() if isinstance(v, str) else v) for k, v in data.model_dump(exclude_unset=True).items()}
     if "url" in fields:
@@ -798,7 +798,7 @@ def update_jot(jot_id: int, data: JotPatch, conn=Depends(get_db)):
 
 
 @app.delete("/api/jots/{jot_id}", status_code=204)
-def delete_jot(jot_id: int, conn=Depends(get_db)):
+def delete_jot(jot_id: int, conn=DB):
     conn.execute("DELETE FROM jots WHERE id = ?", (jot_id,))
 
 
@@ -814,7 +814,7 @@ def split_topic(text: str) -> list[str]:
 
 
 @app.post("/api/jots/{jot_id}/split", status_code=201)
-def split_jot(jot_id: int, conn=Depends(get_db)):
+def split_jot(jot_id: int, conn=DB):
     """Turn one topic with several names into one topic per name. Notes and link are copied."""
     j = load_jot(conn, jot_id)
     if j["status"] == "converted":
@@ -835,7 +835,7 @@ def split_jot(jot_id: int, conn=Depends(get_db)):
 
 
 @app.post("/api/jots/{jot_id}/convert", status_code=201)
-def convert_jot(jot_id: int, data: JotConvert, conn=Depends(get_db)):
+def convert_jot(jot_id: int, data: JotConvert, conn=DB):
     """Turn a note into a board item. Fields not given come from the note."""
     j = load_jot(conn, jot_id)
     if j["status"] == "converted" and j["item_id"] and not j["item_deleted"]:
@@ -893,7 +893,7 @@ def _insert_revision(conn, title: str, notes: str, question: str, url: str | Non
 
 
 @app.get("/api/revisions")
-def list_revisions(conn=Depends(get_db)):
+def list_revisions(conn=DB):
     # Active: by priority, then oldest first so long-waiting topics stay on top. Revised: most recent first.
     return rows(conn.execute(
         REVISION_SELECT + """ ORDER BY r.status = 'revised',
@@ -905,12 +905,12 @@ def list_revisions(conn=Depends(get_db)):
 
 
 @app.post("/api/revisions", status_code=201)
-def create_revision(data: RevisionIn, conn=Depends(get_db)):
+def create_revision(data: RevisionIn, conn=DB):
     return _insert_revision(conn, data.title, data.notes, data.question, data.url, "manual", priority=data.priority)
 
 
 @app.patch("/api/revisions/{rid}")
-def update_revision(rid: int, data: RevisionPatch, conn=Depends(get_db)):
+def update_revision(rid: int, data: RevisionPatch, conn=DB):
     load_revision(conn, rid)
     fields = {k: (v.strip() if isinstance(v, str) else v) for k, v in data.model_dump(exclude_unset=True).items()}
     if "url" in fields:
@@ -940,44 +940,44 @@ def _stop_revision_timer(conn, rid: int) -> None:
 
 
 @app.post("/api/revisions/{rid}/timer/start")
-def start_revision_timer(rid: int, conn=Depends(get_db)):
+def start_revision_timer(rid: int, conn=DB):
     load_revision(conn, rid)
     conn.execute("UPDATE revisions SET timer_started_at = ? WHERE id = ? AND timer_started_at IS NULL", (now(), rid))
     return load_revision(conn, rid)
 
 
 @app.post("/api/revisions/{rid}/timer/stop")
-def stop_revision_timer(rid: int, conn=Depends(get_db)):
+def stop_revision_timer(rid: int, conn=DB):
     load_revision(conn, rid)
     _stop_revision_timer(conn, rid)
     return load_revision(conn, rid)
 
 
 @app.delete("/api/revisions/{rid}/timer", status_code=204)
-def discard_revision_timer(rid: int, conn=Depends(get_db)):
+def discard_revision_timer(rid: int, conn=DB):
     conn.execute("UPDATE revisions SET timer_started_at = NULL WHERE id = ?", (rid,))
 
 
 @app.get("/api/revisions/{rid}/sessions")
-def list_revision_sessions(rid: int, conn=Depends(get_db)):
+def list_revision_sessions(rid: int, conn=DB):
     return rows(conn.execute(
         "SELECT * FROM revision_sessions WHERE revision_id = ? ORDER BY created_at DESC, id DESC", (rid,)))
 
 
 @app.post("/api/revisions/{rid}/sessions", status_code=201)
-def add_revision_session(rid: int, data: SessionIn, conn=Depends(get_db)):
+def add_revision_session(rid: int, data: SessionIn, conn=DB):
     load_revision(conn, rid)
     _log_session(conn, rid, parse_duration(data.time_spent))
     return load_revision(conn, rid)
 
 
 @app.delete("/api/revision-sessions/{sid}", status_code=204)
-def delete_revision_session(sid: int, conn=Depends(get_db)):
+def delete_revision_session(sid: int, conn=DB):
     conn.execute("DELETE FROM revision_sessions WHERE id = ?", (sid,))
 
 
 @app.delete("/api/revisions/{rid}", status_code=204)
-def delete_revision(rid: int, conn=Depends(get_db)):
+def delete_revision(rid: int, conn=DB):
     conn.execute("DELETE FROM revisions WHERE id = ?", (rid,))
 
 
@@ -989,7 +989,7 @@ class RevisionConvert(BaseModel):
 
 
 @app.post("/api/revisions/{rid}/convert", status_code=201)
-def convert_revision(rid: int, data: RevisionConvert, conn=Depends(get_db)):
+def convert_revision(rid: int, data: RevisionConvert, conn=DB):
     """Create a ticket from a Revisit topic. The topic stays on Revisit, linked to the ticket."""
     rev = load_revision(conn, rid)
     if rev["item_id"] and not rev["item_deleted"]:
@@ -1012,7 +1012,7 @@ def convert_revision(rid: int, data: RevisionConvert, conn=Depends(get_db)):
 
 
 @app.post("/api/items/{item_id}/revise", status_code=201)
-def revise_item(item_id: int, conn=Depends(get_db)):
+def revise_item(item_id: int, conn=DB):
     """Put a ticket on the Revise list (once)."""
     item = load_item(conn, item_id)
     if item["revision_id"]:
@@ -1023,7 +1023,7 @@ def revise_item(item_id: int, conn=Depends(get_db)):
 
 
 @app.post("/api/jots/{jot_id}/revise", status_code=201)
-def revise_jot(jot_id: int, conn=Depends(get_db)):
+def revise_jot(jot_id: int, conn=DB):
     """Move a Radar topic to the Revise list. The topic leaves Radar."""
     j = load_jot(conn, jot_id)
     rev = _insert_revision(conn, j["body"], j["details"], "", j["url"], "radar")
@@ -1035,7 +1035,7 @@ def revise_jot(jot_id: int, conn=Depends(get_db)):
 
 
 @app.get("/api/search")
-def search(q: str, conn=Depends(get_db)):
+def search(q: str, conn=DB):
     tokens = re.findall(r"\w+", q, re.UNICODE)
     key = re.fullmatch(r"\s*([A-Za-z][A-Za-z0-9]*)-(\d+)\s*", q)
     results: dict[int, dict] = {}
@@ -1064,13 +1064,13 @@ def search(q: str, conn=Depends(get_db)):
 
 
 @app.get("/api/reviews/{day}")
-def get_review(day: date, conn=Depends(get_db)):
+def get_review(day: date, conn=DB):
     r = row(conn.execute("SELECT * FROM daily_reviews WHERE date = ?", (day.isoformat(),)))
     return r or {"date": day.isoformat(), "went_well": "", "blockers": "", "tomorrow": "", "updated_at": None}
 
 
 @app.put("/api/reviews/{day}")
-def save_review(day: date, data: ReviewIn, conn=Depends(get_db)):
+def save_review(day: date, data: ReviewIn, conn=DB):
     conn.execute(
         """INSERT INTO daily_reviews (date, went_well, blockers, tomorrow, updated_at) VALUES (?, ?, ?, ?, ?)
            ON CONFLICT(date) DO UPDATE SET went_well = excluded.went_well, blockers = excluded.blockers,
@@ -1112,7 +1112,7 @@ def _range_stats(conn, start: date, end: date) -> dict:
 
 
 @app.get("/api/stats/overview")
-def stats_overview(days: int = Query(default=30, ge=1, le=365), conn=Depends(get_db)):
+def stats_overview(days: int = Query(default=30, ge=1, le=365), conn=DB):
     end = date.fromisoformat(today())
     start = end - timedelta(days=days - 1)
     prev_end = start - timedelta(days=1)
@@ -1138,7 +1138,7 @@ def stats_overview(days: int = Query(default=30, ge=1, le=365), conn=Depends(get
 
 
 @app.get("/api/reports/weekly")
-def weekly_report(week_start: date | None = None, conn=Depends(get_db)):
+def weekly_report(week_start: date | None = None, conn=DB):
     ref = week_start or date.fromisoformat(today())
     start = ref - timedelta(days=ref.weekday())  # Monday
     end = start + timedelta(days=6)
@@ -1175,7 +1175,7 @@ def weekly_report(week_start: date | None = None, conn=Depends(get_db)):
 
 
 @app.get("/api/settings")
-def get_settings(conn=Depends(get_db)):
+def get_settings(conn=DB):
     return {
         "version": VERSION,
         "obsidian": obsidian.vault_status(conn),
@@ -1192,7 +1192,7 @@ def get_settings(conn=Depends(get_db)):
 
 
 @app.put("/api/settings")
-def save_settings(data: SettingsIn, conn=Depends(get_db)):
+def save_settings(data: SettingsIn, conn=DB):
     if data.obsidian_folder is not None:
         folder = data.obsidian_folder.strip().strip("/")
         if not folder or ".." in folder.split("/"):
@@ -1216,12 +1216,12 @@ def save_settings(data: SettingsIn, conn=Depends(get_db)):
 
 
 @app.get("/api/quotes")
-def list_quotes(conn=Depends(get_db)):
+def list_quotes(conn=DB):
     return rows(conn.execute("SELECT * FROM quotes ORDER BY id"))
 
 
 @app.post("/api/quotes", status_code=201)
-def add_quote(data: QuoteIn, conn=Depends(get_db)):
+def add_quote(data: QuoteIn, conn=DB):
     cur = conn.execute(
         "INSERT INTO quotes (text, author, created_at) VALUES (?, ?, ?)",
         (data.text.strip(), data.author.strip(), now()),
@@ -1230,7 +1230,7 @@ def add_quote(data: QuoteIn, conn=Depends(get_db)):
 
 
 @app.patch("/api/quotes/{quote_id}")
-def edit_quote(quote_id: int, data: QuoteIn, conn=Depends(get_db)):
+def edit_quote(quote_id: int, data: QuoteIn, conn=DB):
     conn.execute("UPDATE quotes SET text = ?, author = ? WHERE id = ?", (data.text.strip(), data.author.strip(), quote_id))
     q = row(conn.execute("SELECT * FROM quotes WHERE id = ?", (quote_id,)))
     if not q:
@@ -1239,7 +1239,7 @@ def edit_quote(quote_id: int, data: QuoteIn, conn=Depends(get_db)):
 
 
 @app.delete("/api/quotes/{quote_id}", status_code=204)
-def delete_quote(quote_id: int, conn=Depends(get_db)):
+def delete_quote(quote_id: int, conn=DB):
     conn.execute("DELETE FROM quotes WHERE id = ?", (quote_id,))
 
 
@@ -1391,7 +1391,7 @@ def _thumb_response(source: str | list[str] | None):
 
 
 @app.get("/api/items/{item_id}/thumb")
-def item_thumb(item_id: int, conn=Depends(get_db)):
+def item_thumb(item_id: int, conn=DB):
     item = row(conn.execute("SELECT url, thumb FROM items WHERE id = ?", (item_id,)))
     if not item or not item["url"]:
         raise HTTPException(404, "No thumbnail")
@@ -1405,7 +1405,7 @@ def item_thumb(item_id: int, conn=Depends(get_db)):
 
 
 @app.get("/api/articles/{aid}/thumb")
-def article_thumb(aid: int, conn=Depends(get_db)):
+def article_thumb(aid: int, conn=DB):
     a = row(conn.execute("SELECT url, image FROM articles WHERE id = ?", (aid,)))
     if not a:
         raise HTTPException(404, "No thumbnail")
@@ -1414,12 +1414,12 @@ def article_thumb(aid: int, conn=Depends(get_db)):
 
 
 @app.get("/api/articles")
-def list_articles(conn=Depends(get_db)):
+def list_articles(conn=DB):
     return _with_collections(conn, rows(conn.execute(ARTICLE_SELECT + " ORDER BY a.created_at DESC, a.id DESC")))
 
 
 @app.post("/api/articles", status_code=201)
-def create_article(data: ArticleIn, conn=Depends(get_db)):
+def create_article(data: ArticleIn, conn=DB):
     url = _norm_url(data.url)
     dup = row(conn.execute("SELECT id, title FROM articles WHERE url = ?", (url,)))
     if dup:
@@ -1441,7 +1441,7 @@ def create_article(data: ArticleIn, conn=Depends(get_db)):
 
 
 @app.patch("/api/articles/{aid}")
-def update_article(aid: int, data: ArticlePatch, conn=Depends(get_db)):
+def update_article(aid: int, data: ArticlePatch, conn=DB):
     before = load_article(conn, aid)
     updates = data.model_dump(exclude_unset=True)
     collection_ids = updates.pop("collection_ids", None)
@@ -1494,7 +1494,7 @@ def _sync_article_from_item(conn, aid: int, item_status: str) -> None:
 
 
 @app.post("/api/articles/{aid}/ticket", status_code=201)
-def article_to_ticket(aid: int, conn=Depends(get_db)):
+def article_to_ticket(aid: int, conn=DB):
     """Put a blog post on the board as a Learning ticket in the LRN project, marked as a blog."""
     a = load_article(conn, aid)
     if a["item_key"]:
@@ -1508,17 +1508,17 @@ def article_to_ticket(aid: int, conn=Depends(get_db)):
 
 
 @app.post("/api/articles/{aid}/export")
-def export_article(aid: int, conn=Depends(get_db)):
+def export_article(aid: int, conn=DB):
     return _export_article(conn, aid)
 
 
 @app.delete("/api/articles/{aid}", status_code=204)
-def delete_article(aid: int, conn=Depends(get_db)):
+def delete_article(aid: int, conn=DB):
     conn.execute("DELETE FROM articles WHERE id = ?", (aid,))
 
 
 @app.get("/api/collections")
-def list_collections(conn=Depends(get_db)):
+def list_collections(conn=DB):
     return rows(conn.execute(
         """SELECT c.*, (SELECT count(*) FROM article_collections ac WHERE ac.collection_id = c.id) AS count
            FROM collections c ORDER BY c.name COLLATE NOCASE"""))
@@ -1534,13 +1534,13 @@ def _collection_name(conn, name: str, skip_id: int | None = None) -> str:
 
 
 @app.post("/api/collections", status_code=201)
-def create_collection(data: CollectionIn, conn=Depends(get_db)):
+def create_collection(data: CollectionIn, conn=DB):
     cur = conn.execute("INSERT INTO collections (name, created_at) VALUES (?, ?)", (_collection_name(conn, data.name), now()))
     return {**row(conn.execute("SELECT * FROM collections WHERE id = ?", (cur.lastrowid,))), "count": 0}
 
 
 @app.patch("/api/collections/{cid}")
-def rename_collection(cid: int, data: CollectionIn, conn=Depends(get_db)):
+def rename_collection(cid: int, data: CollectionIn, conn=DB):
     if not row(conn.execute("SELECT id FROM collections WHERE id = ?", (cid,))):
         raise HTTPException(404, "Collection not found")
     conn.execute("UPDATE collections SET name = ? WHERE id = ?", (_collection_name(conn, data.name, cid), cid))
@@ -1550,7 +1550,7 @@ def rename_collection(cid: int, data: CollectionIn, conn=Depends(get_db)):
 
 
 @app.delete("/api/collections/{cid}", status_code=204)
-def delete_collection(cid: int, conn=Depends(get_db)):
+def delete_collection(cid: int, conn=DB):
     """Articles stay. Those whose note lived in this folder move to another collection or to the main folder."""
     affected = [r[0] for r in conn.execute("SELECT article_id FROM article_collections WHERE collection_id = ?", (cid,))]
     conn.execute("DELETE FROM article_collections WHERE collection_id = ?", (cid,))
@@ -1650,12 +1650,12 @@ def search_books(q: str = Query(min_length=2, max_length=200)):
 
 
 @app.get("/api/books")
-def list_books(conn=Depends(get_db)):
+def list_books(conn=DB):
     return rows(conn.execute(BOOK_SELECT + " ORDER BY b.created_at DESC, b.id DESC"))
 
 
 @app.post("/api/books", status_code=201)
-def create_book(data: BookIn, conn=Depends(get_db)):
+def create_book(data: BookIn, conn=DB):
     ts = now()
     dates = _book_status_dates(data.status)
     cur = conn.execute(
@@ -1668,7 +1668,7 @@ def create_book(data: BookIn, conn=Depends(get_db)):
 
 
 @app.patch("/api/books/{bid}")
-def update_book(bid: int, data: BookPatch, conn=Depends(get_db)):
+def update_book(bid: int, data: BookPatch, conn=DB):
     book = load_book(conn, bid)
     fields = data.model_dump(exclude_unset=True)
     for k in ("title", "author", "notes"):
@@ -1688,13 +1688,13 @@ def update_book(bid: int, data: BookPatch, conn=Depends(get_db)):
 
 
 @app.delete("/api/books/{bid}", status_code=204)
-def delete_book(bid: int, conn=Depends(get_db)):
+def delete_book(bid: int, conn=DB):
     """Removes the book from the list. A ticket made from it stays on the board."""
     conn.execute("DELETE FROM books WHERE id = ?", (bid,))
 
 
 @app.post("/api/books/{bid}/ticket", status_code=201)
-def book_to_ticket(bid: int, conn=Depends(get_db)):
+def book_to_ticket(bid: int, conn=DB):
     """Put the book on the board as a Learning ticket in the LRN project, marked as a book."""
     book = load_book(conn, bid)
     if book["item_key"]:
@@ -1711,7 +1711,7 @@ def book_to_ticket(bid: int, conn=Depends(get_db)):
 
 
 @app.get("/api/books/{bid}/cover")
-def book_cover(bid: int, conn=Depends(get_db)):
+def book_cover(bid: int, conn=DB):
     b = row(conn.execute("SELECT cover FROM books WHERE id = ?", (bid,)))
     return _thumb_response(b["cover"] if b else None)
 
@@ -1795,7 +1795,7 @@ def load_idea(conn, iid: int) -> dict:
 
 
 @app.get("/api/weekend")
-def get_weekend(day: date | None = None, conn=Depends(get_db)):
+def get_weekend(day: date | None = None, conn=DB):
     sat = weekend_of(day or date.fromisoformat(today()))
     sun = sat + timedelta(days=1)
     entries = rows(conn.execute(
@@ -1810,7 +1810,7 @@ def get_weekend(day: date | None = None, conn=Depends(get_db)):
 
 
 @app.post("/api/weekend/entries", status_code=201)
-def add_plan_entry(data: PlanIn, conn=Depends(get_db)):
+def add_plan_entry(data: PlanIn, conn=DB):
     _check_weekend_day(data.day)
     kind, title, category = data.kind, (data.title or "").strip(), data.category
     if data.item_id:
@@ -1840,7 +1840,7 @@ def add_plan_entry(data: PlanIn, conn=Depends(get_db)):
 
 
 @app.patch("/api/weekend/entries/{eid}")
-def update_plan_entry(eid: int, data: PlanPatch, conn=Depends(get_db)):
+def update_plan_entry(eid: int, data: PlanPatch, conn=DB):
     entry = load_plan_entry(conn, eid)
     updates = data.model_dump(exclude_unset=True)
     if "day" in updates:
@@ -1859,12 +1859,12 @@ def update_plan_entry(eid: int, data: PlanPatch, conn=Depends(get_db)):
 
 
 @app.delete("/api/weekend/entries/{eid}", status_code=204)
-def delete_plan_entry(eid: int, conn=Depends(get_db)):
+def delete_plan_entry(eid: int, conn=DB):
     conn.execute("DELETE FROM weekend_plan WHERE id = ?", (eid,))
 
 
 @app.get("/api/weekend/ideas")
-def list_ideas(conn=Depends(get_db)):
+def list_ideas(conn=DB):
     # planned_day: the next upcoming weekend day this idea is planned for and not yet done.
     return rows(conn.execute(
         """SELECT d.*, (SELECT min(w.day) FROM weekend_plan w
@@ -1874,7 +1874,7 @@ def list_ideas(conn=Depends(get_db)):
 
 
 @app.post("/api/weekend/ideas", status_code=201)
-def add_idea(data: IdeaIn, conn=Depends(get_db)):
+def add_idea(data: IdeaIn, conn=DB):
     cur = conn.execute(
         "INSERT INTO weekend_ideas (title, category, note, url, created_at) VALUES (?, ?, ?, ?, ?)",
         (data.title.strip(), data.category, data.note.strip(), (data.url or "").strip() or None, now()),
@@ -1883,7 +1883,7 @@ def add_idea(data: IdeaIn, conn=Depends(get_db)):
 
 
 @app.patch("/api/weekend/ideas/{iid}")
-def update_idea(iid: int, data: IdeaPatch, conn=Depends(get_db)):
+def update_idea(iid: int, data: IdeaPatch, conn=DB):
     load_idea(conn, iid)
     updates = data.model_dump(exclude_unset=True)
     if "done" in updates:
@@ -1903,7 +1903,7 @@ def update_idea(iid: int, data: IdeaPatch, conn=Depends(get_db)):
 
 
 @app.delete("/api/weekend/ideas/{iid}", status_code=204)
-def delete_idea(iid: int, conn=Depends(get_db)):
+def delete_idea(iid: int, conn=DB):
     conn.execute("DELETE FROM weekend_ideas WHERE id = ?", (iid,))
 
 

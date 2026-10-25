@@ -4,6 +4,8 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from fastapi import Depends
+
 DATA_DIR = os.environ.get("DATA_DIR", "/data")
 DB_PATH = os.path.join(DATA_DIR, "arc.db")
 # Arc was called Smriti; its database file was smriti.db. adopt_legacy_db() renames it once.
@@ -382,6 +384,11 @@ def get_db():
     """FastAPI dependency: one connection per request, committed on success."""
     with transaction() as conn:
         yield conn
+
+
+# scope="function" commits before the response goes out. With the default ("request") FastAPI runs the
+# commit after sending the response, so a page that re-fetches right after saving could read the old data.
+DB = Depends(get_db, scope="function")
 
 
 def init_db() -> None:
